@@ -13,7 +13,10 @@
 #include "KalmanVario_PVA.h"
 #include "embedded_math.h"
 #include "windobserver.h"
+
+#if USE_HARDWARE_EEPROM	== 0
 #include "EEPROM_emulation.h"
+#endif
 
 #include "pt2.h"
 #include "HP_LP_fusion.h"
@@ -85,7 +88,7 @@ public:
 
 	float get_effective_vertical_acceleration( void) const
 	{
-		return KalmanVario_GNSS.get_x( KalmanVario_t::ACCELERATION_OBSERVED);
+		return KalmanVario_GNSS.get_x( KalmanVario_PVA_t::ACCELERATION_OBSERVED);
 	}
 
 private:
@@ -102,8 +105,8 @@ private:
 
 	HP_LP_fusion <float> speed_compensation_fusioner;
 
-	KalmanVario_t KalmanVario_GNSS;
-	KalmanVario_PVA_t KalmanVario_pressure;
+	KalmanVario_PVA_t KalmanVario_GNSS;
+	KalmanVario_t KalmanVario_pressure;
 };
 
 #endif /* FLIGHT_OBSERVER_H_ */

@@ -32,8 +32,8 @@ void navigator_t::update_IMU (
       GNSS_acceleration,
       ahrs.get_nav_acceleration (),
       heading_vector,
-      GNSS_altitude,
-      atmosphere.get_altitude(),
+      GNSS_negative_altitude,
+      atmosphere.get_negative_altitude(),
       TAS,
       ahrs.get_circling_state(),
       wind_average_observer.get_value()
@@ -50,7 +50,7 @@ void navigator_t::update_GNSS (const coordinates_t &coordinates)
   GNSS_velocity 	= coordinates.velocity;
   GNSS_acceleration	= coordinates.acceleration;
   GNSS_heading 		= coordinates.relPosHeading;
-  GNSS_altitude 	= coordinates.position.e[DOWN]; // negative altitude
+  GNSS_negative_altitude= coordinates.position.e[DOWN]; // negative altitude
   GNSS_speed 		= coordinates.speed_motion;
 
   wind_average_observer.update( flight_observer.get_instant_wind(), // do this here because of the update rate 10Hz

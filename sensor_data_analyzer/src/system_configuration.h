@@ -7,6 +7,10 @@
 #define SRC_SYSTEM_CONFIGURATION_H_
 
 #define WITH_DENSITY_DATA	1
+#define PARALLEL_MAGNETIC_AHRS 	1
+#define INCLUDING_NANO	 	1
+
+#define GNSS_VERTICAL_SPEED_INVERTED 1
 
 #define MINIMUM_MAG_CALIBRATION_SAMPLES 6000
 #define MAG_CALIB_LETHARGY	0.5f // percentage of remaining old calibration info
@@ -14,7 +18,5 @@
 
 #define CIRCLE_LIMIT 		(10 * 100) //!< 10 * 1/100 s delay into / out of circling state
 #define STABLE_CIRCLING_LIMIT	(30 * 100) // seconds @ 100 Hz for MAG auto calibration
-
-#define PARALLEL_MAGNETIC_AHRS 1
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
