@@ -50,7 +50,7 @@ void navigator_t::update_GNSS (const coordinates_t &coordinates)
   GNSS_velocity 	= coordinates.velocity;
   GNSS_acceleration	= coordinates.acceleration;
   GNSS_heading 		= coordinates.relPosHeading;
-  GNSS_negative_altitude= coordinates.position.e[DOWN]; // negative altitude
+  GNSS_negative_altitude= coordinates.position.e[DOWN];
   GNSS_speed 		= coordinates.speed_motion;
 
   wind_average_observer.update( flight_observer.get_instant_wind(), // do this here because of the update rate 10Hz

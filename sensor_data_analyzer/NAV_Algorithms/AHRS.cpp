@@ -8,7 +8,10 @@
 #include "system_configuration.h"
 #include "GNSS.h"
 #include "embedded_memory.h"
+
+#if USE_HARDWARE_EEPROM	== 0
 #include "EEPROM_emulation.h"
+#endif
 
 #define P_GAIN 0.03f			//!< Attitude controller: proportional gain
 #define I_GAIN 0.00006f 		//!< Attitude controller: integral gain
@@ -251,11 +254,6 @@ AHRS_type::update_compass (const float3vector &gyro, const float3vector &acc,
   else
       mag = mag_sensor;
 
-  float cross = 0.0f;
-
-  mag[FRONT] -= cross * mag[RIGHT];
-  mag[RIGHT] += cross * mag[FRONT];
-
   float3vector nav_acceleration = body2nav * acc;
   float3vector nav_induction    = body2nav * mag;
 
@@ -337,7 +335,7 @@ AHRS_type::update_compass (const float3vector &gyro, const float3vector &acc,
 
 void AHRS_type::handle_magnetic_calibration (void) const
 {
-#if 0
+#if WRITE_MAG_CALIB_EEPROM
   if( false == compass_calibration.isCalibrationDone())
     return;
 

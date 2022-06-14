@@ -66,7 +66,7 @@ public:
 
   void reset_altitude( void)
   {
-    flight_observer.reset( atmosphere.get_negative_altitude(), - GNSS_negative_altitude);
+    flight_observer.reset( atmosphere.get_negative_altitude(), GNSS_negative_altitude);
   }
   /**
    * @brief update pitot pressure
