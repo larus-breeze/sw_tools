@@ -10,10 +10,12 @@
 
 #include "system_configuration.h"
 #include "float3vector.h"
-//#include "FreeRTOS_wrapper.h"
 #include "Linear_Least_Square_Fit.h"
 
-//extern Queue< linear_least_square_result<float>[3] > magnetic_calibration_queue;
+#if WRITE_MAG_CALIB_EEPROM
+#include "FreeRTOS_wrapper.h"
+extern Queue< linear_least_square_result<float>[3] > magnetic_calibration_queue;
+#endif
 
 class calibration_t
 {
@@ -97,7 +99,10 @@ public:
       }
     calibration_done = true; // at least one calibration has been done now
     completeness = HAVE_NONE; // restart acquisition
-//    magnetic_calibration_queue.send(new_calibration, 0);
+
+#if WRITE_MAG_CALIB_EEPROM
+    magnetic_calibration_queue.send(new_calibration, 0);
+#endif
   }
 
   bool isCalibrationDone () const
@@ -123,7 +128,9 @@ private:
   calibration_t calibration[3];
 };
 
-#if 0
+#if WRITE_MAG_CALIB_EEPROM
+
+
 inline bool compass_calibration_t::parameters_changed_significantly (void) const
 {
   float parameter_change_variance = 0.0f;
