@@ -1,6 +1,6 @@
 clear;
 if 1
-f=fopen(['../20220601.f50.f103'],'r');
+f=fopen(['../20220702123130.f50.f103'],'r');
 x=fread(f,[103,inf],'float32');
 else
 f=fopen(['20211024ASK.f48.f100'],'r');

@@ -335,7 +335,6 @@ AHRS_type::update_compass (const float3vector &gyro, const float3vector &acc,
 
 void AHRS_type::handle_magnetic_calibration (void) const
 {
-#if WRITE_MAG_CALIB_EEPROM
   if( false == compass_calibration.isCalibrationDone())
     return;
 
@@ -347,5 +346,4 @@ void AHRS_type::handle_magnetic_calibration (void) const
     {
       compass_calibration.write_into_EEPROM();
     }
-#endif
 }
