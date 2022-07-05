@@ -10,7 +10,7 @@
 #define PARALLEL_MAGNETIC_AHRS 	1
 #define INCLUDING_NANO	 	1
 
-#define GNSS_VERTICAL_SPEED_INVERTED 1
+#define GNSS_VERTICAL_SPEED_INVERTED 0
 
 #define MINIMUM_MAG_CALIBRATION_SAMPLES 6000
 #define MAG_CALIB_LETHARGY	0.5f // percentage of remaining old calibration info
