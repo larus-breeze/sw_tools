@@ -24,10 +24,10 @@ bool read_EEPROM_value( EEPROM_PARAMETER_ID id, float &value)
 	if( config_parameters[id].identifier == id)
 	{
 		value = config_parameters[id].value;
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 bool write_EEPROM_value( EEPROM_PARAMETER_ID id, float value)
