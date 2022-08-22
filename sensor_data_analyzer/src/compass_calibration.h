@@ -32,6 +32,7 @@ public:
   }
   void refresh ( linear_least_square_result<float> &result)
     {
+#if 0
     if( ! is_initialized()) // first calibration coming in
 	{
 	  offset = result.y_offset;
@@ -45,6 +46,12 @@ public:
 	  variance = variance * MAG_CALIB_LETHARGY + ( (result.variance_offset + result.variance_slope)
 									 * (1.0f - MAG_CALIB_LETHARGY));
 	}
+#else
+	  offset   = offset   * MAG_CALIB_LETHARGY + ( result.y_offset          * (1.0f - MAG_CALIB_LETHARGY));
+	  scale    = scale    * MAG_CALIB_LETHARGY + ( (1.0f / result.slope) * (1.0f - MAG_CALIB_LETHARGY)) ;
+	  variance = variance * MAG_CALIB_LETHARGY + ( (result.variance_offset + result.variance_slope)
+									 * (1.0f - MAG_CALIB_LETHARGY));
+#endif
     }
 
   float calibrate( float sensor_reading)

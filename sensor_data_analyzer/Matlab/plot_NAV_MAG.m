@@ -8,3 +8,9 @@ plot(time, sqrt( x(69+o,:).^2+x(70+o,:).^2+x(71+o,:).^2))
 legend('North','East','Down','Magnitude');
 xlabel('Time / min.');
 ylabel('Mag. Induction norm.');
+title('Magnetic Induction World Frame D-GNSS');
+
+a=100*6000;
+e=400*6000;
+
+std( sqrt( x(69+o,:).^2+x(70+o,:).^2+x(71+o,:).^2))

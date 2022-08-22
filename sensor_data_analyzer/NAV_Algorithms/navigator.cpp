@@ -17,7 +17,11 @@ void navigator_t::update_IMU (
 	    GNSS_heading,
 	    GNSS_fix_type == (SAT_FIX | SAT_HEADING));
 
-#if PARALLEL_MAGNETIC_AHRS
+#if 1 //PARALLEL_MAGNETIC_AHRS
+  ahrs_magnetic.update_special(
+	  gyro, acc, mag,
+	  GNSS_acceleration);
+#else
   ahrs_magnetic.update_compass(
 	  gyro, acc, mag,
 	  GNSS_acceleration);
@@ -71,20 +75,6 @@ void navigator_t::update_GNSS (const coordinates_t &coordinates)
   else
     corrected_wind_averager.respond( flight_observer.get_instant_wind()); // todo bad: cascaded lowpass filters !
 
-#if N_PROBES == 5
-  probe[1] = relative_wind_observer.get_value().e[FRONT];
-  probe[2] = relative_wind_observer.get_value().e[RIGHT] / COS(ahrs.get_euler().r);
-  if( ahrs.get_circling_state () != STRAIGHT_FLIGHT)
-    {
-      probe[3] = instant_wind_corrected.e[NORTH];
-      probe[4] = instant_wind_corrected.e[EAST];
-    }
-  else
-    {
-      probe[3] = flight_observer.get_instant_wind().e[NORTH];
-      probe[4] = flight_observer.get_instant_wind().e[EAST];
-    }
-#endif
   vario_integrator.update (flight_observer.get_vario_GNSS(), // here because of the update rate 10Hz
 			   ahrs.get_euler ().y,
 			   ahrs.get_circling_state ());
@@ -131,5 +121,7 @@ void navigator_t::report_data(output_data_t &d)
     d.nick_angle		= ahrs.getNickAngle();
     d.G_load			= ahrs.get_G_load();
     d.HeadingDifferenceAhrsDgnss = ahrs.getHeadingDifferenceAhrsDgnss();
+    d.QNH_GND			= atmosphere.get_QNH_GND();
+    d.air_density		= atmosphere.getDensity();
 }
 

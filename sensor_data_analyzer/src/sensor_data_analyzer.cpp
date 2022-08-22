@@ -7,9 +7,61 @@
 #include "persistent_data.h"
 #include "EEPROM_emulation.h"
 #include "navigator.h"
+#include "NMEA_format.h"
 #include <fenv.h>
+#include "CAN_output.h"
+
+CAN_driver_t CAN_driver; // just a dummy
 
 using namespace std;
+
+class NMEA_buffer_t
+{
+public:
+  char string[255];
+  uint8_t length;
+};
+
+NMEA_buffer_t NMEA_buf;
+float declination;
+
+void format_NMEA_string( const output_data_t &output_data)
+{
+  char *next;
+
+  format_RMC ( output_data.c, NMEA_buf.string);
+  next = NMEA_append_tail (NMEA_buf.string);
+
+  format_GGA ( output_data.c, next);  //TODO: ensure that this reports the altitude in meter above medium sea level and height above wgs84: http://aprs.gids.nl/nmea/#gga
+  next = NMEA_append_tail (next);
+
+  format_MWV (output_data.wind_average.e[NORTH], output_data.wind_average.e[EAST], next);
+  next = NMEA_append_tail (next);
+
+#if USE_PTAS
+
+  format_PTAS1 (output_data.vario,
+		    output_data.integrator_vario,
+		    output_data.c.position.e[DOWN] * -1.0,   //TODO: PTAS shall report pure barometric altitude, based on static_pressure. As there can be a QNH applied to in XCSOAR.
+		    output_data.TAS,
+		    next);
+  next = NMEA_append_tail (next);
+#endif
+  format_POV( output_data.TAS, output_data.m.static_pressure,
+			 output_data.m.pitot_pressure, output_data.m.supply_voltage, output_data.vario, next);
+
+  if( output_data.m.outside_air_humidity > 0.0f) // report AIR data if available
+	append_POV( output_data.m.outside_air_humidity*100.0f, output_data.m.outside_air_temperature, next);
+
+  next = NMEA_append_tail (next);
+
+  append_HCHDM( output_data.euler.y - declination, next); // report magnetic heading
+
+  next = NMEA_append_tail (next);
+
+  NMEA_buf.length = next - NMEA_buf.string;
+
+}
 
 int
 read_identifier (char *s)
@@ -60,14 +112,19 @@ read_EEPROM_file (char *basename)
 
 }
 
+int mein( void);
+
 int
 main (int argc, char *argv[])
 {
+  bool tick_10HZ = false;
+  unsigned init_counter=10000;
+
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   if (argc != 2)
     {
-      printf ("usage: %s infile %s\n", argv[0], argv[1]);
+      printf ("usage: %s infile %s \n", argv[0], argv[1]);
       return -1;
     }
 
@@ -127,7 +184,9 @@ main (int argc, char *argv[])
   float pitot_span = configuration (PITOT_SPAN);
   float QNH_offset = configuration (QNH_OFFSET);
 
-  navigator.update_pabs (in_data->m.static_pressure);
+  declination = navigator.get_declination();
+
+  navigator.update_pressure_and_altitude(in_data[0].m.static_pressure - QNH_offset, -in_data[0].c.position[DOWN]);
   navigator.reset_altitude ();
 
   // setup initial attitude
@@ -136,13 +195,17 @@ main (int argc, char *argv[])
   navigator.set_from_add_mag (acc, mag); // initialize attitude from acceleration + compass
 
   int32_t nano = 0;
+  unsigned density_data_counter = 0;
 
   for (unsigned count = 0; count < size / sizeof(input_data_t); ++count)
     {
+      if( init_counter)
+	--init_counter;
+
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
 
-      navigator.update_pabs (output_data[count].m.static_pressure - QNH_offset);
+      navigator.update_pressure_and_altitude(output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
       navigator.update_pitot (
 	  (output_data[count].m.pitot_pressure - pitot_offset) * pitot_span);
 
@@ -150,16 +213,27 @@ main (int argc, char *argv[])
 	{
 	  nano = output_data[count].c.nano;
 	  navigator.update_GNSS (output_data[count].c);
+	  tick_10HZ=true;
 	}
+      else
+	  tick_10HZ=false;
 
       // rotate sensor coordinates into airframe coordinates
       acc = sensor_mapping * output_data[count].m.acc;
       mag = sensor_mapping * output_data[count].m.mag;
       gyro = sensor_mapping * output_data[count].m.gyro;
 
+      output_data[count].body_acc = acc;
+      output_data[count].body_gyro = gyro;
+
       navigator.update_IMU (acc, mag, gyro);
       navigator.report_data (output_data[count]);
 
+      if( tick_10HZ && init_counter==0)
+	{
+//	CAN_output ( (const output_data_t&) *(output_data+count));
+	navigator.feed_QNH_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+	}
       ++records;
     }
   printf ("%d records\n", records);

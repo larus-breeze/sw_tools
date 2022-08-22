@@ -39,6 +39,10 @@ public:
     else
       atmosphere.disregard_ambient_air_data();
   }
+  void feed_QNH_density_metering( float pressure, float MSL_altitude)
+  {
+    atmosphere.feed_QNH_density_metering( pressure, MSL_altitude);
+  }
 
   void disregard_density_data( void)
   {
@@ -59,9 +63,10 @@ public:
    * @brief update absolute pressure
    * called @ 100 Hz
    */
-  void update_pabs( float pressure)
+  void update_pressure_and_altitude( float pressure, float MSL_altitude)
   {
     atmosphere.set_pressure(pressure);
+    atmosphere.feed_QNH_density_metering(pressure, MSL_altitude);
   }
 
   void reset_altitude( void)

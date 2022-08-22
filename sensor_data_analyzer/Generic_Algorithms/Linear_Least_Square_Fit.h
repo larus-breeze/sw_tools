@@ -75,6 +75,14 @@ template<typename type>
     {
       return (unsigned) n;
     }
+    type get_mean_y( void) const
+    {
+      return sum_y / n;
+    }
+    type get_mean_x( void) const
+    {
+      return sum_x / n;
+    }
   private:
     type sum_x;
     type sum_y;

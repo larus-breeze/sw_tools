@@ -8,6 +8,7 @@
 #define APPLICATION_ATMOSPHERE_H_
 
 #include "embedded_math.h"
+#include <air_density_observer.h>
 
 #define RECIP_STD_DENSITY_TIMES_2 1.632f
 
@@ -24,8 +25,13 @@ class atmosphere_t
 {
 public:
   atmosphere_t( float p_abs)
-  : pressure ( p_abs),
-    have_ambient_air_data(false)
+  :
+    have_ambient_air_data(false),
+    pressure ( p_abs),
+    temperature(20.0f),
+    humidity( 0.0f),
+    density_correction(1.0f),
+    QNH_GND(101325)
   {}
   void set_pressure( float p_abs)
   {
@@ -37,7 +43,7 @@ public:
   }
   float get_density( void) const
   {
-    return  (1.0496346613e-5f * pressure + 0.1671546011f);
+    return  (1.0496346613e-5f * pressure + 0.1671546011f) * density_correction;
   }
   float get_negative_altitude( void) const
   {
@@ -62,6 +68,29 @@ public:
   {
     have_ambient_air_data = false;
   }
+
+  float
+  getDensity () const
+  {
+    return density_correction;
+  }
+
+  float
+  get_QNH_GND () const
+  {
+    return QNH_GND;
+  }
+
+  void feed_QNH_density_metering( float pressure, float MSL_altitude)
+    {
+    air_data_result result = density_QNH_calculator.feed_metering( pressure, MSL_altitude);
+      if( result.valid)
+	{
+	  QNH_GND = result.QNH;
+	  density_correction = result.density_correction;
+	}
+    }
+
 private:
   float calculateGasConstantHumAir(
       float humidity, float pressure, float temperature);
@@ -72,7 +101,9 @@ private:
   float pressure;
   float temperature;
   float humidity;
-  float density;
+  float density_correction;
+  float QNH_GND;
+  air_density_observer density_QNH_calculator;
 };
 
 #endif /* APPLICATION_ATMOSPHERE_H_ */
