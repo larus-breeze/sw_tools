@@ -10,7 +10,7 @@ public:
     : valid( false)
   {}
   float density_correction;
-  float QNH;
+  float QFF;
   bool valid;
 };
 
@@ -28,10 +28,10 @@ private:
     {
       min_altitude = 10000.0f;
       max_altitude = -1000.0f;
-      density_QNH_calculator.reset();
+      density_QFF_calculator.reset();
     }
 
-    linear_least_square_fit<double> density_QNH_calculator;
+    linear_least_square_fit<double> density_QFF_calculator;
     float min_altitude;
     float max_altitude;
 };

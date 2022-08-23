@@ -14,7 +14,14 @@ template<typename type>
   class linear_least_square_result
   {
   public:
-    type y_offset;
+    linear_least_square_result(void)
+    : y_offset( type()),
+      slope( type()),
+      variance_offset( type()),
+      variance_slope( type()),
+      id(0)
+      {}
+      type y_offset;
     type slope;
     type variance_offset;
     type variance_slope;

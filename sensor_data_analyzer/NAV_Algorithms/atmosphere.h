@@ -31,7 +31,7 @@ public:
     temperature(20.0f),
     humidity( 0.0f),
     density_correction(1.0f),
-    QNH_GND(101325)
+    QFF(101325)
   {}
   void set_pressure( float p_abs)
   {
@@ -76,17 +76,17 @@ public:
   }
 
   float
-  get_QNH_GND () const
+  get_QFF () const
   {
-    return QNH_GND;
+    return QFF;
   }
 
-  void feed_QNH_density_metering( float pressure, float MSL_altitude)
+  void feed_QFF_density_metering( float pressure, float MSL_altitude)
     {
-    air_data_result result = density_QNH_calculator.feed_metering( pressure, MSL_altitude);
+    air_data_result result = density_QFF_calculator.feed_metering( pressure, MSL_altitude);
       if( result.valid)
 	{
-	  QNH_GND = result.QNH;
+	  QFF = result.QFF;
 	  density_correction = result.density_correction;
 	}
     }
@@ -102,8 +102,8 @@ private:
   float temperature;
   float humidity;
   float density_correction;
-  float QNH_GND;
-  air_density_observer density_QNH_calculator;
+  float QFF;
+  air_density_observer density_QFF_calculator;
 };
 
 #endif /* APPLICATION_ATMOSPHERE_H_ */

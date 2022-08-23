@@ -79,7 +79,7 @@ typedef struct
   float3vector body_acc;
   float3vector body_gyro;
   float HeadingDifferenceAhrsDgnss;
-  float QNH_GND;
+  float QFF;
   float air_density;
 } output_data_t;
 

@@ -232,7 +232,7 @@ main (int argc, char *argv[])
       if( tick_10HZ && init_counter==0)
 	{
 //	CAN_output ( (const output_data_t&) *(output_data+count));
-	navigator.feed_QNH_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+	navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
 	}
       ++records;
     }
