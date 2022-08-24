@@ -121,7 +121,7 @@ main (int argc, char *argv[])
   unsigned init_counter=10000;
   unsigned density_metering_counter=0;
 
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
 
   if (argc != 2)
     {
