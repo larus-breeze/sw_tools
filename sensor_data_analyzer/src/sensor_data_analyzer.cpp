@@ -119,7 +119,6 @@ main (int argc, char *argv[])
 {
   bool tick_10HZ = false;
   unsigned init_counter=10000;
-  unsigned density_metering_counter=0;
 
   feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
 
@@ -129,20 +128,8 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  volatile unsigned size1 = sizeof(measurement_data_t) / 4;
-  volatile unsigned size2 = sizeof(coordinates_t) / 4;
-  volatile unsigned size3 = sizeof(output_data_t) / 4;
-
-  streampos size;
-
   input_data_t *in_data;
   output_data_t *output_data;
-
-#if 0
-  ofstream outfile ( argv[2], ios::out|ios::binary);
-  if (! outfile.is_open())
-	  return -1;
-#endif
 
   ifstream file (argv[1], ios::in | ios::binary | ios::ate);
   if (!file.is_open ())
@@ -156,7 +143,7 @@ main (int argc, char *argv[])
   navigator_t navigator;
   float3vector acc, mag, gyro;
 
-  size = file.tellg ();
+  streampos size = file.tellg ();
   in_data = (input_data_t*) new char[size];
 
   unsigned records = size / sizeof(input_data_t);
@@ -234,12 +221,7 @@ main (int argc, char *argv[])
       if( tick_10HZ && init_counter==0)
 	{
 //	CAN_output ( (const output_data_t&) *(output_data+count));
-	  ++density_metering_counter;
-	  if( true || density_metering_counter >= 30)
-	    {
-	      density_metering_counter=0;
-	      navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
-	    }
+	  navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
 	}
       ++records;
     }
