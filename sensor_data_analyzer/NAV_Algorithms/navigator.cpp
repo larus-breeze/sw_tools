@@ -68,6 +68,7 @@ void navigator_t::update_GNSS (const coordinates_t &coordinates)
 				ahrs.get_circling_state ());
 
   float3vector wind_correction_nav    = ahrs.get_body2nav() * relative_wind_observer.get_value();
+  wind_correction_nav.e[DOWN]=0.0f; // ignore vertical component as this van cause an underflow error
   float3vector instant_wind_corrected = flight_observer.get_instant_wind() - wind_correction_nav;
 
   if( ahrs.get_circling_state () == CIRCLING)

@@ -221,8 +221,8 @@ main (int argc, char *argv[])
 	  tick_10HZ=false;
 
       // rotate sensor coordinates into airframe coordinates
-      acc = sensor_mapping * output_data[count].m.acc;
-      mag = sensor_mapping * output_data[count].m.mag;
+      acc =  sensor_mapping * output_data[count].m.acc;
+      mag =  sensor_mapping * output_data[count].m.mag;
       gyro = sensor_mapping * output_data[count].m.gyro;
 
       output_data[count].body_acc = acc;
