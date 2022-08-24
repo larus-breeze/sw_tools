@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
 #include "stdio.h"
@@ -10,6 +11,7 @@
 #include "NMEA_format.h"
 #include <fenv.h>
 #include "CAN_output.h"
+#include "TCP_server.h"
 
 CAN_driver_t CAN_driver; // just a dummy
 
@@ -119,14 +121,19 @@ main (int argc, char *argv[])
 {
   bool tick_10HZ = false;
   unsigned init_counter=10000;
+  unsigned ziptime;
 
   feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
 
-  if (argc != 2)
+  if ((argc != 2) && (argc != 3))
     {
-      printf ("usage: %s infile %s \n", argv[0], argv[1]);
+      printf ("usage: %s infile %s [ziptime for TCP version]\n", argv[0], argv[1]);
       return -1;
     }
+
+  bool realtime_with_TCP_server = argc == 3;
+  if( realtime_with_TCP_server)
+    ziptime = 10 * atoi( argv[2]); // 10Hz output rate
 
   input_data_t *in_data;
   output_data_t *output_data;
@@ -137,6 +144,12 @@ main (int argc, char *argv[])
       cout << "Unable to open file";
       return -1;
     }
+
+  if( realtime_with_TCP_server)
+    realtime_with_TCP_server = open_TCP_port();
+
+  if( realtime_with_TCP_server)
+    realtime_with_TCP_server = wait_and_accept_TCP_connection();
 
   read_EEPROM_file (argv[1]);
 
@@ -157,7 +170,6 @@ main (int argc, char *argv[])
 // ************************************************************
 
   records = 0;
-  unsigned errors = 0;
 
   float3matrix sensor_mapping;
     {
@@ -169,8 +181,8 @@ main (int argc, char *argv[])
     }
 
   float pitot_offset = configuration (PITOT_OFFSET);
-  float pitot_span = configuration (PITOT_SPAN);
-  float QNH_offset = configuration (QNH_OFFSET);
+  float pitot_span   = configuration (PITOT_SPAN);
+  float QNH_offset   = configuration (QNH_OFFSET);
 
   declination = navigator.get_declination();
 
@@ -202,6 +214,8 @@ main (int argc, char *argv[])
 	{
 	  nano = output_data[count].c.nano;
 	  navigator.update_GNSS (output_data[count].c);
+	  navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+
 	  tick_10HZ=true;
 	}
       else
@@ -212,16 +226,26 @@ main (int argc, char *argv[])
       mag =  sensor_mapping * output_data[count].m.mag;
       gyro = sensor_mapping * output_data[count].m.gyro;
 
-      output_data[count].body_acc = acc;
+      output_data[count].body_acc  = acc;
       output_data[count].body_gyro = gyro;
 
       navigator.update_IMU (acc, mag, gyro);
       navigator.report_data (output_data[count]);
 
-      if( tick_10HZ && init_counter==0)
+      if( tick_10HZ)
 	{
 //	CAN_output ( (const output_data_t&) *(output_data+count));
-	  navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+	  if( realtime_with_TCP_server)
+	    {
+	      if( ziptime > 0)
+		--ziptime;
+	      else
+		{
+		  format_NMEA_string( (const output_data_t&) *(output_data+count));
+		  write_TCP_port( NMEA_buf.string, NMEA_buf.length);
+		  usleep( 200*1000);
+		}
+	    }
 	}
       ++records;
     }
@@ -234,14 +258,20 @@ main (int argc, char *argv[])
   strcat (buf, ".f");
   strcat (buf, ascii_len);
 
-  ofstream outfile (buf, ios::out | ios::binary | ios::ate);
-  if (outfile.is_open ())
+  if( ! realtime_with_TCP_server)
     {
-      outfile.write ((const char*) output_data,
-		     records * sizeof(output_data_t));
-      outfile.close ();
+      ofstream outfile (buf, ios::out | ios::binary | ios::ate);
+      if (outfile.is_open ())
+	{
+	  outfile.write ((const char*) output_data,
+			 records * sizeof(output_data_t));
+	  outfile.close ();
+	}
     }
 
   delete[] in_data;
   delete[] output_data;
+
+  if( realtime_with_TCP_server)
+    close_TCP_port();
 }
