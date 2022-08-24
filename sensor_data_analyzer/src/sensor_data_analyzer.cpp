@@ -127,7 +127,7 @@ main (int argc, char *argv[])
 
   if ((argc != 2) && (argc != 3))
     {
-      printf ("usage: %s infile %s [ziptime for TCP version]\n", argv[0], argv[1]);
+      printf ("usage: %s infile.f50 [ziptime for TCP version]\n", argv[0], argv[1]);
       return -1;
     }
 
@@ -243,7 +243,7 @@ main (int argc, char *argv[])
 		{
 		  format_NMEA_string( (const output_data_t&) *(output_data+count));
 		  write_TCP_port( NMEA_buf.string, NMEA_buf.length);
-		  usleep( 200*1000);
+		  usleep( 200*1000); // ... some magic factor of two ?!
 		}
 	    }
 	}
