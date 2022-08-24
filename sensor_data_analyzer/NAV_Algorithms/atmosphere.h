@@ -33,6 +33,10 @@ public:
     density_correction(1.0f),
     QFF(101325)
   {}
+  void initialize( float altitude)
+  {
+    density_QFF_calculator.initialize(altitude);
+  }
   void set_pressure( float p_abs)
   {
     pressure = p_abs;

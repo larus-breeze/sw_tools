@@ -2,6 +2,12 @@
 #define AIR_DENSITY_OBSERVER_H_
 
 #include "Linear_Least_Square_Fit.h"
+#include "trigger.h"
+
+typedef double evaluation_float_type;
+#define MAX_ALLOWED_VARIANCE	1e-9
+#define MINIMUM_ALTITUDE_RANGE	300.0f
+#define ALTITUDE_TRIGGER_HYSTERESIS 50.0f
 
 class air_data_result
 {
@@ -18,22 +24,23 @@ class air_density_observer
 {
 public:
   air_density_observer (void)
+  : altitude_trigger( ALTITUDE_TRIGGER_HYSTERESIS)
   {
-    reset();
   }
   air_data_result feed_metering( float pressure, float MSL_altitude);
 
+  void initialize( float altitude)
+  {
+    altitude_trigger.initialize(altitude);
+    min_altitude = max_altitude = altitude;
+    density_QFF_calculator.reset();
+  }
 private:
-    void reset(void)
-    {
-      min_altitude = 10000.0f;
-      max_altitude = -1000.0f;
-      density_QFF_calculator.reset();
-    }
 
-    linear_least_square_fit<double> density_QFF_calculator;
+    linear_least_square_fit<int64_t,evaluation_float_type> density_QFF_calculator;
     float min_altitude;
     float max_altitude;
+    trigger altitude_trigger;
 };
 
 #endif /* AIR_DENSITY_OBSERVER_H_ */

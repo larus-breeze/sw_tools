@@ -9,6 +9,7 @@
 #include "math.h"
 #include "stdint.h"
 #include "float.h"
+#include "assert.h"
 
 #define ftype float
 

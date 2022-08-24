@@ -39,6 +39,11 @@ public:
     else
       atmosphere.disregard_ambient_air_data();
   }
+  void initialize_QFF_density_metering( float MSL_altitude)
+  {
+    atmosphere.initialize( MSL_altitude);
+  }
+
   void feed_QFF_density_metering( float pressure, float MSL_altitude)
   {
     atmosphere.feed_QFF_density_metering( pressure, MSL_altitude);

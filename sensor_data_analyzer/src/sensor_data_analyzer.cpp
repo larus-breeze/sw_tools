@@ -119,6 +119,7 @@ main (int argc, char *argv[])
 {
   bool tick_10HZ = false;
   unsigned init_counter=10000;
+  unsigned density_metering_counter=0;
 
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
@@ -187,6 +188,7 @@ main (int argc, char *argv[])
   declination = navigator.get_declination();
 
   navigator.update_pressure_and_altitude(in_data[0].m.static_pressure - QNH_offset, -in_data[0].c.position[DOWN]);
+  navigator.initialize_QFF_density_metering( -in_data[0].c.position[DOWN]);
   navigator.reset_altitude ();
 
   // setup initial attitude
@@ -232,7 +234,12 @@ main (int argc, char *argv[])
       if( tick_10HZ && init_counter==0)
 	{
 //	CAN_output ( (const output_data_t&) *(output_data+count));
-	navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+	  ++density_metering_counter;
+	  if( true || density_metering_counter >= 30)
+	    {
+	      density_metering_counter=0;
+	      navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+	    }
 	}
       ++records;
     }
