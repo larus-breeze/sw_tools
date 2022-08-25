@@ -11,6 +11,7 @@
 #include "navigator.h"
 #include "flight_observer.h"
 #include "NMEA_format.h"
+#include "USB_serial.h"
 
 #ifdef UNIX
 #include "stdint.h"
@@ -23,8 +24,14 @@
 #include "string.h"
 
 //! basic CAN packet type
-typedef struct
+class CANpacket
 {
+public:
+  CANpacket( uint16_t _id=0, uint16_t _dlc=0, uint64_t _data=0)
+  : id(_id),
+    dlc(_dlc),
+    data_l(_data)
+  {}
   uint16_t id; 	//!< identifier
   uint16_t dlc; //!< data length code
   union
@@ -38,22 +45,54 @@ typedef struct
 		float    data_f[2]; 	//!< data seen as 2 times 32-bit floats
 		uint64_t data_l;    	//!< data seen as 64-bit integer
   };
-} CANpacket;
+} ;
+
+class CAN_gateway_packet
+{
+public:
+  CAN_gateway_packet( const CANpacket &p)
+  : ID_checked(p.id),
+    DLC_checksum(p.dlc),
+    data(p.data_l)
+  {
+    uint16_t checksum = ~(p.id % 31);
+    ID_checked |= checksum << 11;
+
+    checksum = ~(p.data_l % 4095);
+    DLC_checksum |= checksum << 4;
+  }
+
+  bool to_CANpacket( CANpacket &p)
+  {
+    uint16_t checksum = ~((ID_checked & 0x7ff) % 31) & 0x1f;
+    if( ID_checked >> 11 != checksum)
+      return false;
+
+    checksum = ~(data % 4095) & 0xfff;
+    if( DLC_checksum >> 4 != checksum)
+      return false;
+
+    p.id     = ID_checked & 0x7ff;
+    p.dlc    = DLC_checksum & 0x0f;
+    p.data_l = data;
+
+    return true;
+  }
+
+public:
+  uint16_t ID_checked;
+  uint16_t DLC_checksum;
+  uint64_t data; //
+};
+
+
 class CAN_driver_t
 {
 public:
   bool send( CANpacket p, int dummy)
   {
-    std::cout << std::hex << "$CAN " << p.id;
-
-    std::cout << ' ' << std::setw(2) ;
-
-    unsigned i = 0;
-    while( p.dlc--)
-      std::cout << std::hex <<  (unsigned)(p.data_b[i++]);
-
-    std::cout << std::endl;
-
+    CAN_gateway_packet output( p);
+    write_usb_serial( (uint8_t *) &p, sizeof p);
     return true;
   }
 };

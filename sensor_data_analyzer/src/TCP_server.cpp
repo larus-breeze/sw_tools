@@ -24,8 +24,9 @@ bool open_TCP_port(void)
         printf("socket creation failed...\n");
         return false;
     }
-    else
-        printf("Socket successfully created..\n");
+//    else
+//        printf("Socket successfully created..\n");
+
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
@@ -38,8 +39,8 @@ bool open_TCP_port(void)
         printf("socket bind failed...\n");
         return false;
     }
-    else
-        printf("Socket successfully binded..\n");
+//    else
+//        printf("Socket successfully binded..\n");
 
     // Now server is ready to listen and verification
     if ((listen(sockfd, 5)) != 0) {
@@ -48,6 +49,7 @@ bool open_TCP_port(void)
     }
     else
         printf("Server listening..\n");
+
     len = sizeof(cli);
     return true;
 }

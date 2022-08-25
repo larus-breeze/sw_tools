@@ -5,6 +5,7 @@
  **************************************************************************/
 #include "system_configuration.h"
 #include "CAN_output.h"
+
 #ifndef UNIX
 #include <FreeRTOS_wrapper.h>
 #endif

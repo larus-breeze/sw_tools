@@ -4,6 +4,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "time.h"
 #include "data_structures.h"
 #include "persistent_data.h"
 #include "EEPROM_emulation.h"
@@ -12,6 +13,7 @@
 #include <fenv.h>
 #include "CAN_output.h"
 #include "TCP_server.h"
+#include "USB_serial.h"
 
 CAN_driver_t CAN_driver; // just a dummy
 
@@ -114,26 +116,23 @@ read_EEPROM_file (char *basename)
 
 }
 
-int mein( void);
-
-int
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
   bool tick_10HZ = false;
   unsigned init_counter=10000;
-  unsigned ziptime;
+  unsigned skiptime;
 
   feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
 
   if ((argc != 2) && (argc != 3))
     {
-      printf ("usage: %s infile.f50 [ziptime for TCP version]\n", argv[0], argv[1]);
+      printf ("usage: %s infile.f50 [skiptime for TCP version]\n", argv[0]);
       return -1;
     }
 
   bool realtime_with_TCP_server = argc == 3;
   if( realtime_with_TCP_server)
-    ziptime = 10 * atoi( argv[2]); // 10Hz output rate
+    skiptime = 10 * atoi( argv[2]); // 10Hz output rate
 
   input_data_t *in_data;
   output_data_t *output_data;
@@ -148,8 +147,13 @@ main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     realtime_with_TCP_server = open_TCP_port();
 
+  bool USB_active = false;
+
   if( realtime_with_TCP_server)
-    realtime_with_TCP_server = wait_and_accept_TCP_connection();
+    {
+      USB_active = open_USB_serial ();
+      realtime_with_TCP_server = wait_and_accept_TCP_connection();
+    }
 
   read_EEPROM_file (argv[1]);
 
@@ -196,7 +200,9 @@ main (int argc, char *argv[])
   navigator.set_from_add_mag (acc, mag); // initialize attitude from acceleration + compass
 
   int32_t nano = 0;
-  unsigned density_data_counter = 0;
+  unsigned fife_hertz_counter = 0;
+
+  int delta_time;
 
   for (unsigned count = 0; count < size / sizeof(input_data_t); ++count)
     {
@@ -212,6 +218,9 @@ main (int argc, char *argv[])
 
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
+	  delta_time = output_data[count].c.nano - nano;
+	  if( delta_time < 0 )
+	    delta_time += 1000000000;
 	  nano = output_data[count].c.nano;
 	  navigator.update_GNSS (output_data[count].c);
 	  navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
@@ -237,13 +246,21 @@ main (int argc, char *argv[])
 //	CAN_output ( (const output_data_t&) *(output_data+count));
 	  if( realtime_with_TCP_server)
 	    {
-	      if( ziptime > 0)
-		--ziptime;
+	      if( skiptime > 0)
+		--skiptime;
 	      else
 		{
 		  format_NMEA_string( (const output_data_t&) *(output_data+count));
 		  write_TCP_port( NMEA_buf.string, NMEA_buf.length);
-		  usleep( 200*1000); // ... some magic factor of two ?!
+
+		  if( USB_active)
+		      CAN_output( (const output_data_t&) *(output_data+count));
+
+		  timespec want,got;
+		  want.tv_nsec = delta_time;
+		  want.tv_sec = 0;
+		  while( nanosleep( &want, &got))
+		    want = got;
 		}
 	    }
 	}
