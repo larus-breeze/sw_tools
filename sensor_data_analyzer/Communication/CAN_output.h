@@ -92,7 +92,7 @@ public:
   bool send( CANpacket p, int dummy)
   {
     CAN_gateway_packet output( p);
-    write_usb_serial( (uint8_t *) &p, sizeof p);
+    write_usb_serial( (uint8_t *) &output, sizeof p);
     return true;
   }
 };
