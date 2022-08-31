@@ -129,6 +129,15 @@ void CAN_output ( const output_data_t &x)
   CAN_driver.send(p, 1);
 #else
   CAN_driver.send(p, 1);
+
+  p.id=c_CAN_Id_SystemState;				// 0x10d
+  p.dlc=4;
+  p.data_w[0] = 0x00; // dummy
+  CAN_driver.send(p, 1);
+
+  p.id=0x200; // dummy for audio heart beat
+  p.dlc=1;
+  CAN_driver.send(p, 1);
 #endif
 
 }

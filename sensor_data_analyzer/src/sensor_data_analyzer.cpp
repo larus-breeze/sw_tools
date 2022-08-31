@@ -118,7 +118,6 @@ read_EEPROM_file (char *basename)
 
 int main (int argc, char *argv[])
 {
-  bool tick_10HZ = false;
   unsigned init_counter=10000;
   unsigned skiptime;
 
@@ -224,11 +223,7 @@ int main (int argc, char *argv[])
 	  nano = output_data[count].c.nano;
 	  navigator.update_GNSS (output_data[count].c);
 	  navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
-
-	  tick_10HZ=true;
 	}
-      else
-	  tick_10HZ=false;
 
       // rotate sensor coordinates into airframe coordinates
       acc =  sensor_mapping * output_data[count].m.acc;
@@ -241,7 +236,7 @@ int main (int argc, char *argv[])
       navigator.update_IMU (acc, mag, gyro);
       navigator.report_data (output_data[count]);
 
-      if( tick_10HZ)
+      if( count % 10 == 0)
 	{
 //	CAN_output ( (const output_data_t&) *(output_data+count));
 	  if( realtime_with_TCP_server)
@@ -257,7 +252,7 @@ int main (int argc, char *argv[])
 		      CAN_output( (const output_data_t&) *(output_data+count));
 
 		  timespec want,got;
-		  want.tv_nsec = delta_time;
+		  want.tv_nsec = 100000000;
 		  want.tv_sec = 0;
 		  while( nanosleep( &want, &got))
 		    want = got;

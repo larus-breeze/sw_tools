@@ -32,6 +32,12 @@ public:
     dlc(_dlc),
     data_l(_data)
   {}
+  bool operator ==(const CANpacket&right)
+    {
+      return 	(id == right.id) &&
+		(dlc = right.dlc) &&
+		(data_l == right.data_l);
+    }
   uint16_t id; 	//!< identifier
   uint16_t dlc; //!< data length code
   union
@@ -46,6 +52,8 @@ public:
 		uint64_t data_l;    	//!< data seen as 64-bit integer
   };
 } ;
+
+#pragma pack(push, 2)
 
 class CAN_gateway_packet
 {
@@ -85,6 +93,7 @@ public:
   uint64_t data; //
 };
 
+#pragma pack(pop)
 
 class CAN_driver_t
 {
@@ -92,7 +101,7 @@ public:
   bool send( CANpacket p, int dummy)
   {
     CAN_gateway_packet output( p);
-    write_usb_serial( (uint8_t *) &output, sizeof p);
+    write_usb_serial( (uint8_t *) &output, sizeof output);
     return true;
   }
 };
