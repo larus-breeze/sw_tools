@@ -121,7 +121,8 @@ int main (int argc, char *argv[])
   unsigned init_counter=10000;
   unsigned skiptime;
 
-  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+  //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   if ((argc != 2) && (argc != 3))
     {

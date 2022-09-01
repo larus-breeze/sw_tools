@@ -29,8 +29,9 @@ public:
 	 relative_wind_observer( configuration( MEAN_WIND_TC)),
 	 corrected_wind_averager( 1.0f / 15.0f / 10.0f), 	// 15s @ 10Hz
 	 GNSS_speed( ZERO),
-	 GNSS_negative_altitude( ZERO)
-  {  };
+	 GNSS_negative_altitude( ZERO),
+	 TAS_averager(1.0f / 1.0f / 100.0f)
+  {};
 
   void set_density_data( float temperature, float humidity)
   {
@@ -86,6 +87,7 @@ public:
     pitot_pressure=pressure;
     TAS = atmosphere.get_TAS_from_dynamic_pressure ( pitot_pressure);
     IAS = atmosphere.get_IAS_from_dynamic_pressure ( pitot_pressure);
+    TAS_averager.respond(TAS);
   }
   /**
    * @brief update AHRS from IMU
@@ -144,6 +146,7 @@ private:
   smart_averager< float3vector, true> wind_average_observer; // configure wind average clamping on first circle
   smart_averager< float3vector> relative_wind_observer;
   pt2<float3vector,float> corrected_wind_averager;
+  pt2<float,float> TAS_averager;
 };
 
 #endif /* NAVIGATORT_H_ */

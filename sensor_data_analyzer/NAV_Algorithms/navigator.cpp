@@ -83,7 +83,7 @@ void navigator_t::update_GNSS (const coordinates_t &coordinates)
 
 void navigator_t::report_data(output_data_t &d)
 {
-    d.TAS 			= TAS;
+    d.TAS 			= TAS_averager.get_output();
     d.IAS 			= IAS;
 
     d.euler			= ahrs.get_euler();
