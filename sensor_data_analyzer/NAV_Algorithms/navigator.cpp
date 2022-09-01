@@ -123,6 +123,6 @@ void navigator_t::report_data(output_data_t &d)
     d.G_load			= ahrs.get_G_load();
     d.HeadingDifferenceAhrsDgnss = ahrs.getHeadingDifferenceAhrsDgnss();
     d.QFF			= atmosphere.get_QFF();
-    d.air_density		= atmosphere.getDensity();
+    d.air_density		= atmosphere.get_density();
 }
 

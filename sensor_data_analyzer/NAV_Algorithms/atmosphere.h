@@ -73,14 +73,7 @@ public:
     have_ambient_air_data = false;
   }
 
-  float
-  getDensity () const
-  {
-    return density_correction;
-  }
-
-  float
-  get_QFF () const
+  float get_QFF () const
   {
     return QFF;
   }
