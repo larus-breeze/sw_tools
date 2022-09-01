@@ -40,9 +40,6 @@ air_data_result air_density_observer::feed_metering( float pressure, float MSL_a
       float pressure = density_QFF_calculator.get_mean_y();
       float std_density = 1.0496346613e-5f * pressure + 0.1671546011f;
       air_data.density_correction = density / std_density;
-
-      max_altitude = min_altitude = MSL_altitude;
-
       air_data.valid = true;
     }
 
