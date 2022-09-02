@@ -11,9 +11,8 @@
 #include "navigator.h"
 #include "flight_observer.h"
 #include "NMEA_format.h"
-#include "USB_serial.h"
-
 #ifdef UNIX
+#include "USB_serial.h"
 #include "stdint.h"
 #include <iostream>
 #include <iomanip>
@@ -111,9 +110,9 @@ void CAN_output ( const output_data_t &x);
 
 #else
 #include "candriver.h"
-extern Task CAN_task;
+extern RestrictedTask CAN_task;
 
-void trigger_CAN(void)
+inline void trigger_CAN(void)
 {
   CAN_task.notify_give();
 }

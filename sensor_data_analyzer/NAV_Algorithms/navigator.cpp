@@ -17,7 +17,8 @@ void navigator_t::update_IMU (
 	    GNSS_heading,
 	    GNSS_fix_type == (SAT_FIX | SAT_HEADING));
 
-#if 1 //PARALLEL_MAGNETIC_AHRS
+#if PARALLEL_MAGNETIC_AHRS
+#if 0
   ahrs_magnetic.update_special(
 	  gyro, acc, mag,
 	  GNSS_acceleration);
@@ -25,6 +26,7 @@ void navigator_t::update_IMU (
   ahrs_magnetic.update_compass(
 	  gyro, acc, mag,
 	  GNSS_acceleration);
+#endif
 #endif
   float3vector heading_vector;
   heading_vector[NORTH] = ahrs.get_north ();

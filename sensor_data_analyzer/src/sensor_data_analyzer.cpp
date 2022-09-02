@@ -213,8 +213,7 @@ int main (int argc, char *argv[])
       output_data[count].c = in_data[count].c;
 
       navigator.update_pressure_and_altitude(output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
-      navigator.update_pitot (
-	  (output_data[count].m.pitot_pressure - pitot_offset) * pitot_span);
+      navigator.update_pitot ( (output_data[count].m.pitot_pressure - pitot_offset) * pitot_span);
 
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
