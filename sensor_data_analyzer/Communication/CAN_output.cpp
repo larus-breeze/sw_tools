@@ -96,8 +96,8 @@ void CAN_output ( const output_data_t &x)
 
   p.id=c_CAN_Id_Atmosphere;		// 0x109
   p.dlc=8;
-  p.data_w[0] = (uint32_t)(round(x.m.static_pressure));
-  p.data_w[1] = (uint32_t)(round(1.0496346613e-2f * x.m.static_pressure + 0.1671546011e3f)); // todo: true density = ?
+  p.data_w[0] = (uint32_t)(x.m.static_pressure);
+  p.data_w[1] = (uint32_t)(x.air_density * 1000.0f);
   CAN_driver.send(p, 1);
 
   p.id=c_CAN_Id_GPS_Sats;		// 0x10a
