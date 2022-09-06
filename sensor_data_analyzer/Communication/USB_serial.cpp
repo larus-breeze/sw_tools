@@ -18,7 +18,7 @@ int set_interface_attribs (int fd, int speed, int parity)
   struct termios tty;
   if (tcgetattr (fd, &tty) != 0)
     {
-      error_message ("error %d from tcgetattr", errno);
+      error_message ((char *)"error %d from tcgetattr", errno);
       return -1;
     }
 
@@ -46,7 +46,7 @@ int set_interface_attribs (int fd, int speed, int parity)
 
   if (tcsetattr (fd, TCSANOW, &tty) != 0)
     {
-      error_message ("error %d from tcsetattr", errno);
+      error_message ((char *)"error %d from tcsetattr", errno);
       return -1;
     }
   return 0;
@@ -58,7 +58,7 @@ void set_blocking (int fd, int should_block)
   memset (&tty, 0, sizeof tty);
   if (tcgetattr (fd, &tty) != 0)
     {
-      error_message ("error %d from tggetattr", errno);
+      error_message ((char *)"error %d from tggetattr", errno);
       return;
     }
 
@@ -66,7 +66,7 @@ void set_blocking (int fd, int should_block)
   tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
 
   if (tcsetattr (fd, TCSANOW, &tty) != 0)
-    error_message ("error %d setting term attributes", errno);
+    error_message ((char *)"error %d setting term attributes", errno);
 }
 
 bool open_USB_serial ( char *portname)
@@ -74,7 +74,7 @@ bool open_USB_serial ( char *portname)
   fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
   if (fd < 0)
     {
-      error_message ("error %d opening %s: %s", errno, portname,
+      error_message ((char *)"error %d opening %s: %s", errno, portname,
 		     strerror (errno));
       return false;
     }
@@ -89,7 +89,7 @@ bool open_USB_serial ( char *portname)
   usleep ((7 + 25) * 100);             // sleep enough to transmit the 7 plus
 				       // receive 25:  approx 100 uS per char transmit
   char buf[100];
-  int n = read (fd, buf, sizeof buf); // read up to 100 characters if ready to read
+  (void) read (fd, buf, sizeof buf); // read up to 100 characters if ready to read
   return true;
 }
 
