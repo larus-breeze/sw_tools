@@ -12,60 +12,11 @@
 #include "NMEA_format.h"
 #include <fenv.h>
 #include "CAN_output.h"
+#include "NMEA_format.h"
 #include "TCP_server.h"
 #include "USB_serial.h"
 
-CAN_driver_t CAN_driver; // just a dummy
-
 using namespace std;
-
-class NMEA_buffer_t
-{
-public:
-  char string[255];
-  uint8_t length;
-};
-
-NMEA_buffer_t NMEA_buf;
-float declination;
-
-void format_NMEA_string( const output_data_t &output_data)
-{
-  char *next;
-
-  format_RMC ( output_data.c, NMEA_buf.string);
-  next = NMEA_append_tail (NMEA_buf.string);
-
-  format_GGA ( output_data.c, next);  //TODO: ensure that this reports the altitude in meter above medium sea level and height above wgs84: http://aprs.gids.nl/nmea/#gga
-  next = NMEA_append_tail (next);
-
-  format_MWV (output_data.wind_average.e[NORTH], output_data.wind_average.e[EAST], next);
-  next = NMEA_append_tail (next);
-
-#if USE_PTAS
-
-  format_PTAS1 (output_data.vario,
-		    output_data.integrator_vario,
-		    output_data.c.position.e[DOWN] * -1.0,   //TODO: PTAS shall report pure barometric altitude, based on static_pressure. As there can be a QNH applied to in XCSOAR.
-		    output_data.TAS,
-		    next);
-  next = NMEA_append_tail (next);
-#endif
-  format_POV( output_data.TAS, output_data.m.static_pressure,
-			 output_data.m.pitot_pressure, output_data.m.supply_voltage, output_data.vario, next);
-
-  if( output_data.m.outside_air_humidity > 0.0f) // report AIR data if available
-	append_POV( output_data.m.outside_air_humidity*100.0f, output_data.m.outside_air_temperature, next);
-
-  next = NMEA_append_tail (next);
-
-  append_HCHDM( output_data.euler.y - declination, next); // report magnetic heading
-
-  next = NMEA_append_tail (next);
-
-  NMEA_buf.length = next - NMEA_buf.string;
-
-}
 
 int
 read_identifier (char *s)
@@ -120,6 +71,7 @@ int main (int argc, char *argv[])
 {
   unsigned init_counter=10000;
   unsigned skiptime;
+  float declination; // todo fixme this variable is somewhat misplaced here
 
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
   feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
@@ -245,8 +197,9 @@ int main (int argc, char *argv[])
 		--skiptime;
 	      else
 		{
-		  format_NMEA_string( (const output_data_t&) *(output_data+count));
-		  write_TCP_port( NMEA_buf.string, NMEA_buf.length);
+		  NMEA_buffer_t buffer;
+		  format_NMEA_string( (const output_data_t&) *(output_data+count), buffer, declination);
+		  write_TCP_port( buffer.string, buffer.length);
 
 		  if( USB_active)
 		      CAN_output( (const output_data_t&) *(output_data+count));
