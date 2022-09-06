@@ -1,26 +1,14 @@
-/** ***********************************************************************
- * @file		CAN_output.h
- * @brief		format internal data and send to CAN
- * @author		Dr. Klaus Schaefer
- **************************************************************************/
-#ifndef SRC_CAN_OUTPUT_H_
-#define SRC_CAN_OUTPUT_H_
+/*
+ * generic_CAN_driver.h
+ *
+ *  Created on: Sep 5, 2022
+ *      Author: schaefer
+ */
 
-#include "system_configuration.h"
+#ifndef GENERIC_CAN_DRIVER_H_
+#define GENERIC_CAN_DRIVER_H_
 
-#include "navigator.h"
-#include "flight_observer.h"
-#include "NMEA_format.h"
-#ifdef UNIX
-#include "USB_serial.h"
 #include "stdint.h"
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include "stdio.h"
-#include "sstream"
-#include "stdlib.h"
-#include "string.h"
 
 //! basic CAN packet type
 class CANpacket
@@ -54,6 +42,7 @@ public:
 
 #pragma pack(push, 2)
 
+//! CAN packet tunneled through USART gateway
 class CAN_gateway_packet
 {
 public:
@@ -94,29 +83,6 @@ public:
 
 #pragma pack(pop)
 
-class CAN_driver_t
-{
-public:
-  bool send( CANpacket p, int dummy)
-  {
-    CAN_gateway_packet output( p);
-    write_usb_serial( (uint8_t *) &output, sizeof output);
-    return true;
-  }
-};
+bool CAN_send( const CANpacket &p, unsigned dummy);
 
-extern CAN_driver_t CAN_driver;
-void CAN_output ( const output_data_t &x);
-
-#else
-#include "candriver.h"
-extern RestrictedTask CAN_task;
-
-inline void trigger_CAN(void)
-{
-  CAN_task.notify_give();
-}
-
-#endif
-
-#endif /* SRC_CAN_OUTPUT_H_ */
+#endif /* GENERIC_CAN_DRIVER_H_ */

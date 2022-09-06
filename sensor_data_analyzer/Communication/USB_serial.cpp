@@ -4,6 +4,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdint.h>
+#include "USB_serial.h"
 
 int fd;
 
