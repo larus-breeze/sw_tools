@@ -8,7 +8,7 @@
 #include "data_structures.h"
 #include "persistent_data.h"
 #include "EEPROM_emulation.h"
-#include "navigator.h"
+#include "organizer.h"
 #include "NMEA_format.h"
 #include <fenv.h>
 #include "CAN_output.h"
@@ -69,7 +69,6 @@ read_EEPROM_file (char *basename)
 
 int main (int argc, char *argv[])
 {
-  unsigned init_counter=10000;
   unsigned skiptime;
   float declination; // todo fixme this variable is somewhat misplaced here
 
@@ -84,10 +83,10 @@ int main (int argc, char *argv[])
 
   bool realtime_with_TCP_server = argc == 3;
   if( realtime_with_TCP_server)
-    skiptime = 10 * atoi( argv[2]); // 10Hz output rate
+    skiptime = 10 * atoi( argv[2]); // at 10Hz output rate
 
-  input_data_t *in_data;
-  output_data_t *output_data;
+  input_data_t  * in_data;
+  output_data_t * output_data;
 
   ifstream file (argv[1], ios::in | ios::binary | ios::ate);
   if (!file.is_open ())
@@ -109,8 +108,7 @@ int main (int argc, char *argv[])
 
   read_EEPROM_file (argv[1]);
 
-  navigator_t navigator;
-  float3vector acc, mag, gyro;
+  organizer_t organizer;
 
   streampos size = file.tellg ();
   in_data = (input_data_t*) new char[size];
@@ -125,47 +123,26 @@ int main (int argc, char *argv[])
 
 // ************************************************************
 
-  records = 0;
-
-  float3matrix sensor_mapping;
-    {
-      quaternion<float> q;
-      q.from_euler (configuration (SENS_TILT_ROLL),
-		    configuration (SENS_TILT_NICK),
-		    configuration (SENS_TILT_YAW));
-      q.get_rotation_matrix (sensor_mapping);
-    }
-
-  float pitot_offset = configuration (PITOT_OFFSET);
-  float pitot_span   = configuration (PITOT_SPAN);
-  float QNH_offset   = configuration (QNH_OFFSET);
-
-  declination = navigator.get_declination();
-
-  navigator.update_pressure_and_altitude(in_data[0].m.static_pressure - QNH_offset, -in_data[0].c.position[DOWN]);
-  navigator.initialize_QFF_density_metering( -in_data[0].c.position[DOWN]);
-  navigator.reset_altitude ();
-
-  // setup initial attitude
-  acc = sensor_mapping * in_data->m.acc;
-  mag = sensor_mapping * in_data->m.mag;
-  navigator.set_from_add_mag (acc, mag); // initialize attitude from acceleration + compass
+  organizer.initialize_before_measurement();
 
   int32_t nano = 0;
   unsigned fife_hertz_counter = 0;
 
   int delta_time;
 
-  for (unsigned count = 0; count < size / sizeof(input_data_t); ++count)
-    {
-      if( init_counter)
-	--init_counter;
+  output_data[0].m = in_data[0].m;
+  output_data[0].c = in_data[0].c;
 
+  organizer.initialize_after_first_measurement( output_data[0]);
+
+  records = 0;
+
+  for (unsigned count = 1; count < size / sizeof(input_data_t); ++count)
+    {
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
 
-      navigator.update_pressure_and_altitude(output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
-      navigator.update_pitot ( (output_data[count].m.pitot_pressure - pitot_offset) * pitot_span);
+      organizer.on_new_pressure_data( output_data[count]);
 
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
@@ -173,20 +150,12 @@ int main (int argc, char *argv[])
 	  if( delta_time < 0 )
 	    delta_time += 1000000000;
 	  nano = output_data[count].c.nano;
-	  navigator.update_GNSS (output_data[count].c);
-	  navigator.feed_QFF_density_metering( output_data[count].m.static_pressure - QNH_offset, -in_data[count].c.position[DOWN]);
+
+	  organizer.update_GNSS(output_data[count]);
 	}
 
-      // rotate sensor coordinates into airframe coordinates
-      acc =  sensor_mapping * output_data[count].m.acc;
-      mag =  sensor_mapping * output_data[count].m.mag;
-      gyro = sensor_mapping * output_data[count].m.gyro;
-
-      output_data[count].body_acc  = acc;
-      output_data[count].body_gyro = gyro;
-
-      navigator.update_IMU (acc, mag, gyro);
-      navigator.report_data (output_data[count]);
+      organizer.update_IMU(output_data[count]);
+      organizer.report_data(output_data[count]);
 
       if( count % 10 == 0)
 	{
@@ -208,7 +177,7 @@ int main (int argc, char *argv[])
 		  want.tv_nsec = 100000000;
 		  want.tv_sec = 0;
 		  while( nanosleep( &want, &got))
-		    want = got;
+		    want.tv_nsec = want.tv_nsec - got.tv_nsec;
 		}
 	    }
 	}
