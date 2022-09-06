@@ -154,7 +154,7 @@ int main (int argc, char *argv[])
 	  organizer.update_GNSS(output_data[count]);
 	}
 
-      organizer.update_IMU(output_data[count]);
+      organizer.update_IMU( output_data[count]);
       organizer.report_data(output_data[count]);
 
       if( count % 10 == 0)
