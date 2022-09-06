@@ -19,7 +19,9 @@ energy_altitude = initial_speed^2 / 2 / g;
 horiz_speed = sqrt( (energy_altitude - pos) * 2 * g - vel.^2)
 horiz_acc = [ 0 diff( horiz_speed) * samplerate];
 
-[kvario, kacc] = kalman_vario_XVA( pos, vel, acc + acc_offset);
+%[horiz_speed, horiz_acc ] = Kalman_VA( horiz_speed, horiz_acc );
+
+[kvario, kacc] = kalman_vario_XVA( -pos, vel, acc + acc_offset);
 
 speed_compensation = (horiz_speed .* horiz_acc + kvario .* kacc) / g;
 simple_speed_compensation = (horiz_speed .* horiz_acc) / g;
