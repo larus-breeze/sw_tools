@@ -134,6 +134,7 @@ int main (int argc, char *argv[])
   output_data[0].c = in_data[0].c;
 
   organizer.initialize_after_first_measurement( output_data[0]);
+  declination = organizer.getDeclination();
 
   records = 0;
 

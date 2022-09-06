@@ -101,6 +101,12 @@ public:
     navigator.disregard_density_data();
   }
 
+  float
+  getDeclination () const
+  {
+    return declination;
+  }
+
 private:
   navigator_t navigator;
   float3vector acc, mag, gyro;
