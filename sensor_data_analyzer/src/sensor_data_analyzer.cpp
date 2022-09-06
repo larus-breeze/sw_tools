@@ -154,12 +154,11 @@ int main (int argc, char *argv[])
 	  organizer.update_GNSS(output_data[count]);
 	}
 
-      organizer.update_IMU(output_data[count]);
+      organizer.update_IMU( output_data[count]);
       organizer.report_data(output_data[count]);
 
       if( count % 10 == 0)
 	{
-//	CAN_output ( (const output_data_t&) *(output_data+count));
 	  if( realtime_with_TCP_server)
 	    {
 	      if( skiptime > 0)
