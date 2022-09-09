@@ -1,6 +1,3 @@
-[submodule "sw_sensor_algorithms"]
-	path = sw_sensor_algorithms
-	url = /home/schaefer.open/git/flight_sensor_algorithms/sw_sensor_algorithms
 [submodule "sensor_data_analyzer/lib"]
 	path = sensor_data_analyzer/lib
 	url = git@github.com:larus-breeze/sw_sensor_algorithms.git
