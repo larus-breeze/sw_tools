@@ -32,7 +32,7 @@ read_identifier (char *s)
 int
 read_EEPROM_file (char *basename)
 {
-  char buf[50];
+  char buf[200];
   strcpy (buf, basename);
   strcat (buf, ".EEPROM");
 
@@ -185,7 +185,7 @@ int main (int argc, char *argv[])
     }
   printf ("%d records\n", records);
 
-  char buf[50];
+  char buf[200];
   char ascii_len[10];
   sprintf (ascii_len, "%d", sizeof(output_data_t) / sizeof(float));
   strcpy (buf, argv[1]);
