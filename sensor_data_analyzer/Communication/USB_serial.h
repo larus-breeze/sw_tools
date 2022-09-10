@@ -1,6 +1,6 @@
 /***********************************************************************//**
  * @file		USB_serial.h
- * @brief		Interface to USB -> RS232 interface
+ * @brief		Interface to USB -> RS232 (interface)
  * @author		Dr. Klaus Schaefer
  * @copyright 		Copyright 2021 Dr. Klaus Schaefer. All rights reserved.
  * @license 		This project is released under the GNU Public License GPL-3.0

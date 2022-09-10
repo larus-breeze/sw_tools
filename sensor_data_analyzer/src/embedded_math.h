@@ -1,6 +1,6 @@
 /***********************************************************************//**
  * @file    		embedded_math.h
- * @brief   		settings for the tuning of math algorithms
+ * @brief   		defines platform-dependent algorithms and constants
  * @author		Dr. Klaus Schaefer
  * @copyright 		Copyright 2021 Dr. Klaus Schaefer. All rights reserved.
  * @license 		This project is released under the GNU Public License GPL-3.0
@@ -46,7 +46,6 @@
 #define ASIN(x) asinf(x)
 #define ATAN2(y, x) atan2f(y, x)
 
-inline int ROUND(float x) { return (int)((x) + 0.5f);}
 #define CLIP( x, min, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
 
 #endif /* INC_EMBEDDED_MATH_H_ */
