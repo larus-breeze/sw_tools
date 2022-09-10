@@ -20,15 +20,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- * @mainpage
- * This SIL software inputs a binary data file from Larus flight logger
- * and feeds the sensor readings through the original flight processing algorithms.
- *
- * The output is either a binary data file with all derived properties
- * or information going to a XCsoar instance in real-time via TCP and CAN bus data tunneled
- * through a USB->USART dongle to a flight display.
- *
- * The complete project is hosted at https://github.com/larus-breeze
  **************************************************************************/
 
 #include <unistd.h>
@@ -119,7 +110,7 @@ int main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     skiptime = 10 * atoi( argv[2]); // at 10Hz output rate
 
-  input_data_t  * in_data;
+  observations_type  * in_data;
   output_data_t * output_data;
 
   ifstream file (argv[1], ios::in | ios::binary | ios::ate);
@@ -145,9 +136,9 @@ int main (int argc, char *argv[])
   organizer_t organizer;
 
   streampos size = file.tellg ();
-  in_data = (input_data_t*) new char[size];
+  in_data = (observations_type*) new char[size];
 
-  unsigned records = size / sizeof(input_data_t);
+  unsigned records = size / sizeof(observations_type);
   size_t outfile_size = records * sizeof(output_data_t);
   output_data = (output_data_t*) new char[outfile_size];
 
@@ -172,7 +163,7 @@ int main (int argc, char *argv[])
 
   records = 0;
 
-  for (unsigned count = 1; count < size / sizeof(input_data_t); ++count)
+  for (unsigned count = 1; count < size / sizeof(observations_type); ++count)
     {
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
@@ -200,7 +191,7 @@ int main (int argc, char *argv[])
 		--skiptime;
 	      else
 		{
-		  NMEA_buffer_t buffer;
+		  string_buffer_t buffer;
 		  format_NMEA_string( (const output_data_t&) *(output_data+count), buffer, declination);
 		  write_TCP_port( buffer.string, buffer.length);
 

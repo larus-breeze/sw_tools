@@ -28,6 +28,7 @@
 #include "persistent_data.h"
 float configuration( EEPROM_PARAMETER_ID id);
 
+//! this structure describes one persistent parameter
 struct config_param_type
 {
 	unsigned identifier;
