@@ -1,3 +1,28 @@
+/***********************************************************************//**
+ * @file		TCP_server.cpp
+ * @brief		TCP server to feed XCsoar with flight data
+ * @author		Dr. Klaus Schaefer
+ * @copyright 		Copyright 2021 Dr. Klaus Schaefer. All rights reserved.
+ * @license 		This project is released under the GNU Public License GPL-3.0
+
+    <Larus Flight Sensor Firmware>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+ **************************************************************************/
+
+#include "system_configuration.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <netdb.h>
@@ -8,47 +33,35 @@
 #include <sys/types.h>
 #include "TCP_server.h"
 
-#define MAX 80
-#define PORT 8880
-
-#define SA struct sockaddr
 int sockfd, connfd;
 struct sockaddr_in servaddr, cli;
 socklen_t len;
 
 bool open_TCP_port(void)
 {
-    // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        printf("socket creation failed...\n");
+        printf("Socket creation failed\n");
         return false;
     }
-//    else
-//        printf("Socket successfully created..\n");
 
     bzero(&servaddr, sizeof(servaddr));
 
-    // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(TCP_PORT);
 
-    // Binding newly created socket to given IP and verification
-    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
-        printf("socket bind failed...\n");
+    if ((bind(sockfd, (sockaddr*)&servaddr, sizeof(servaddr))) != 0) {
+        printf("Bind failed\n");
         return false;
     }
-//    else
-//        printf("Socket successfully binded..\n");
 
-    // Now server is ready to listen and verification
     if ((listen(sockfd, 5)) != 0) {
-        printf("Listen failed...\n");
+        printf("Listen failed\n");
         return false;
     }
     else
-        printf("Server listening..\n");
+        printf("Server listening\n");
 
     len = sizeof(cli);
     return true;
@@ -56,8 +69,7 @@ bool open_TCP_port(void)
 
 bool wait_and_accept_TCP_connection( void)
 {
-  // Accept the data packet from client
-  connfd = accept(sockfd, (SA*)&cli, &len);
+  connfd = accept(sockfd, (sockaddr*)&cli, &len);
   if (connfd < 0) {
       printf("server accept failed...\n");
       return false;

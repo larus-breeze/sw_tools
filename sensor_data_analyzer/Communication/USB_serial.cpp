@@ -1,3 +1,27 @@
+/***********************************************************************//**
+ * @file		USB_serial.h
+ * @brief		Interface to USB -> RS232 interface
+ * @author		Dr. Klaus Schaefer
+ * @copyright 		Copyright 2021 Dr. Klaus Schaefer. All rights reserved.
+ * @license 		This project is released under the GNU Public License GPL-3.0
+
+    <Larus Flight Sensor Firmware>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+ **************************************************************************/
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -8,88 +32,58 @@
 
 int fd;
 
-void error_message (char*, ...)
-{
-
-}
-
 int set_interface_attribs (int fd, int speed, int parity)
 {
   struct termios tty;
   if (tcgetattr (fd, &tty) != 0)
-    {
-      error_message ((char *)"error %d from tcgetattr", errno);
       return -1;
-    }
 
   cfsetospeed (&tty, speed);
   cfsetispeed (&tty, speed);
 
-  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
-  // disable IGNBRK for mismatched speed tests; otherwise receive break
-  // as \000 chars
-  tty.c_iflag &= ~IGNBRK;         // disable break processing
-  tty.c_lflag = 0;                // no signaling chars, no echo,
-				  // no canonical processing
-  tty.c_oflag = 0;                // no remapping, no delays
-  tty.c_cc[VMIN] = 0;            // read doesn't block
-  tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8-bit symbols
+  tty.c_iflag &= ~IGNBRK;
+  tty.c_lflag = 0;
+  tty.c_oflag = 0;
+  tty.c_cc[VMIN] = 0;
+  tty.c_cc[VTIME] = 5;
 
-  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // no XON XOFF
 
-  tty.c_cflag |= (CLOCAL | CREAD); // ignore modem controls,
-				   // enable reading
-  tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
+  tty.c_cflag |= (CLOCAL | CREAD);   // ignore modem controls + enable reading
+  tty.c_cflag &= ~(PARENB | PARODD); // no parity
   tty.c_cflag |= parity;
   tty.c_cflag &= ~CSTOPB;
   tty.c_cflag &= ~CRTSCTS;
 
   if (tcsetattr (fd, TCSANOW, &tty) != 0)
-    {
-      error_message ((char *)"error %d from tcsetattr", errno);
       return -1;
-    }
-  return 0;
+  else
+    return 0;
 }
 
 void set_blocking (int fd, int should_block)
 {
-  struct termios tty;
-  memset (&tty, 0, sizeof tty);
-  if (tcgetattr (fd, &tty) != 0)
-    {
-      error_message ((char *)"error %d from tggetattr", errno);
+  struct termios tty_settings;
+  memset (&tty_settings, 0, sizeof tty_settings);
+  if (tcgetattr (fd, &tty_settings) != 0)
       return;
-    }
 
-  tty.c_cc[VMIN] = should_block ? 1 : 0;
-  tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+  tty_settings.c_cc[VMIN] = should_block ? 1 : 0;
+  tty_settings.c_cc[VTIME] = 5;    // 5 + 100ms timeout
 
-  if (tcsetattr (fd, TCSANOW, &tty) != 0)
-    error_message ((char *)"error %d setting term attributes", errno);
+  tcsetattr (fd, TCSANOW, &tty_settings);
 }
 
 bool open_USB_serial ( char *portname)
 {
   fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
   if (fd < 0)
-    {
-      error_message ((char *)"error %d opening %s: %s", errno, portname,
-		     strerror (errno));
       return false;
-    }
 
-  set_interface_attribs (fd, B115200, 0); 	// set speed to 115,200 bps, 8n1 (no parity)
-  set_blocking (fd, 0);                		// set no blocking
+  set_interface_attribs (fd, B115200, 0);
+  set_blocking (fd, 0);
 
-  return true;
-// ************************************************************************************
-  write (fd, "hello!\n", 7);           // send 7 character greeting
-
-  usleep ((7 + 25) * 100);             // sleep enough to transmit the 7 plus
-				       // receive 25:  approx 100 uS per char transmit
-  char buf[100];
-  (void) read (fd, buf, sizeof buf); // read up to 100 characters if ready to read
   return true;
 }
 

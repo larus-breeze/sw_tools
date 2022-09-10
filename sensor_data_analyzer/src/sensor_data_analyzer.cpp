@@ -2,10 +2,10 @@
  * @file		sensor_data_analyzer.cpp
  * @brief		PC-based Software In The Loop Data Analyzer
  * @author		Dr. Klaus Schaefer
- * @license 		GPL-3.0
+ * @copyright 		Copyright 2021 Dr. Klaus Schaefer. All rights reserved.
+ * @license 		This project is released under the GNU Public License GPL-3.0
 
     <Larus Flight Sensor Firmware>
-    Copyright (C) <2021>  <Dr. Klaus Schaefer>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -97,6 +97,7 @@ int main (int argc, char *argv[])
   float declination; // todo fixme this variable is somewhat misplaced here
 
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+  // don't enable UNDERFLOW as this can happen regularly when filter outputs decay
   feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   if ((argc != 2) && (argc != 3))
