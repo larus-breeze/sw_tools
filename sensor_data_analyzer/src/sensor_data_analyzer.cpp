@@ -53,8 +53,7 @@ read_identifier (char *s)
   return EEPROM_PARAMETER_ID_END; // error
 }
 
-int
-read_EEPROM_file (char *basename)
+int read_EEPROM_file (char *basename)
 {
   char buf[200];
   strcpy (buf, basename);
@@ -62,7 +61,7 @@ read_EEPROM_file (char *basename)
 
   FILE *fp = fopen (buf, "r");
   if (fp == NULL)
-    exit (EXIT_FAILURE);
+    return (EXIT_FAILURE);
 
   char *line = NULL;
   size_t len = 0;
@@ -89,6 +88,7 @@ read_EEPROM_file (char *basename)
   if (line)
     free (line);
 
+  return 0;
 }
 
 int main (int argc, char *argv[])
@@ -131,7 +131,11 @@ int main (int argc, char *argv[])
       realtime_with_TCP_server = wait_and_accept_TCP_connection();
     }
 
-  read_EEPROM_file (argv[1]);
+  if( read_EEPROM_file (argv[1]) == EXIT_FAILURE)
+    {
+      cout << "Unable to open EEPROM file";
+      return -1;
+    }
 
   organizer_t organizer;
 
