@@ -46,6 +46,9 @@
 #define ASIN(x) asinf(x)
 #define ATAN2(y, x) atan2f(y, x)
 
-#define CLIP( x, min, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
+template <typename type> type CLIP( type x, type min, type max)
+{
+  return x < min ? min : x > max ? max : x;
+}
 
 #endif /* INC_EMBEDDED_MATH_H_ */
