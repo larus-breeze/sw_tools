@@ -127,7 +127,7 @@ int main (int argc, char *argv[])
 
   if( realtime_with_TCP_server)
     {
-      USB_active = open_USB_serial ();
+      USB_active = open_USB_serial ( (char*)"/dev/ttyUSB0");
       realtime_with_TCP_server = wait_and_accept_TCP_connection();
     }
 
@@ -216,7 +216,7 @@ int main (int argc, char *argv[])
 
   char buf[200];
   char ascii_len[10];
-  sprintf (ascii_len, "%d", sizeof(output_data_t) / sizeof(float));
+  sprintf (ascii_len, "%d", (int)(sizeof(output_data_t) / sizeof(float)));
   strcpy (buf, argv[1]);
   strcat (buf, ".f");
   strcat (buf, ascii_len);
