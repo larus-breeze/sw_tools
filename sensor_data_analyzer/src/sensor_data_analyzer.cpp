@@ -163,10 +163,12 @@ int main (int argc, char *argv[])
   output_data[0].c = in_data[0].c;
 
   organizer.initialize_after_first_measurement( output_data[0]);
+  organizer.update_GNSS_data(output_data[0].c);
   declination = organizer.getDeclination();
 
   records = 0;
 
+  unsigned counter_10Hz = 10;
   for (unsigned count = 1; count < size / sizeof(observations_type); ++count)
     {
       output_data[count].m = in_data[count].m;
@@ -181,10 +183,19 @@ int main (int argc, char *argv[])
 	    delta_time += 1000000000;
 	  nano = output_data[count].c.nano;
 
-	  organizer.update_GNSS(output_data[count]);
+	  organizer.update_GNSS_data(output_data[count].c);
+	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
-      organizer.update_IMU( output_data[count]);
+      organizer.update_every_10ms( output_data[count]);
+
+      --counter_10Hz;
+      if(counter_10Hz == 0)
+	{
+	  organizer.update_every_100ms( output_data[count]);
+	  counter_10Hz = 10;
+	}
+
       organizer.report_data(output_data[count]);
 
       if( count % 10 == 0)
