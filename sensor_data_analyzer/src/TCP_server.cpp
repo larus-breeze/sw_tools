@@ -33,15 +33,50 @@
 #include <sys/types.h>
 #include "TCP_server.h"
 
-int sockfd, connfd;
+int listening_socket_file_descriptor;
 struct sockaddr_in servaddr, cli;
 socklen_t len;
 
+enum {MAX_CLIENTS=10};
+int TCP_clients[MAX_CLIENTS];
+int number_of_TCP_clients = 0;
+
+bool accept_TCP_client( bool wait_for_client)
+{
+  if( number_of_TCP_clients >= MAX_CLIENTS)
+    return false;
+
+  int client_descriptor;
+  while( true)
+    {
+      client_descriptor = accept(listening_socket_file_descriptor, (sockaddr*)&cli, &len);
+      if( client_descriptor > 0)
+	{
+        printf("New client accepted\n");
+        break;
+	}
+      if( ! wait_for_client)
+	  return false;
+      sleep( 1);
+    }
+
+  TCP_clients[number_of_TCP_clients]=client_descriptor;
+  ++number_of_TCP_clients;
+  return true;
+}
+
 bool open_TCP_port(void)
 {
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
+  listening_socket_file_descriptor = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (listening_socket_file_descriptor == -1) {
         printf("Socket creation failed\n");
+        return false;
+    }
+
+    int opt = 0;
+    if( setsockopt( listening_socket_file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
+    {
+        printf("Socket modification failed\n");
         return false;
     }
 
@@ -51,12 +86,12 @@ bool open_TCP_port(void)
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(TCP_PORT);
 
-    if ((bind(sockfd, (sockaddr*)&servaddr, sizeof(servaddr))) != 0) {
+    if ((bind(listening_socket_file_descriptor, (sockaddr*)&servaddr, sizeof(servaddr))) != 0) {
         printf("Bind failed\n");
         return false;
     }
 
-    if ((listen(sockfd, 5)) != 0) {
+    if ((listen(listening_socket_file_descriptor, 2)) != 0) {
         printf("Listen failed\n");
         return false;
     }
@@ -67,26 +102,35 @@ bool open_TCP_port(void)
     return true;
 }
 
-bool wait_and_accept_TCP_connection( void)
-{
-  connfd = accept(sockfd, (sockaddr*)&cli, &len);
-  if (connfd < 0) {
-      printf("server accept failed...\n");
-      return false;
-  }
-  else
-      printf("server accept the client...\n");
-  return true;
-}
-
 void write_TCP_port( char * data, unsigned length)
 {
-  if( connfd)
-    write(connfd, data, length);
+  accept_TCP_client(false);
+
+  int written_bytes;
+  unsigned remaining_length;
+  char * data_tail;
+
+  for( int client_index = 0; client_index < number_of_TCP_clients; ++client_index)
+    {
+      data_tail = data;
+      remaining_length = length;
+      do
+	{
+	  written_bytes = write(TCP_clients[client_index], data_tail, remaining_length);
+	  if( written_bytes < 0)
+	    continue; // we have got some error and give up
+	  remaining_length -= written_bytes;
+	  data_tail += written_bytes;
+	}
+      while( remaining_length > 0);
+    }
 }
 
 void close_TCP_port(void)
 {
-  if( sockfd)
-    close(sockfd);
+  if( listening_socket_file_descriptor)
+    close(listening_socket_file_descriptor);
+
+  for( int client_index = 0; client_index < number_of_TCP_clients; ++client_index)
+    close( TCP_clients[client_index]);
 }

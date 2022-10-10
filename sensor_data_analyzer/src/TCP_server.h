@@ -26,7 +26,7 @@
 #define TCP_SERVER_H_
 
 bool open_TCP_port(void);
-bool wait_and_accept_TCP_connection( void);
+bool accept_TCP_client( bool wait_for_client);
 void write_TCP_port( char * data, unsigned length);
 void close_TCP_port(void);
 

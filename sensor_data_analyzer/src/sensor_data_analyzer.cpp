@@ -128,7 +128,7 @@ int main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     {
       USB_active = open_USB_serial ( (char*)"/dev/ttyUSB0");
-      realtime_with_TCP_server = wait_and_accept_TCP_connection();
+      realtime_with_TCP_server = accept_TCP_client(true);
     }
 
   if( read_EEPROM_file (argv[1]) == EXIT_FAILURE)
