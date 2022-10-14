@@ -15,10 +15,14 @@ Import the project including the lib subproject using **Eclipse CDT** on a Linux
 
 Or: Clone repository including the submodules using the **command line**: 
 
-##Step one: Get the files for the project including the "lib"-subproject:
-    git clone --recurse-submodules https://github.com/larus-breeze/SIL_flight_sensor_emulator
-##Step two: 
-	Within an empty workspace in eclipse do: "File/Import_General/Existing Projects into Workspace"
+**Step one:** Get the files for the project including the "lib"-subproject:
+
+      git clone --recurse-submodules https://github.com/larus-breeze/SIL_flight_sensor_emulator
+    
+**Step two:** Within an empty workspace in eclipse do:
+ 
+      File/Import_General/Existing Projects into Workspace
+
 to set up your workspace with the Eclipse project for the SIL system.
     
 The program needs a **pair of files**  foo.f50 and (same name)  foo.f50.EEPROM
