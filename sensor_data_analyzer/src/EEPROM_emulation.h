@@ -37,4 +37,6 @@ struct config_param_type
 
 extern config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
+int read_EEPROM_file (char *basename);
+
 #endif /* EEPROM_EMULATION_H_ */

@@ -42,55 +42,6 @@
 
 using namespace std;
 
-int
-read_identifier (char *s)
-{
-  if (s[2] != ' ')
-    return EEPROM_PARAMETER_ID_END;
-  int identifier = atoi (s);
-  if ((identifier > 0) && (identifier < EEPROM_PARAMETER_ID_END))
-    return identifier;
-  return EEPROM_PARAMETER_ID_END; // error
-}
-
-int read_EEPROM_file (char *basename)
-{
-  char buf[200];
-  strcpy (buf, basename);
-  strcat (buf, ".EEPROM");
-
-  FILE *fp = fopen (buf, "r");
-  if (fp == NULL)
-    return (EXIT_FAILURE);
-
-  char *line = NULL;
-  size_t len = 0;
-  while ((getline (&line, &len, fp)) != -1)
-    {
-      EEPROM_PARAMETER_ID identifier = (EEPROM_PARAMETER_ID) read_identifier (
-	  line);
-      if (identifier == EEPROM_PARAMETER_ID_END)
-	continue;
-      const persistent_data_t *param = find_parameter_from_ID (identifier);
-      unsigned name_len = strlen (param->mnemonic);
-      if (0
-	  != strncmp ((const char*) (param->mnemonic), (const char*) (line + 3),
-		      name_len))
-	continue;
-      if (line[name_len + 4] != '=')
-	continue;
-      float value = atof (line + name_len + 6);
-
-      config_parameters[identifier].identifier = identifier;
-      config_parameters[identifier].value = value;
-    }
-  fclose (fp);
-  if (line)
-    free (line);
-
-  return 0;
-}
-
 int main (int argc, char *argv[])
 {
   unsigned skiptime;
