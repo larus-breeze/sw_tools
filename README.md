@@ -24,6 +24,9 @@ Or: Clone repository including the submodules using the **command line**:
       File/Import_General/Existing Projects into Workspace
 
 to set up your workspace with the Eclipse project for the SIL system.
+The root within Eclipse shall point to "SIL_flight_sensor_emulator".
+After that you will be able to say "build all" to compile and link the project.
+
     
 The program needs a **pair of files**  foo.f50 and (same name)  foo.f50.EEPROM
 
