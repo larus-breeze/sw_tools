@@ -25,6 +25,7 @@ Or: Clone repository including the submodules using the **command line**:
 
 to set up your workspace with the Eclipse project for the SIL system.
 The root within Eclipse shall point to "SIL_flight_sensor_emulator".
+"Search for nested projects" must be activated to resolve the library subproject.
 After that you will be able to say "build all" to compile and link the project.
 
     
