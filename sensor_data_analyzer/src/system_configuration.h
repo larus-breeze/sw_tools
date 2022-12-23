@@ -29,8 +29,10 @@
 
 #define TCP_PORT 8880	// XCsoar wants this one
 
+#define WITH_LOWCOST_SENSORS	1 // must be 1 for Larus MK1 making 2021
 #define WITH_DENSITY_DATA	1
 #define PARALLEL_MAGNETIC_AHRS 	1
 #define INCLUDING_NANO	 	1
+#define USE_LOWCOST_IMU		0
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */

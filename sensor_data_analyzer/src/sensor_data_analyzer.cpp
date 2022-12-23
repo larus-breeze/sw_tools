@@ -39,7 +39,9 @@
 #include "NMEA_format.h"
 #include "TCP_server.h"
 #include "USB_serial.h"
+#include "old_data_structures.h"
 
+#define NEW_DATA_FORMAT 1
 using namespace std;
 
 int main (int argc, char *argv[])
@@ -61,7 +63,6 @@ int main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     skiptime = 10 * atoi( argv[2]); // at 10Hz output rate
 
-  observations_type  * in_data;
   output_data_t * output_data;
 
   ifstream file (argv[1], ios::in | ios::binary | ios::ate);
@@ -91,7 +92,13 @@ int main (int argc, char *argv[])
   organizer_t organizer;
 
   streampos size = file.tellg ();
+#if NEW_DATA_FORMAT
+  observations_type  * in_data;
   in_data = (observations_type*) new char[size];
+#else
+  old_input_data_t  * in_data;
+  in_data = (old_input_data_t*) new char[size];
+#endif
 
   unsigned records = size / sizeof(observations_type);
   size_t outfile_size = records * sizeof(output_data_t);
@@ -110,8 +117,17 @@ int main (int argc, char *argv[])
 
   int delta_time;
 
+#if NEW_DATA_FORMAT
   output_data[0].m = in_data[0].m;
   output_data[0].c = in_data[0].c;
+#else
+  *(old_measurement_data_t*)&(output_data[0].m) = in_data[0].m;
+  *(old_coordinates_t*)&(output_data[0].c) =      in_data[0].c;
+  // patches
+  output_data[0].c.sat_fix_type = 3;  // force D-GNSS usage
+  output_data[0].c.SATS_number  = 13; // just a joke ...
+  output_data[0].c.velocity[DOWN] *= -1.0f;
+#endif
 
   organizer.initialize_after_first_measurement( output_data[0]);
   organizer.update_GNSS_data(output_data[0].c);
@@ -122,11 +138,22 @@ int main (int argc, char *argv[])
   unsigned counter_10Hz = 10;
   for (unsigned count = 1; count < size / sizeof(observations_type); ++count)
     {
+#if NEW_DATA_FORMAT
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
+#else
+      *(old_measurement_data_t*)&(output_data[count].m) = in_data[count].m;
+      *(old_coordinates_t*)&(output_data[count].c) =      in_data[count].c;
 
+      // patches
+      output_data[count].c.sat_fix_type = 3;  // force D-GNSS usage
+      output_data[count].c.SATS_number  = 13; // just a joke ...
+      output_data[count].c.velocity[DOWN] *= -1.0f;
+
+#endif
       organizer.on_new_pressure_data( output_data[count]);
 
+#if NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
 	  delta_time = output_data[count].c.nano - nano;
@@ -137,6 +164,13 @@ int main (int argc, char *argv[])
 	  organizer.update_GNSS_data(output_data[count].c);
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
+#else
+      if( count % 10 ==0)
+	{
+	  organizer.update_GNSS_data(output_data[count].c);
+	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	}
+#endif
 
       organizer.update_every_10ms( output_data[count]);
 
