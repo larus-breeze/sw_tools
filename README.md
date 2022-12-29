@@ -10,6 +10,8 @@ Software-In-The-Loop Simulator for the Larus Glider Flight Sensor
 
 This software needs a subproject [lib](https://github.com/larus-breeze/sw_sensor_algorithms) that contains the **Larus** flight-computer algorithms to be SIL-tested using this software.
 
+A Doxygen-generated documentation can be found [here](https://schaefer.eit.h-da.de/Larus_SIL/).
+
 # How to use it: 
 Import the project including the lib subproject using **Eclipse CDT** on a Linux machine, compile/link and run.
 
