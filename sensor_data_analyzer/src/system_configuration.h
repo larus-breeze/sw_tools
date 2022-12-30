@@ -34,5 +34,6 @@
 #define PARALLEL_MAGNETIC_AHRS 	1
 #define INCLUDING_NANO	 	1
 #define USE_LOWCOST_IMU		0
+#define WITH_DENSITY_DATA	1 // 1 for year 2022 data
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
