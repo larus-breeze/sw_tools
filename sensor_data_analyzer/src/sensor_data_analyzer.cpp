@@ -22,9 +22,15 @@
 
  **************************************************************************/
 
-#include <unistd.h>
+#ifdef _WIN32
+# include "windows.h"
+#else
+# include <unistd.h>
+#endif
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <thread>
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -41,17 +47,29 @@
 #include "USB_serial.h"
 #include "old_data_structures.h"
 
+#ifdef _WIN32
+# pragma float_control(except, on)
+#endif
+
 #define NEW_DATA_FORMAT 1
 using namespace std;
+
+auto awake_time(std::chrono::steady_clock::time_point stime) {
+  using std::chrono::operator""ms;
+  return stime + 100ms;
+}
+
 
 int main (int argc, char *argv[])
 {
   unsigned skiptime;
   float declination; // todo fixme this variable is somewhat misplaced here
 
+#ifndef _WIN32
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
   // don't enable UNDERFLOW as this can happen regularly when filter outputs decay
   feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
 
   if ((argc != 2) && (argc != 3))
     {
@@ -136,6 +154,7 @@ int main (int argc, char *argv[])
   records = 0;
 
   unsigned counter_10Hz = 10;
+  auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
   for (unsigned count = 1; count < size / sizeof(observations_type); ++count)
     {
 #if NEW_DATA_FORMAT
@@ -198,11 +217,10 @@ int main (int argc, char *argv[])
 		  if( USB_active)
 		      CAN_output( (const output_data_t&) *(output_data+count));
 
-		  timespec want,got;
-		  want.tv_nsec = 100000000;
-		  want.tv_sec = 0;
-		  while( nanosleep( &want, &got))
-		    want.tv_nsec = want.tv_nsec - got.tv_nsec;
+      if (until <= std::chrono::steady_clock::now())
+                    until = awake_time(std::chrono::steady_clock::now());
+      std::this_thread::sleep_until(until);
+      until = awake_time(until);
 		}
 	    }
 	}

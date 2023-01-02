@@ -60,4 +60,6 @@ typedef struct
   old_coordinates_t c;
 } old_input_data_t;
 
+#pragma pack(pop)
+
 #endif /* OLD_DATA_STRUCTURES_H_ */

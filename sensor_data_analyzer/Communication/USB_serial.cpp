@@ -22,6 +22,18 @@
 
  **************************************************************************/
 
+#ifndef _WITH_USB2CAN
+#include "USB_serial.h"
+#include <stdint.h>
+bool open_USB_serial(char *portname) {
+  return false;
+}
+
+bool write_usb_serial(uint8_t *data, unsigned size) {
+  return false;
+}
+
+#else
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -91,3 +103,5 @@ bool write_usb_serial( uint8_t * data, unsigned size)
 {
   return 0 == write (fd, data, size);
 }
+
+#endif
