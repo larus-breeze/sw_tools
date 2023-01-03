@@ -25,6 +25,10 @@
 #ifndef INC_EMBEDDED_MATH_H_
 #define INC_EMBEDDED_MATH_H_
 
+#ifdef _MSC_VER
+# include "corecrt_math_defines.h"
+#endif
+
 #include "math.h"
 #include "stdint.h"
 #include "float.h"

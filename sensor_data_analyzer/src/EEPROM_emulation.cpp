@@ -31,6 +31,9 @@ using namespace std;
 
 #include "EEPROM_emulation.h"
 
+#include <istream>
+#include <string>
+
 config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
 float configuration( EEPROM_PARAMETER_ID id)
@@ -68,7 +71,7 @@ bool EEPROM_initialize( void)
 }
 
 int
-read_identifier (char *s)
+read_identifier (const char *s)
 {
   if (s[2] != ' ')
     return EEPROM_PARAMETER_ID_END;
@@ -84,35 +87,52 @@ int read_EEPROM_file (char *basename)
   strcpy (buf, basename);
   strcat (buf, ".EEPROM");
 
-  FILE *fp = fopen (buf, "r");
+#ifdef _WIN32  // _AUGUST
+  const char *line = NULL;
+  size_t len = 0;
+  ifstream inFile;
+  string sline;
+
+  inFile.open(buf);
+
+  for (getline(inFile, sline);
+       sline.length();
+       getline(inFile, sline)) {
+    line = sline.c_str();
+#else
+  FILE *fp = fopen(buf, "r");
   if (fp == NULL)
     return (EXIT_FAILURE);
 
   char *line = NULL;
   size_t len = 0;
-  while ((getline (&line, &len, fp)) != -1)
-    {
-      EEPROM_PARAMETER_ID identifier = (EEPROM_PARAMETER_ID) read_identifier (
-	  line);
-      if (identifier == EEPROM_PARAMETER_ID_END)
-	continue;
-      const persistent_data_t *param = find_parameter_from_ID (identifier);
-      unsigned name_len = strlen (param->mnemonic);
-      if (0
-	  != strncmp ((const char*) (param->mnemonic), (const char*) (line + 3),
-		      name_len))
-	continue;
-      if (line[name_len + 4] != '=')
-	continue;
-      float value = atof (line + name_len + 6);
+  while ((getline(&line, &len, fp)) != -1) {
+#endif
+    EEPROM_PARAMETER_ID identifier =
+        (EEPROM_PARAMETER_ID)read_identifier(line);
+    if (identifier == EEPROM_PARAMETER_ID_END)
+      continue;
+    const persistent_data_t *param = find_parameter_from_ID(identifier);
+    unsigned name_len = strlen(param->mnemonic);
+    if (0 != strncmp((const char *)(param->mnemonic), (const char *)(line + 3),
+                     name_len))
+      continue;
+    if (line[name_len + 4] != '=')
+      continue;
+    float value = atof(line + name_len + 6);
 
-      config_parameters[identifier].identifier = identifier;
-      config_parameters[identifier].value = value;
-    }
+    config_parameters[identifier].identifier = identifier;
+    config_parameters[identifier].value = value;
+
+#ifdef _WIN32 // _AUGUST
+  }
+  inFile.close();
+#else 
+  }
   fclose (fp);
   if (line)
     free (line);
-
+#endif
   return 0;
 }
 
