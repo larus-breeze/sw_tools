@@ -22,7 +22,7 @@
 
  **************************************************************************/
 
-#ifndef _WITH_USB2CAN
+#ifdef _WIN32
 #include "USB_serial.h"
 #include <stdint.h>
 bool open_USB_serial(char *portname) {
@@ -34,6 +34,7 @@ bool write_usb_serial(uint8_t *data, unsigned size) {
 }
 
 #else
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
