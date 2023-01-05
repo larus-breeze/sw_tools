@@ -35,5 +35,6 @@
 #define INCLUDING_NANO	 	1
 #define USE_LOWCOST_IMU		0
 #define WITH_DENSITY_DATA	1 // 1 for year 2022 data
+#define USE_LARUS_NMEA_EXTENSIONS 1
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
