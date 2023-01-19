@@ -46,6 +46,7 @@
 #include "TCP_server.h"
 #include "USB_serial.h"
 #include "old_data_structures.h"
+#include "system_state.h"
 
 #ifdef _WIN32
 # pragma float_control(except, on)
