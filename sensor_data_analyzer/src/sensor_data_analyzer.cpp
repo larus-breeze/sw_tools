@@ -59,6 +59,8 @@ auto awake_time(std::chrono::steady_clock::time_point stime) {
   return stime + 100ms;
 }
 
+uint32_t system_state // fake system state here in lack of hardware
+  = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
 int main (int argc, char *argv[])
 {
