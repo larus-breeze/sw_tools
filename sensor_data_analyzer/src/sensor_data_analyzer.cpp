@@ -66,7 +66,6 @@ uint32_t system_state // fake system state here in lack of hardware
 int main (int argc, char *argv[])
 {
   unsigned skiptime;
-  float declination; // todo fixme this variable is somewhat misplaced here
 
 #ifndef _WIN32
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
@@ -152,7 +151,6 @@ int main (int argc, char *argv[])
 
   organizer.initialize_after_first_measurement( output_data[0]);
   organizer.update_GNSS_data(output_data[0].c);
-  declination = organizer.getDeclination();
 
   records = 0;
 
@@ -214,7 +212,7 @@ int main (int argc, char *argv[])
 	      else
 		{
 		  string_buffer_t buffer;
-		  format_NMEA_string( (const output_data_t&) *(output_data+count), buffer, declination);
+		  format_NMEA_string( (const output_data_t&) *(output_data+count), buffer);
 		  write_TCP_port( buffer.string, buffer.length);
 
 		  if( USB_active)
