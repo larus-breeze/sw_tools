@@ -8,25 +8,32 @@
 #ifndef OLD_DATA_STRUCTURES_H_
 #define OLD_DATA_STRUCTURES_H_
 
+#define WITH_DENSITY_DATA 1
+
 #include "quaternion.h"
 #include "GNSS.h"
+#include "data_structures.h"
 
 #pragma pack(push, 1)
 
 typedef struct
 {
-  float3vector acc;   //XSENSE MTi1 IMU
-  float3vector gyro;  //XSENSE MTi1 IMU
-  float3vector mag;   //XSENSE MTi1 IMU
+  float3vector acc;
+  float3vector gyro;
+  float3vector mag;
   float3vector lowcost_acc;
   float3vector lowcost_gyro;
   float3vector lowcost_mag;
   float pitot_pressure;
   float static_pressure;
-  float absolute_pressure;  //this is the second ms5611 on the PCB.
-  float static_sensor_temperature;  //log temperature to monitor temperature in enclosure
+  float absolute_pressure;  		//this is the second ms5611 on the PCB.
+  float static_sensor_temperature;  	//log temperature to monitor temperature in enclosure
   float absolute_sensor_temperature;
-  float supply_voltage;  //Measuring the supply voltage. Might be related to sensor noise.
+  float supply_voltage;  		//Measuring the supply voltage. Might be related to sensor noise.
+#if WITH_DENSITY_DATA
+  float outside_air_temperature; //!< OAT from external sensor if installed
+  float outside_air_humidity; //!< 0.0 -> 1.0 NOT percent
+#endif
 } old_measurement_data_t;
 
 typedef struct
@@ -41,8 +48,6 @@ typedef struct
   float speed_acc;		// speed accuracy m/s
   double latitude;		//!< degrees
   double longitude;		//!< degrees
-//  uint32_t time; 		// time of day / ms
-//  uint32_t date; 		// calendar date 1000*year + day of year
 
   uint8_t year;
   uint8_t month;
@@ -51,7 +56,15 @@ typedef struct
 
   uint8_t minute;
   uint8_t second;
-  int16_t geo_sep_dm;	// (WGS ellipsoid height - elevation MSL) in 0.1m units
+  uint8_t SATS_number;	//!< number of tracked satellites
+  uint8_t sat_fix_type;	//!< bit 0: SAT FIX, bit 1: SAT HEADING availale
+
+#if INCLUDING_NANO
+  int32_t nano;		// nanoseconds from time stamp
+#endif
+
+  int16_t geo_sep_dm; 	//!< (WGS ellipsoid height - elevation MSL) in 0.1m units
+  uint16_t dummy;
 } old_coordinates_t;
 
 typedef struct
@@ -61,5 +74,43 @@ typedef struct
 } old_input_data_t;
 
 #pragma pack(pop)
+
+inline void new_format_from_old( measurement_data_t & out_m, coordinates_t & out_c, const old_input_data_t & in)
+{
+  out_m.acc = in.m.acc;
+  out_m.mag = in.m.mag;
+  out_m.gyro = in.m.gyro;
+
+  out_m.static_pressure = in.m.static_pressure;
+  out_m.static_sensor_temperature = in.m.static_sensor_temperature;
+  out_m.pitot_pressure = in.m.pitot_pressure;
+  out_m.supply_voltage = in.m.supply_voltage;
+
+  out_c.position = in.c.position;
+  out_c.velocity = in.c.velocity;
+  out_c.acceleration = in.c.acceleration;  	//!< NED / m/s^2 (from velocity delta)
+  out_c.heading_motion = in.c.heading_motion;	// degrees
+  out_c.speed_motion = in.c.speed_motion;
+  out_c.relPosNED = in.c.relPosNED;	//
+  out_c.relPosHeading = in.c.relPosHeading;
+  out_c.speed_acc = in.c.speed_acc;
+  out_c.latitude = in.c.latitude;
+  out_c.longitude = in.c.longitude;
+
+  out_c.year = in.c.year;
+  out_c.month = in.c.month;
+  out_c.day = in.c.day;
+  out_c.hour = in.c.hour;
+
+  out_c.minute = in.c.minute;
+  out_c.second = in.c.second;
+  out_c.geo_sep_dm = in.c.geo_sep_dm;
+
+  out_c.nano = 0xefffffff; // not used in old format
+  // patches
+  out_c.sat_fix_type = 3;  // force D-GNSS usage
+  out_c.SATS_number  = 13; // just a joke ...
+  out_c.velocity[DOWN] *= -1.0f;
+}
 
 #endif /* OLD_DATA_STRUCTURES_H_ */

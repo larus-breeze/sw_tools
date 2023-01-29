@@ -52,7 +52,7 @@
 # pragma float_control(except, on)
 #endif
 
-#define NEW_DATA_FORMAT 1
+#define NEW_DATA_FORMAT 0
 using namespace std;
 
 auto awake_time(std::chrono::steady_clock::time_point stime) {
@@ -132,21 +132,16 @@ int main (int argc, char *argv[])
 
   organizer.initialize_before_measurement();
 
+#if NEW_DATA_FORMAT
+
   int32_t nano = 0;
   unsigned fife_hertz_counter = 0;
-
   int delta_time;
 
-#if NEW_DATA_FORMAT
   output_data[0].m = in_data[0].m;
   output_data[0].c = in_data[0].c;
 #else
-  *(old_measurement_data_t*)&(output_data[0].m) = in_data[0].m;
-  *(old_coordinates_t*)&(output_data[0].c) =      in_data[0].c;
-  // patches
-  output_data[0].c.sat_fix_type = 3;  // force D-GNSS usage
-  output_data[0].c.SATS_number  = 13; // just a joke ...
-  output_data[0].c.velocity[DOWN] *= -1.0f;
+  new_format_from_old( output_data[0].m, output_data[0].c, in_data[0]);
 #endif
 
   organizer.initialize_after_first_measurement( output_data[0]);
@@ -162,14 +157,7 @@ int main (int argc, char *argv[])
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
 #else
-      *(old_measurement_data_t*)&(output_data[count].m) = in_data[count].m;
-      *(old_coordinates_t*)&(output_data[count].c) =      in_data[count].c;
-
-      // patches
-      output_data[count].c.sat_fix_type = 3;  // force D-GNSS usage
-      output_data[count].c.SATS_number  = 13; // just a joke ...
-      output_data[count].c.velocity[DOWN] *= -1.0f;
-
+      new_format_from_old( output_data[count].m, output_data[count].c, in_data[count]);
 #endif
       organizer.on_new_pressure_data( output_data[count]);
 
