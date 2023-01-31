@@ -13,6 +13,7 @@
 #include "quaternion.h"
 #include "GNSS.h"
 #include "data_structures.h"
+#include "cmath"
 
 #pragma pack(push, 1)
 
@@ -87,7 +88,9 @@ inline void new_format_from_old( measurement_data_t & out_m, coordinates_t & out
   out_m.supply_voltage = in.m.supply_voltage;
 
   out_c.position = in.c.position;
-  out_c.velocity = in.c.velocity;
+  out_c.velocity.e[NORTH] = in.c.velocity.e[NORTH];
+  out_c.velocity.e[EAST] = in.c.velocity.e[EAST];
+  out_c.velocity.e[DOWN] = - in.c.velocity.e[DOWN]; // todo vertical veloctiy inverted
   out_c.acceleration = in.c.acceleration;  	//!< NED / m/s^2 (from velocity delta)
   out_c.heading_motion = in.c.heading_motion;	// degrees
   out_c.speed_motion = in.c.speed_motion;
@@ -107,10 +110,15 @@ inline void new_format_from_old( measurement_data_t & out_m, coordinates_t & out
   out_c.geo_sep_dm = in.c.geo_sep_dm;
 
   out_c.nano = 0xefffffff; // not used in old format
+
   // patches
-  out_c.sat_fix_type = 3;  // force D-GNSS usage
-  out_c.SATS_number  = 13; // just a joke ...
-  out_c.velocity[DOWN] *= -1.0f;
+  if( isnormal(out_c.relPosHeading))
+    out_c.sat_fix_type = 3; // D-GNSS available
+  else
+    out_c.sat_fix_type = 1;
+
+  out_c.SATS_number  = 55; // just a joke ...
+  out_c.velocity[DOWN] *= -1.0f; // earlier we recorded the wrong sign
 }
 
 #endif /* OLD_DATA_STRUCTURES_H_ */
