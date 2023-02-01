@@ -115,12 +115,13 @@ int main (int argc, char *argv[])
 #if NEW_DATA_FORMAT
   observations_type  * in_data;
   in_data = (observations_type*) new char[size];
+  unsigned records = size / sizeof(observations_type);
 #else
   old_input_data_t  * in_data;
   in_data = (old_input_data_t*) new char[size];
+  unsigned records = size / sizeof(old_input_data_t);
 #endif
 
-  unsigned records = size / sizeof(observations_type);
   size_t outfile_size = records * sizeof(output_data_t);
   output_data = (output_data_t*) new char[outfile_size];
 
@@ -147,11 +148,11 @@ int main (int argc, char *argv[])
   organizer.initialize_after_first_measurement( output_data[0]);
   organizer.update_GNSS_data(output_data[0].c);
 
-  records = 0;
-
   unsigned counter_10Hz = 10;
   auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
-  for (unsigned count = 1; count < size / sizeof(observations_type); ++count)
+
+  unsigned count;
+  for ( count = 1; count < records; ++count)
     {
 #if NEW_DATA_FORMAT
       output_data[count].m = in_data[count].m;
@@ -213,9 +214,8 @@ int main (int argc, char *argv[])
 		}
 	    }
 	}
-      ++records;
     }
-  printf ("%d records\n", records);
+  printf ("%d records\n", count);
 
   char buf[200];
   char ascii_len[10];
