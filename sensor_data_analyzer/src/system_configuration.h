@@ -34,7 +34,7 @@
 #define PARALLEL_MAGNETIC_AHRS 	1
 #define INCLUDING_NANO	 	1
 #define USE_LOWCOST_IMU		0
-#define WITH_DENSITY_DATA	0 // 1 for year 2022 data
+#define WITH_DENSITY_DATA	1 // 1 for year 2022 data
 #define USE_PTAS		1
 
 #define USE_LARUS_NMEA_EXTENSIONS 1
