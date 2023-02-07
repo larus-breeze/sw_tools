@@ -25,6 +25,10 @@
 #ifndef INC_EMBEDDED_MATH_H_
 #define INC_EMBEDDED_MATH_H_
 
+#ifndef _WIN32
+char* itoa( int value, char* result, int base=10);
+#endif
+
 #ifdef _MSC_VER
 # include "corecrt_math_defines.h"
 #endif
