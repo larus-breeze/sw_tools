@@ -32,6 +32,9 @@ char* itoa( int value, char* result, int base=10);
 #ifdef _MSC_VER
 # include "corecrt_math_defines.h"
 #endif
+#ifdef _WIN32
+# include <cmath>  // needed for inline abs
+#endif
 
 #include "math.h"
 #include "stdint.h"
