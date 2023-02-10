@@ -37,6 +37,7 @@
 #define WITH_DENSITY_DATA	1
 #define INCLUDING_NANO	 	1
 #define USE_LOWCOST_IMU		0
+#define NEW_DATA_FORMAT 	0
 
 #else // for MK2 (actual) sensor data
 
@@ -44,6 +45,7 @@
 #define WITH_DENSITY_DATA	0
 #define INCLUDING_NANO	 	1
 #define USE_LOWCOST_IMU		0
+#define NEW_DATA_FORMAT 	1
 
 #endif
 

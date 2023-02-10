@@ -52,7 +52,6 @@
 # pragma float_control(except, on)
 #endif
 
-#define NEW_DATA_FORMAT 0
 using namespace std;
 
 auto awake_time(std::chrono::steady_clock::time_point stime) {
@@ -103,7 +102,16 @@ int main (int argc, char *argv[])
       realtime_with_TCP_server = accept_TCP_client(true);
     }
 
-  if( read_EEPROM_file (argv[1]) == EXIT_FAILURE)
+  // cut off file extension
+  char basename[100];
+  strcpy( basename, argv[1]);
+#if NEW_DATA_FORMAT
+  char * dot = strchr( basename, '.');
+  if( (dot != 0) && (dot[1] == 'f')) // old format: filename.f37.EEPROM new: filename.EEPROM
+    *dot=0; // cut off .f37 extension
+#endif
+
+  if( read_EEPROM_file ( basename) == EXIT_FAILURE)
     {
       cout << "Unable to open EEPROM file";
       return -1;
