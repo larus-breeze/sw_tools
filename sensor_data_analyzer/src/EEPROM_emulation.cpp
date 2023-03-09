@@ -28,6 +28,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "math.h"
+
 using namespace std;
 
 #include "EEPROM_emulation.h"
@@ -83,6 +85,12 @@ read_identifier (const char *s)
   return EEPROM_PARAMETER_ID_END; // error
 }
 
+unsigned ANGLE_CODING_IDENTIFIERS[]=
+    {
+	SENS_TILT_ROLL, SENS_TILT_NICK, SENS_TILT_YAW,
+	DECLINATION, INCLINATION
+    };
+
 int read_EEPROM_file (char *basename)
 {
   char buf[200];
@@ -108,10 +116,10 @@ int read_EEPROM_file (char *basename)
 
   char *line = NULL;
   size_t len = 0;
-  while ((getline(&line, &len, fp)) != -1) {
+  while ((getline(&line, &len, fp)) != -1)
+    {
 #endif
-    EEPROM_PARAMETER_ID identifier =
-        (EEPROM_PARAMETER_ID)read_identifier(line);
+    EEPROM_PARAMETER_ID identifier = (EEPROM_PARAMETER_ID)read_identifier(line);
     if (identifier == EEPROM_PARAMETER_ID_END)
       continue;
     const persistent_data_t *param = find_parameter_from_ID(identifier);
@@ -135,6 +143,11 @@ int read_EEPROM_file (char *basename)
   if (line)
     free (line);
 #endif
+
+  // 	angle format conversion degree -> rad
+  for( unsigned id =0; id < sizeof(ANGLE_CODING_IDENTIFIERS)/sizeof(unsigned); ++id)
+	config_parameters[ ANGLE_CODING_IDENTIFIERS[id] ].value *= (M_PI / 180.0);
+
   return 0;
 }
 
