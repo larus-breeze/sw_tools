@@ -1,6 +1,9 @@
 /Debug/
 /lib/
-
 /Matlab/
 /log_channels_109.ods
 /log_channels.ods
+/log_channels*.ods
+*.EEPROM
+*.f*
+.settings/language.settings.xml
