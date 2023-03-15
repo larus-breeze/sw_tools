@@ -85,12 +85,6 @@ read_identifier (const char *s)
   return EEPROM_PARAMETER_ID_END; // error
 }
 
-unsigned ANGLE_CODING_IDENTIFIERS[]=
-    {
-	SENS_TILT_ROLL, SENS_TILT_NICK, SENS_TILT_YAW,
-	DECLINATION, INCLINATION
-    };
-
 int read_EEPROM_file (char *basename)
 {
   char buf[200];
