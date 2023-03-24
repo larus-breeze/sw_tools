@@ -125,6 +125,9 @@ int read_EEPROM_file (char *basename)
       continue;
     float value = atof(line + name_len + 6);
 
+    if( param->is_an_angle)
+      value *= (M_PI / 180.0);
+
     config_parameters[identifier].identifier = identifier;
     config_parameters[identifier].value = value;
 
@@ -137,10 +140,6 @@ int read_EEPROM_file (char *basename)
   if (line)
     free (line);
 #endif
-
-  // 	angle format conversion degree -> rad
-  for( unsigned id =0; id < sizeof(ANGLE_CODING_IDENTIFIERS)/sizeof(unsigned); ++id)
-	config_parameters[ ANGLE_CODING_IDENTIFIERS[id] ].value *= (M_PI / 180.0);
 
   return 0;
 }
