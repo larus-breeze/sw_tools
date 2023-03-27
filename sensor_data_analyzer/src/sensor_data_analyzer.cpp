@@ -253,44 +253,44 @@ int main (int argc, char *argv[])
     close_TCP_port();
 }
 
-void report_magnetic_calibration_has_changed( magnetic_induction_report_t *p_magnetic_induction_report)
+void report_magnetic_calibration_has_changed (
+    magnetic_induction_report_t *p_magnetic_induction_report, char type)
 {
   magnetic_induction_report_t magnetic_induction_report = *p_magnetic_induction_report;
   char buffer[50];
-    char *next = buffer;
-    int32_t writtenBytes = 0;
+  char *next = buffer;
 
-    printf("\n");
+  printf (type == 'm' ? "\nMagnetic:\n" : "\nSatellite:\n");
 
-    for( unsigned i=0; i<3; ++i)
-      {
-        char *next = buffer;
-        next = my_ftoa (next, magnetic_induction_report.calibration[i].offset);
-        *next++=' ';
-        next = my_ftoa (next, magnetic_induction_report.calibration[i].scale);
-        *next++=' ';
-        next = my_ftoa (next, SQRT( magnetic_induction_report.calibration[i].variance));
-        *next++=' ';
-        *next++=0;
-        printf("%s\t", buffer);
-      }
+  for (unsigned i = 0; i < 3; ++i)
+    {
+      char *next = buffer;
+      next = my_ftoa (next, magnetic_induction_report.calibration[i].offset);
+      *next++ = ' ';
+      next = my_ftoa (next, magnetic_induction_report.calibration[i].scale);
+      *next++ = ' ';
+      next = my_ftoa (next,
+		      SQRT(magnetic_induction_report.calibration[i].variance));
+      *next++ = ' ';
+      *next++ = 0;
+      printf ("%s\t", buffer);
+    }
 
+  float3vector induction = magnetic_induction_report.nav_induction;
+  for (unsigned i = 0; i < 3; ++i)
+    {
+      next = my_ftoa (next, induction[i]);
+      *next++ = ' ';
+    }
 
-    float3vector induction = magnetic_induction_report.nav_induction;
-    for( unsigned i=0; i<3; ++i)
-      {
-        next = my_ftoa (next, induction[i]);
-        *next++=' ';
-      }
+  next = my_ftoa (next, magnetic_induction_report.nav_induction_std_deviation);
+  *next++ = 0;
 
-    next = my_ftoa (next, magnetic_induction_report.nav_induction_std_deviation);
-    *next++=0;
+  printf( "Dev=%f Inc=%f",
+      atan2 (magnetic_induction_report.nav_induction[EAST],
+	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI,
+      atan2 (magnetic_induction_report.nav_induction[DOWN],
+	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI);
 
-    printf("%s ", buffer);
-
-    printf( "Dev=%f Inc=%f",
-	    atan2(magnetic_induction_report.nav_induction[EAST],magnetic_induction_report.nav_induction[NORTH])*180.0/M_PI,
-	    atan2(magnetic_induction_report.nav_induction[DOWN],magnetic_induction_report.nav_induction[NORTH])*180.0/M_PI);
-
-    printf("\n", buffer);
+  printf ("\n", buffer);
 }

@@ -29,6 +29,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "math.h"
+#include "system_configuration.h"
 
 using namespace std;
 
@@ -62,10 +63,12 @@ bool read_EEPROM_value( EEPROM_PARAMETER_ID id, float &value)
 
 bool write_EEPROM_value( EEPROM_PARAMETER_ID id, float value)
 {
+#if EEPROM_WRITES_LOGGED
   assert( id < EEPROM_PARAMETER_ID_END);
   float old_value = config_parameters[id].value;
   config_parameters[id].value = value;
   cout << "EEPROM(" << id << ")=" << old_value << "->" << value << endl;
+#endif
   return false;
 }
 
