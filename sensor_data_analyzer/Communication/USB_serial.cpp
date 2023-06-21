@@ -102,6 +102,9 @@ bool open_USB_serial ( char *portname)
 
 bool write_usb_serial( uint8_t * data, unsigned size)
 {
+  if( fd == 0)
+    return 0; // silently give up
+
   return 0 == write (fd, data, size);
 }
 

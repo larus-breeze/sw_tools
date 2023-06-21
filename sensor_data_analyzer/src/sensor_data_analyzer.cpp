@@ -50,6 +50,7 @@
 #include "system_state.h"
 #include "magnetic_induction_report.h"
 #include "ascii_support.h"
+#include "CAN_socket_driver.h"
 
 #ifdef _WIN32
 # pragma float_control(except, on)
@@ -95,15 +96,18 @@ int main (int argc, char *argv[])
     }
 
   if( realtime_with_TCP_server)
-    realtime_with_TCP_server = open_TCP_port();
-
-  bool USB_active = false;
-
-  if( realtime_with_TCP_server)
     {
-      USB_active = open_USB_serial ( (char*)"/dev/ttyUSB0");
+      realtime_with_TCP_server = open_TCP_port();
       realtime_with_TCP_server = accept_TCP_client(true);
     }
+
+#ifndef _WIN32
+  if( realtime_with_TCP_server)
+    {
+      open_USB_serial ( (char*)"/dev/ttyUSB0");
+      CAN_socket_initialize();
+    }
+#endif
 
   // cut off file extension
   char basename[100];
@@ -214,14 +218,12 @@ int main (int argc, char *argv[])
 		  string_buffer_t buffer;
 		  format_NMEA_string( (const output_data_t&) *(output_data+count), buffer);
 		  write_TCP_port( buffer.string, buffer.length);
+		  CAN_output( (const output_data_t&) *(output_data+count));
 
-		  if( USB_active)
-		      CAN_output( (const output_data_t&) *(output_data+count));
-
-      if (until <= std::chrono::steady_clock::now())
-                    until = awake_time(std::chrono::steady_clock::now());
-      std::this_thread::sleep_until(until);
-      until = awake_time(until);
+		  if (until <= std::chrono::steady_clock::now())
+				until = awake_time(std::chrono::steady_clock::now());
+		  std::this_thread::sleep_until(until);
+		  until = awake_time(until);
 		}
 	    }
 	}

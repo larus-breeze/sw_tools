@@ -1,6 +1,6 @@
 /***********************************************************************//**
- * @file		CAN_USB_gateway.cpp
- * @brief		CAN-bus packets tunneled via RS232
+ * @file		CAN_socket_driver.h
+ * @brief		I/O over the generic Linux CANsocket interface
  * @author		Dr. Klaus Schaefer
  * @copyright 		Copyright 2021 Dr. Klaus Schaefer. All rights reserved.
  * @license 		This project is released under the GNU Public License GPL-3.0
@@ -22,22 +22,18 @@
 
  **************************************************************************/
 
-#include "USB_serial.h"
+#ifndef CAN_SOCKET_DRIVER_H_
+#define CAN_SOCKET_DRIVER_H_
+
+#ifndef _WIN32
+
 #include "generic_CAN_driver.h"
 #include <CAN_socket_driver.h>
 
-bool CAN_send( const CANpacket &p, unsigned)
-{
-  CAN_gateway_packet output( p);
+int  CAN_socket_initialize(void);
+bool CAN_socket_close( void);
+int  CAN_socket_send(const CANpacket &p);
+bool CAN_socket_is_open( void);
 
-  write_usb_serial( (uint8_t *) &output, sizeof output);
-
-#ifndef _WIN32
-  if( CAN_socket_is_open())
-    CAN_socket_send(p);
-#endif
-  return true;
-}
-
-
-
+#endif // _WIN32
+#endif /* CAN_SOCKET_DRIVER_H_ */
