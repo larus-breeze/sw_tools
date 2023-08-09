@@ -29,7 +29,7 @@
 
 #define TCP_PORT 8880	// XCsoar wants this one
 
-#define DATA_FORMAT_2022	1 // use this to analyze year 2022 and older data files
+#define DATA_FORMAT_2022	0 // use this to analyze year 2022 and older data files
 
 #if DATA_FORMAT_2022
 
