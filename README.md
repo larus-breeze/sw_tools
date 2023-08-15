@@ -7,7 +7,11 @@ Software-In-The-Loop Simulator for the Larus Glider Flight Sensor
 
 * The program can also be used to **feed data in real-time to a XCsoar instance** on the PC or over the netword (Port 8880 TCP) in **OpenVario NMEA** format.
 * Optionally **CAN data** can be tunneled through a USART gateway (on /dev/ttyUSB0) to feed an external display. We use a modified AD57 from Air-Avionics.
+* On Linux generic CAN output to the can0 network interface is also supported. Configure the CAN interface with:  
 
+      sudo ip link set can0 up type can bitrate 1000000
+      sudo ifconfig can0 txqueuelen 1000
+ 
 This software needs a subproject [lib](https://github.com/larus-breeze/sw_sensor_algorithms) that contains the **Larus** flight-computer algorithms to be SIL-tested using this software.
 
 A Doxygen-generated documentation can be found [here](https://schaefer.eit.h-da.de/Larus_SIL/).
