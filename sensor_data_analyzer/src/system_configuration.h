@@ -29,12 +29,14 @@
 
 #define TCP_PORT 8880	// XCsoar wants this one
 
-#define DATA_FORMAT_2022	1 // use this to analyze year 2022 and older data files
+#define DATA_FORMAT_2022	0 // use this to analyze year 2022 and older data files
 
 #if DATA_FORMAT_2022
 
 #define WITH_LOWCOST_SENSORS	1
 #define WITH_DENSITY_DATA	1
+#define WITH_DENSITY_DUMMY	0
+#define VERTICAL_SPEED_INVERTED 0
 #define INCLUDING_NANO	 	1
 #define USE_LOWCOST_IMU		0
 #define NEW_DATA_FORMAT 	0
@@ -51,7 +53,7 @@
 
 #define USE_LARUS_NMEA_EXTENSIONS	1
 #define DEVELOPMENT_ADDITIONS		1
-#define MAGNETIC_DECISION_OVERRIDE 	0
-#define EEPROM_WRITES_LOGGED		0
-
+#define MAGNETIC_DECISION_OVERRIDE 	1
+#define EEPROM_WRITES_LOGGED		1
+#define DISABLE_SAT_COMPASS		0
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
