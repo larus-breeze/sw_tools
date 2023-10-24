@@ -55,4 +55,5 @@
 #define MAGNETIC_DECISION_OVERRIDE 	0
 #define EEPROM_WRITES_LOGGED		0
 #define DISABLE_SAT_COMPASS		0
+#define LONGTIME_MAG_TEST		1 // read and write file "config.EEPROM" if it exists
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */

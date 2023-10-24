@@ -120,7 +120,7 @@ int main (int argc, char *argv[])
     *dot=0; // cut off .f37 extension
 #endif
 
-#if 1
+#if LONGTIME_MAG_TEST
 // try to read "config.EEPROM" first
   char config_path[200];
   strcpy( config_path, basename);
@@ -273,9 +273,11 @@ int main (int argc, char *argv[])
 	  outfile.close ();
 	}
 
+#if LONGTIME_MAG_TEST
       char * path_end = strrchr( buf, '/');
       *path_end=0;
-      write_EEPROM_dump(buf);
+      write_EEPROM_dump(buf); // make new magnetic data permanent
+#endif
     }
 
   delete[] in_data;
