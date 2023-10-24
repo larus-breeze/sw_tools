@@ -28,6 +28,7 @@
 bool open_TCP_port(void);
 bool accept_TCP_client( bool wait_for_client);
 void write_TCP_port( char * data, unsigned length);
+unsigned poll_and_read_TCP_port( char * data, unsigned max_length);
 void close_TCP_port(void);
 
 #endif /* TCP_SERVER_H_ */

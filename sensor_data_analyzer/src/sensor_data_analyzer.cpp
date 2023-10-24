@@ -52,6 +52,8 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 
+#define IN_BUFLEN 100
+
 #ifdef _WIN32
 # pragma float_control(except, on)
 #endif
@@ -118,11 +120,27 @@ int main (int argc, char *argv[])
     *dot=0; // cut off .f37 extension
 #endif
 
+#if 1
+// try to read "config.EEPROM" first
+  char config_path[200];
+  strcpy( config_path, basename);
+  char * slash_location = strrchr( config_path, '/');
+  *slash_location = 0;
+  strcat( config_path, "/config");
+  if( read_EEPROM_file ( config_path) == EXIT_FAILURE)
+// else try to read the EEPROM file accompanying the data file
+    if( read_EEPROM_file ( basename) == EXIT_FAILURE)
+      {
+	cout << "Unable to open EEPROM file";
+	return -1;
+      }
+#else
   if( read_EEPROM_file ( basename) == EXIT_FAILURE)
     {
       cout << "Unable to open EEPROM file";
       return -1;
     }
+#endif
 
   organizer_t organizer;
 
@@ -177,7 +195,7 @@ int main (int argc, char *argv[])
 #endif
       organizer.on_new_pressure_data( output_data[count]);
 
-#if NEW_DATA_FORMAT
+#if 0// patch NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
 	  delta_time = output_data[count].c.nano - nano;
@@ -220,6 +238,14 @@ int main (int argc, char *argv[])
 		  write_TCP_port( buffer.string, buffer.length);
 		  CAN_output( (const output_data_t&) *(output_data+count));
 
+		  char in_buffer[IN_BUFLEN];
+		  unsigned bytes_read = poll_and_read_TCP_port( in_buffer, IN_BUFLEN);
+		  if( bytes_read > 0)
+		    {
+		      in_buffer[bytes_read] = 0;
+		      printf( "TCP input: %s\n", in_buffer);
+		    }
+
 		  if (until <= std::chrono::steady_clock::now())
 				until = awake_time(std::chrono::steady_clock::now());
 		  std::this_thread::sleep_until(until);
@@ -228,7 +254,7 @@ int main (int argc, char *argv[])
 	    }
 	}
     }
-  printf ("%d records\n", count);
+//  printf ("%d records\n", count);
 
   char buf[200];
   char ascii_len[10];
@@ -246,6 +272,10 @@ int main (int argc, char *argv[])
 			 records * sizeof(output_data_t));
 	  outfile.close ();
 	}
+
+      char * path_end = strrchr( buf, '/');
+      *path_end=0;
+      write_EEPROM_dump(buf);
     }
 
   delete[] in_data;
@@ -262,7 +292,7 @@ void report_magnetic_calibration_has_changed (
   char buffer[50];
   char *next = buffer;
 
-  printf (type == 'm' ? "\nMagnetic:\n" : "\nSatellite:\n");
+//  printf (type == 'm' ? "\nMagnetic:\n" : "\nSatellite:\n");
 
   for (unsigned i = 0; i < 3; ++i)
     {
@@ -288,11 +318,13 @@ void report_magnetic_calibration_has_changed (
   next = my_ftoa (next, magnetic_induction_report.nav_induction_std_deviation);
   *next++ = 0;
 
+#if 0
   printf( "Dev=%f Inc=%f",
       atan2 (magnetic_induction_report.nav_induction[EAST],
 	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI,
       atan2 (magnetic_induction_report.nav_induction[DOWN],
 	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI);
 
-  printf ("\n", buffer);
+#endif
+  printf ("%s\n", buffer);
 }

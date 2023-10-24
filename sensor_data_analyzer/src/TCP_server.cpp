@@ -161,6 +161,20 @@ void write_TCP_port( char * data, unsigned length)
     }
 }
 
+unsigned poll_and_read_TCP_port( char * data, unsigned max_length)
+{
+  int bytes_read;
+  fd_set readfds;
+
+  for( int client_index = 0; client_index < number_of_TCP_clients; ++client_index)
+    {
+      if (FD_ISSET( TCP_clients[client_index] , &readfds))
+	bytes_read = read( TCP_clients[client_index], data, max_length);
+      return bytes_read; // for the moment we pick just one peer
+    }
+  return 0;
+}
+
 void close_TCP_port(void)
 {
   if( listening_socket_file_descriptor)
