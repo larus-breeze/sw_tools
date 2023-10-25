@@ -134,7 +134,7 @@ int main (int argc, char *argv[])
 	cout << "Unable to open EEPROM file";
 	return -1;
       }
-#else
+#else // read the accompanying *.EEPROM only
   if( read_EEPROM_file ( basename) == EXIT_FAILURE)
     {
       cout << "Unable to open EEPROM file";
@@ -169,8 +169,6 @@ int main (int argc, char *argv[])
 #if NEW_DATA_FORMAT
 
   int32_t nano = 0;
-  unsigned fife_hertz_counter = 0;
-  int delta_time;
 
   output_data[0].m = in_data[0].m;
   output_data[0].c = in_data[0].c;
@@ -195,10 +193,10 @@ int main (int argc, char *argv[])
 #endif
       organizer.on_new_pressure_data( output_data[count]);
 
-#if 0// patch NEW_DATA_FORMAT
+#if NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
-	  delta_time = output_data[count].c.nano - nano;
+	  int delta_time = output_data[count].c.nano - nano;
 	  if( delta_time < 0 )
 	    delta_time += 1000000000;
 	  nano = output_data[count].c.nano;

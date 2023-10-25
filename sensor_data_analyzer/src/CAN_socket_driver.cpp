@@ -62,6 +62,7 @@ int CAN_socket_initialize(void)
       perror ("CAN Bind");
       return 1;
     }
+  return 0;
 }
 
 bool CAN_socket_is_open( void)
