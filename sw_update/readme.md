@@ -35,11 +35,11 @@ The **copy routine** included in the update package performs the following:
 
 Implementation in Detail
 ------------------------
-The following diagram shows the image of the memory of a device after the running application has loaded the image and before the copy routine has been started. You can see in detail which memory areas and meta data are available.
+The following diagram shows the image of the memory of a device after the running application has loaded the image and before the copy routine has been started. You can see in detail which memory areas and meta data are available. The absolute addresses are given as an example (stm32f407).
 
-![memory_map](https://github.com/larus-breeze/sw_frontend_rs/assets/3678273/8fee9983-5bea-4a34-981c-820f40f93262)
+![memory_map](https://github.com/larus-breeze/sw_emulator_sil/assets/3678273/a0de3493-a021-4135-9ac2-78cafffe6bbe)
 
 This repository provides the following components:
 - pack_image.py: Generally usable tool for creating update images
-- app_stm32f407_1m.rs, app_stm32f407_1m.elf: Example app, which displays the required steps in the running app
+- app_stm32f407_1m.rs: Example app, which displays the required steps in the running app
 - copy_stm32f407_1m.rs, copy_stm32f407_1m.elf: Copy routine for the controller in question
