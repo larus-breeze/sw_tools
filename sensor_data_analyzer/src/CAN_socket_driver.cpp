@@ -39,16 +39,13 @@
 
 int CAN_socket;
 
-int CAN_socket_initialize(void)
+bool CAN_socket_initialize(void)
 {
   struct sockaddr_can addr;
   struct ifreq ifr;
 
   if ((CAN_socket = socket (PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
-    {
-      perror ("CAN Socket");
-      return 1;
-    }
+      return false;
 
   strcpy (ifr.ifr_name, "can0");
   ioctl (CAN_socket, SIOCGIFINDEX, &ifr);
@@ -58,11 +55,9 @@ int CAN_socket_initialize(void)
   addr.can_ifindex = ifr.ifr_ifindex;
 
   if (bind (CAN_socket, (struct sockaddr*) &addr, sizeof(addr)) < 0)
-    {
-      perror ("CAN Bind");
-      return 1;
-    }
-  return 0;
+      return false;
+
+  return true; // success
 }
 
 bool CAN_socket_is_open( void)

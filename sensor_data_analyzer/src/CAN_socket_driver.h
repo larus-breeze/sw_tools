@@ -30,7 +30,7 @@
 #include "generic_CAN_driver.h"
 #include <CAN_socket_driver.h>
 
-int  CAN_socket_initialize(void);
+bool  CAN_socket_initialize(void);
 bool CAN_socket_close( void);
 int  CAN_socket_send(const CANpacket &p);
 bool CAN_socket_is_open( void);
