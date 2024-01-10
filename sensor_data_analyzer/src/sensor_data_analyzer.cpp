@@ -107,7 +107,7 @@ int main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     {
       open_USB_serial ( (char*)"/dev/ttyUSB0");
-      CAN_socket_initialize();
+      (void) CAN_socket_initialize();
     }
 #endif
 
@@ -127,13 +127,16 @@ int main (int argc, char *argv[])
   char * slash_location = strrchr( config_path, '/');
   *slash_location = 0;
   strcat( config_path, "/config");
+
   if( read_EEPROM_file ( config_path) == EXIT_FAILURE)
-// else try to read the EEPROM file accompanying the data file
-    if( read_EEPROM_file ( basename) == EXIT_FAILURE)
-      {
-	cout << "Unable to open EEPROM file";
-	return -1;
-      }
+    {
+      // try to read the EEPROM file accompanying the data file
+      if( read_EEPROM_file ( basename) == EXIT_FAILURE)
+	{
+	  cout << "Unable to open EEPROM file";
+	  return -1;
+	}
+    }
 #else // read the accompanying *.EEPROM only
   if( read_EEPROM_file ( basename) == EXIT_FAILURE)
     {
@@ -182,6 +185,8 @@ int main (int argc, char *argv[])
   unsigned counter_10Hz = 10;
   auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
 
+  bool have_GNSS_fix = false;
+
   unsigned count;
   for ( count = 1; count < records; ++count)
     {
@@ -192,6 +197,15 @@ int main (int argc, char *argv[])
       new_format_from_old( output_data[count].m, output_data[count].c, in_data[count]);
 #endif
       organizer.on_new_pressure_data( output_data[count]);
+
+      if( have_GNSS_fix == false)
+	{
+	  if( output_data[count].c.sat_fix_type > 0)
+	    {
+	      organizer.update_after_first_position_fix( output_data[count]);
+	      have_GNSS_fix = true;
+	    }
+	}
 
 #if NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
@@ -236,6 +250,7 @@ int main (int argc, char *argv[])
 		  write_TCP_port( buffer.string, buffer.length);
 		  CAN_output( (const output_data_t&) *(output_data+count));
 
+#if 0 // patch
 		  char in_buffer[IN_BUFLEN];
 		  unsigned bytes_read = poll_and_read_TCP_port( in_buffer, IN_BUFLEN);
 		  if( bytes_read > 0)
@@ -243,6 +258,7 @@ int main (int argc, char *argv[])
 		      in_buffer[bytes_read] = 0;
 		      printf( "TCP input: %s\n", in_buffer);
 		    }
+#endif
 
 		  if (until <= std::chrono::steady_clock::now())
 				until = awake_time(std::chrono::steady_clock::now());
