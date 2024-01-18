@@ -1,3 +1,4 @@
 *.f110
 *.pyc
 sw_update/target
+sw_update/stm32f407_1m/target
