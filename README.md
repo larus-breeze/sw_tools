@@ -1,3 +1,6 @@
+# Software tools for larus devices for development and verification
+
+## Sensor Data Analyzer
 Software-In-The-Loop Simulator for the Larus Glider Flight Sensor
 =================================================================
 
@@ -58,3 +61,17 @@ The "3600" - argument means: Go for real-time processing, skip the first flight 
 The Doxygen-generated documentation of the simulator can be found [here](https://schaefer.eit.h-da.de/Larus_SIL/)
 
 The sorftware is licensed under the GNU Public License V3.
+
+## Analysis
+Python scripts to plot the from the sensor recorded and via the Sensor Data Analyzer converted raw data logfiles
+
+
+## CAN Helper
+A simple script to tap into the sensors CAN traffic and generate live plots
+
+
+## Flight Player
+A Python QT based software to replay the via the Sensor Data Analyzer generated logfiles. This tool can generate CAN and NMEA Traffic to test the HMI and Frontend Solutions.
+
+## SW Update
+A solution for firmware updates of the larus devices. 
