@@ -2,7 +2,6 @@
 
 ## Sensor Data Analyzer
 Software-In-The-Loop Simulator for the Larus Glider Flight Sensor
-=================================================================
 
 * Eclipse CDT project for a headless program to **replay or process flight sensor data**
 
@@ -19,7 +18,7 @@ This software needs a subproject [lib](https://github.com/larus-breeze/sw_sensor
 
 A Doxygen-generated documentation can be found [here](https://schaefer.eit.h-da.de/Larus_SIL/).
 
-# How to use it: 
+### How to use it: 
 Import the project including the lib subproject using **Eclipse CDT** on a Linux machine, compile/link and run.
 
 Or: Clone repository including the submodules using the **command line**: 
