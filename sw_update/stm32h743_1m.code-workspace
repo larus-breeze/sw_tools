@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "stm32h743_1m"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cortex-debug.variableUseNaturalFormat": true
+	}
+}

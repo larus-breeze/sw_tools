@@ -1,0 +1,103 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "cortex-debug",
+        "request": "launch",
+        "name": "Deb main",
+        "servertype": "openocd",
+        "gdbPath": "/usr/bin/gdb-multiarch",
+        "cwd": "${workspaceRoot}",
+        "preLaunchTask": "Cargo Build (debug)",
+        "runToEntryPoint": "main",
+        "executable": "./target/thumbv7em-none-eabihf/debug/copy",
+        "device": "STM32H743VGTx",
+        "configFiles": [
+          "interface/stlink.cfg",
+          "target/stm32h7x_dual_bank.cfg"
+        ],
+        "postLaunchCommands": [
+          "monitor rtt server start 8765 0",
+          // should span the *right* part of RAM
+          // get address $ rust-nm -S target/thumbv7*/debug/vario | grep RTT
+          "monitor rtt setup 0x20000020 0x30 \"SEGGER RTT\"",
+          "monitor rtt start",
+        ],
+          "svdFile": "${workspaceRoot}/STM32H743.svd",
+      },      
+      {
+        "type": "cortex-debug",
+        "request": "launch",
+        "name": "Deb copy example",
+        "servertype": "openocd",
+        "gdbPath": "/usr/bin/gdb-multiarch",
+        "cwd": "${workspaceRoot}",
+        "preLaunchTask": "Cargo Build Examples (debug)",
+        "runToEntryPoint": "main",
+        "executable": "./target/thumbv7em-none-eabihf/debug/examples/copy",
+        "device": "STM32H743VGTx",
+        "configFiles": [
+          "interface/stlink.cfg",
+          "target/stm32h7x_dual_bank.cfg"
+        ],
+        "postLaunchCommands": [
+          "monitor rtt server start 8765 0",
+          // should span the *right* part of RAM
+          // get address $ rust-nm -S target/thumbv7*/debug/vario | grep RTT
+          "monitor rtt setup 0x20000020 0x30 \"SEGGER RTT\"",
+          "monitor rtt start",
+        ],
+          "svdFile": "${workspaceRoot}/STM32H743.svd",
+      },      
+      {
+        "type": "cortex-debug",
+        "request": "launch",
+        "name": "Deb copy example -r",
+        "servertype": "openocd",
+        "gdbPath": "/usr/bin/gdb-multiarch",
+        "cwd": "${workspaceRoot}",
+        "preLaunchTask": "Cargo Build Examples (release)",
+        "runToEntryPoint": "main",
+        "executable": "./target/thumbv7em-none-eabihf/release/examples/copy",
+        "device": "STM32H743VGTx",
+        "configFiles": [
+          "interface/stlink.cfg",
+          "target/stm32h7x_dual_bank.cfg"
+        ],
+        "postLaunchCommands": [
+          "monitor rtt server start 8765 0",
+          // should span the *right* part of RAM
+          // get address $ rust-nm -S target/thumbv7*/debug/vario | grep RTT
+          "monitor rtt setup 0x20000020 0x30 \"SEGGER RTT\"",
+          "monitor rtt start",
+        ],
+          "svdFile": "${workspaceRoot}/STM32H743.svd",
+      },      
+      {
+        "preLaunchTask": "${defaultBuildTask}",
+        "type": "probe-rs-debug",
+        "request": "launch",
+        "name": "probe_rs main",
+        "chip": "STM32H743VGTx",
+        "coreConfigs": [
+          {
+            "coreIndex": 0,
+            "programBinary": "${workspaceRoot}/target/thumbv7em-none-eabihf/debug/copy",
+            "svdFile": "${workspaceRoot}/STM32H743.svd",
+            "rttEnabled": true,
+          }
+        ],
+        "env": {
+          //!MODIFY (or remove)
+          // If you set this variable, check the VSCode console log window for the location of the log file.
+          "RUST_LOG": "info"
+        },
+         // Info, Debug
+        "consoleLogLevel": "Console"
+      },
+
+    ]
+  }
