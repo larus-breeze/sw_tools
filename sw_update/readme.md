@@ -41,5 +41,10 @@ The following diagram shows the image of the memory of a device after the runnin
 
 This repository provides the following components:
 - pack_image.py: Generally usable tool for creating update images
-- app_stm32f407_1m.rs: Example app, which displays the required steps in the running app
-- copy_stm32f407_1m.rs, copy_stm32f407_1m.elf: Copy routine for the controller in question
+- stm32f407_1m: Implementation for the stm32f407 controller (copy app, example app)
+- stm32h743_1m: Implementation for the stm32h743 controller (copy app, example app)
+
+Some hints
+- The example app and the copy app work with different memory regions (memory.x). Before the other app can be compiled, the build directory must be deleted with cargo clean. Otherwise the result is not usable.
+- The copy app can be tested on its own by starting it in the debugger and stopping it at the beginning. Before the application is started, the finished image can be written over it (Openocd command "mon program image.bin \<address\>")
+- The sample app can then be tested, again by stopping it after starting. Before it runs, the image must be reloaded (Openocd command "mon program image.bin \<address\>").
