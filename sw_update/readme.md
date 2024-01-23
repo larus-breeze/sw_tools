@@ -37,7 +37,7 @@ Implementation in Detail
 ------------------------
 The following diagram shows the image of the memory of a device after the running application has loaded the image and before the copy routine has been started. You can see in detail which memory areas and meta data are available. The absolute addresses are given as an example (stm32f407).
 
-![memory_map](https://github.com/larus-breeze/sw_emulator_sil/assets/3678273/a0de3493-a021-4135-9ac2-78cafffe6bbe)
+![memory_map](https://github.com/larus-breeze/sw_tools/blob/master/sw_update/assets/copy_stm32f407_1m.png)
 
 This repository provides the following components:
 - pack_image.py: Generally usable tool for creating update images
