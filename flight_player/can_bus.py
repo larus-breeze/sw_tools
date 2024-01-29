@@ -57,6 +57,11 @@ class Can():
         av_wind_direction = atan2(- data['wind avg E'], - data['wind avg N'])
         if (av_wind_direction < 0.0):
             av_wind_direction += 2 * pi
+        # GPS track and groundspeed
+        print(data['track GNSS'], data['speed GNSS'])
+        self.can_send(0x107,
+                      to_i16((data['track GNSS'] * pi / 180)*1000.0) +
+                      to_u16(data['speed GNSS'] * 3.6))
         self.can_send(0x108,
                       to_i16(wind_direction * 1000.0) +
                       to_i16(sqrt(data['wind E'] ** 2 + data['wind N'] ** 2) * 3.6) + \
@@ -81,6 +86,7 @@ class Can():
                       to_i16(data['slip angle'] * 1000.0) +
                       to_i16(data['turn rate'] * 1000.0) +
                       to_i16(data['nick angle'] * 1000.0))
+        
 
     def can_send(self, id: int, frame: bytes):
         """Send a single canbus frame"""
