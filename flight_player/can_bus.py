@@ -49,6 +49,14 @@ class Can():
         self.can_send(0x103,
                       to_i16(data['vario'] * 1000.0) +
                       to_i16(data['vario integrator'] * 1000.0))
+        # GPS altitude and geo separation
+        self.can_send(0x106,
+                      to_u32(data['pos DWN'] * -1000.0) +
+                      to_u32(data["geo separation dm"] * 10))
+        # GPS track and groundspeed
+        self.can_send(0x107,
+                      to_i16((data['track GNSS'] * pi / 180)*1000.0) +
+                      to_u16(data['speed GNSS'] * 3.6))
 
         # WIND wind 0.001 rad i16 km/h i16 avg wind 0.001 rad i16 km/h i16
         wind_direction = atan2(- data['wind E'], - data['wind N'])
@@ -57,10 +65,7 @@ class Can():
         av_wind_direction = atan2(- data['wind avg E'], - data['wind avg N'])
         if (av_wind_direction < 0.0):
             av_wind_direction += 2 * pi
-        # GPS track and groundspeed
-        self.can_send(0x107,
-                      to_i16((data['track GNSS'] * pi / 180)*1000.0) +
-                      to_u16(data['speed GNSS'] * 3.6))
+
         self.can_send(0x108,
                       to_i16(wind_direction * 1000.0) +
                       to_i16(sqrt(data['wind E'] ** 2 + data['wind N'] ** 2) * 3.6) + \
