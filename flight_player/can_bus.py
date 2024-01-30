@@ -2,6 +2,7 @@ import socket, struct
 from math import atan2, pi, sqrt
 
 import can
+import numpy as np
 
 from flight_data import FlightData
 
@@ -103,25 +104,27 @@ class Can():
 # Below are some functions that generate defined binary data
 
 def to_u32(val: int|float) -> bytes:
+    val = np.clip(val, 0, 4294967295)
     return round(val).to_bytes(4, byteorder='little', signed=False)
 
-
 def to_u16(val: int|float) -> bytes:
+    val = np.clip(val, 0, 65535 )
     return round(val).to_bytes(2, byteorder='little', signed=False)
 
-
 def to_u8(val: int|float) -> bytes:
+    val = np.clip(val, 0, 255)
     return round(val).to_bytes(1, byteorder='little', signed=False)
 
 def to_i32(val: int|float) -> bytes:
+    val = np.clip(val, -2147483648, 2147483647)
     return round(val).to_bytes(4, byteorder='little', signed=True)
 
-
 def to_i16(val: int|float) -> bytes:
+    val = np.clip(val, -32768, 32767)
     return round(val).to_bytes(2, byteorder='little', signed=True)
 
-
 def to_i8(val: int|float) -> bytes:
+    val = np.clip(val, -128, 127)
     return round(val).to_bytes(1, byteorder='little', signed=True)
 
 def to_f32(val: float) -> bytes:
