@@ -202,7 +202,7 @@ int main (int argc, char *argv[])
 	{
 	  if( output_data[count].c.sat_fix_type > 0)
 	    {
-	      organizer.update_after_first_position_fix( output_data[count]);
+	      organizer.update_magnetic_induction_data( output_data[count].c.latitude, output_data[count].c.longitude);
 	      have_GNSS_fix = true;
 	    }
 	}
