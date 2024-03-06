@@ -89,19 +89,37 @@ class Player(QtWidgets.QWidget):
         if fileName != '':
             self.stop_flight_player()
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
-            self.data.from_file(fileName)
-            self.ui.lbFileNameA.setText(fileName.split('/')[-1])
-            self.ui.lbDateA.setText(str(self.data.date_of_flight()))
-            self.ui.lbStartRecordingA.setText(str(self.data.start_recording()))
-            self.ui.lbStopRecordingA.setText(str(self.data.end_recording()))
-            self.ui.verticalLayout.removeWidget(self.baroWidget)
-            self.baroWidget = BaroWidget(self.data)
-            self.ui.verticalLayout.insertWidget(3, self.baroWidget)
 
-            self.file_open = True
-            self.is_running = False
+            try:
+                self.data.from_file(fileName)
+                self.file_open = True
+            except:
+                self.file_open = False
+           
+            if self.file_open:
+                self.ui.lbFileNameA.setText(fileName.split('/')[-1])
+                self.ui.lbDateA.setText(str(self.data.date_of_flight()))
+                self.ui.lbStartRecordingA.setText(str(self.data.start_recording()))
+                self.ui.lbStopRecordingA.setText(str(self.data.end_recording()))
+                self.ui.verticalLayout.removeWidget(self.baroWidget)
+                self.baroWidget = BaroWidget(self.data)
+                self.ui.verticalLayout.insertWidget(3, self.baroWidget)
+                QtWidgets.QApplication.restoreOverrideCursor()
+            else:
+                self.ui.lbFileNameA.setText("")
+                self.ui.lbDateA.setText("")
+                self.ui.lbStartRecordingA.setText("")
+                self.ui.lbStopRecordingA.setText("")
+                self.baroWidget.clear()
+    
+                QtWidgets.QApplication.restoreOverrideCursor()
+                msgBox = QtWidgets.QMessageBox()
+                msgBox.setIcon(QtWidgets.QMessageBox.Critical)
+                msgBox.setText("Could not open file")
+                msgBox.exec()
+
             self.set_player_pos()
-            QtWidgets.QApplication.restoreOverrideCursor()
+            self.is_running = False
 
     def set_player_speed(self):
         """The playback rate of the player can be in the range of 0.1 to 10 times the original speed"""

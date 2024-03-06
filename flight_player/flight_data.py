@@ -10,14 +10,17 @@ from dataformats import *
 class FlightData():
     def __init__(self, file_name: str|None=None):
         """Initializes the FlightData class"""
+        self.clear()
+        if file_name is not None:
+            self.from_file(file_name)
+
+    def clear(self):
         self._idx = 0
         self._last_idx = 0
         self._delta = 10
 
         self._df = None
         self._row = None
-        if file_name is not None:
-            self.from_file(file_name)
 
     def from_file(self, file_name):
         """Opens a Larus flight data file"""
@@ -36,13 +39,20 @@ class FlightData():
 
         # Create a pandas dataframe
         format = numpy.dtype(dataformat)
-        data = numpy.fromfile(file_name, dtype=format, sep="")
+        try:
+            data = numpy.fromfile(file_name, dtype=format, sep="")
+        except:
+            data = None
 
-        # store references in class instance
-        self._df = pandas.DataFrame(data)
-        self._last_idx = len(self._df.index) - 1
-        self._idx = 0
-        self._row = self._df.iloc[self._idx]
+        if data is None:
+            self.clear()
+            raise ValueError
+        else:
+            # store references in class instance
+            self._df = pandas.DataFrame(data)
+            self._last_idx = len(self._df.index) - 1
+            self._idx = 0
+            self._row = self._df.iloc[self._idx]
 
     def set_offset(self, seconds: int):
         """Sets the time depending on the start point"""
