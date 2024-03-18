@@ -50,10 +50,21 @@ class Can():
         self.can_send(0x103,
                       to_i16(data['vario'] * 1000.0) +
                       to_i16(data['vario integrator'] * 1000.0))
+
+        # GPS date and time
+        self.can_send(0x104,
+                      to_u8(data['year']) + 
+                      to_u8(data['month']) + 
+                      to_u8(data['day']) + 
+                      to_u8(data['hour']) + 
+                      to_u8(data['minute']) + 
+                      to_u8(data['second']))
+
         # GPS altitude and geo separation
         self.can_send(0x106,
                       to_u32(data['pos DWN'] * -1000.0) +
                       to_u32(data["geo separation dm"] * 10))
+
         # GPS track and groundspeed
         self.can_send(0x107,
                       to_i16((data['track GNSS'] * pi / 180)*1000.0) +
