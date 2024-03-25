@@ -69,6 +69,11 @@ class Can():
         self.can_send(0x107,
                       to_i16((data['track GNSS'] * pi / 180)*1000.0) +
                       to_u16(data['speed GNSS'] * 3.6))
+        
+        # GPS no sats & gps state
+        self.can_send(0x10a,
+                      to_u8(data['sat number']) + 
+                      to_u8(data['sat fix type']))
 
         # WIND wind 0.001 rad i16 km/h i16 avg wind 0.001 rad i16 km/h i16
         wind_direction = atan2(- data['wind E'], - data['wind N'])
