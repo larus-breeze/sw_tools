@@ -41,6 +41,12 @@ class Can():
     def can_send_frames(self, data: FlightData):
         """Send the Larus canframes over the given physical interface"""
 
+        # EULER ANGLES i16, i16, i16 roll nick yaw / 1/1000 rad
+        self.can_send(0x0101,
+                      to_i16(data['roll'] * 1000.0) +
+                      to_i16(data['nick '] * 1000.0) +
+                      to_i16(data['yaw'] * 1000.0))
+
         # AIRSPEED tas, ias in km/h
         self.can_send(0x0102,
                       to_i16(data['TAS'] * 3.6) +
@@ -60,10 +66,15 @@ class Can():
                       to_u8(data['minute']) + 
                       to_u8(data['second']))
 
+        # GPS lat, lon
+        self.can_send(0x105,
+                      to_i32(data['Lat'] * 10_000_000.0) + 
+                      to_i32(data['Long'] * 10_000_000.0))
+
         # GPS altitude and geo separation
         self.can_send(0x106,
-                      to_u32(data['pos DWN'] * -1000.0) +
-                      to_u32(data["geo separation dm"] * 10))
+                      to_i32(data['pos DWN'] * -1000.0) +
+                      to_i32(data["geo separation dm"]))
 
         # GPS track and groundspeed
         self.can_send(0x107,

@@ -53,6 +53,8 @@ class Window(QtWidgets.QMainWindow):
         status = QtWidgets.QStatusBar()
         self.setStatusBar(status)
 
+        self.resize(800, 600)
+
     def _open_file(self):
         """Opens the selected Larus Data File"""
         settings = QtCore.QSettings()
