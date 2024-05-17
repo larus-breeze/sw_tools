@@ -294,6 +294,8 @@ void report_magnetic_calibration_has_changed (
       printf ("%s\t", buffer);
     }
 
+#if USE_EARTH_INDUCTION_DATA_COLLECTOR
+
   float3vector induction = magnetic_induction_report.nav_induction;
   for (unsigned i = 0; i < 3; ++i)
     {
@@ -304,11 +306,13 @@ void report_magnetic_calibration_has_changed (
   next = my_ftoa (next, magnetic_induction_report.nav_induction_std_deviation);
   *next++ = 0;
 
-  printf( "Dev=%f Inc=%f",
+  printf( "Dev=%f Inc=%f\n",
       atan2 (magnetic_induction_report.nav_induction[EAST],
 	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI,
       atan2 (magnetic_induction_report.nav_induction[DOWN],
 	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI);
 
-  printf ("\n", buffer);
+#else
+  printf ("\n");
+#endif
 }
