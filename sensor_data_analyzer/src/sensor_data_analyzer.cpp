@@ -105,7 +105,9 @@ int main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     {
       open_USB_serial ( (char*)"/dev/ttyUSB0");
+#if ENABLE_LINUX_CAN_INTERFACE
       CAN_socket_initialize();
+#endif
     }
 #endif
 
@@ -162,6 +164,7 @@ int main (int argc, char *argv[])
 
   organizer.initialize_after_first_measurement( output_data[0]);
   organizer.update_GNSS_data(output_data[0].c);
+  organizer.update_magnetic_induction_data( output_data[0].c.latitude, output_data[0].c.longitude);
 
   unsigned counter_10Hz = 10;
   auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
@@ -212,21 +215,34 @@ int main (int argc, char *argv[])
 	  if( realtime_with_TCP_server)
 	    {
 	      if( skiptime > 0)
-		--skiptime;
-	      else
 		{
-		  string_buffer_t buffer;
-		  format_NMEA_string( (const output_data_t&) *(output_data+count), buffer);
-		  write_TCP_port( buffer.string, buffer.length);
-		  CAN_output( (const output_data_t&) *(output_data+count));
-
-		  if (until <= std::chrono::steady_clock::now())
-				until = awake_time(std::chrono::steady_clock::now());
-		  std::this_thread::sleep_until(until);
-		  until = awake_time(until);
+		  --skiptime;
+		  continue;
 		}
+
+	      string_buffer_t buffer;
+	      buffer.length=0;
+
+	      if( count % 40 == 0)
+		format_NMEA_string_fast( (const output_data_t&) *(output_data+count), buffer, true);
+
+	      if( count % 160 == 0)
+		format_NMEA_string_slow( (const output_data_t&) *(output_data+count), buffer);
+
+	      if( buffer.length != 0)
+		write_TCP_port( buffer.string, buffer.length);
+
+#if ENABLE_LINUX_CAN_INTERFACE
+	      CAN_output( (const output_data_t&) *(output_data+count));
+#endif
+
+	      if (until <= std::chrono::steady_clock::now())
+			    until = awake_time(std::chrono::steady_clock::now());
+	      std::this_thread::sleep_until(until);
+	      until = awake_time(until);
 	    }
 	}
+
     }
   printf ("%d records\n", count);
 

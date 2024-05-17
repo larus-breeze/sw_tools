@@ -87,6 +87,10 @@ read_identifier (const char *s)
     return identifier;
   return EEPROM_PARAMETER_ID_END; // error
 }
+bool lock_EEPROM(bool)
+{
+  return true; // just a stub
+}
 
 int read_EEPROM_file (char *basename)
 {
@@ -120,6 +124,8 @@ int read_EEPROM_file (char *basename)
     if (identifier == EEPROM_PARAMETER_ID_END)
       continue;
     const persistent_data_t *param = find_parameter_from_ID(identifier);
+    if( param == 0)
+      continue;
     unsigned name_len = strlen(param->mnemonic);
     if (0 != strncmp((const char *)(param->mnemonic), (const char *)(line + 3),
                      name_len))
