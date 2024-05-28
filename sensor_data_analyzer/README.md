@@ -35,7 +35,7 @@ The root within Eclipse shall point to the directory "sensor_data_analyzer".
 After that you will be able to say "build all" to compile and link the project.
 
 
-The program needs a **pair of files**  foo.f37 and (same name) foo.EEPROM
+The program needs a **pair of files**  foo.f37 (or legacy .f50) and (same name) foo.EEPROM
 
 The *.f37 file contains recorded flight data from the IMU, the pitot and static sensor and the (D-)GNSS
 in binary float32_t format, recorded with 100Hz.
