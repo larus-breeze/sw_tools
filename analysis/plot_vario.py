@@ -11,7 +11,7 @@ data = LoadLarus2Df(file)
 df = data.df
 
 # Prepare the data
-t = df.index / 100.0 / 60.0   # 100Hz ticks to minutes for the time axis
+t = (df.index / 100.0 / 60.0).to_numpy()   # 100Hz ticks to minutes for the time axis
 
 # Create figure with 3 independent y-axis
 fig, host = plt.subplots(figsize=(8, 5), layout='constrained')
@@ -30,10 +30,10 @@ ax3.set_ylabel("TAS")
 
 color1, color2, color3, color4 = plt.cm.viridis([0, .25, .5, .9])
 
-p1 = host.plot(t, df["Pressure-altitude"], color=color1, label="Pressure-altitude")
-p2 = ax2.plot(t, df["vario"], color=color2, label="vario")
-p2b = ax2.plot(t, df["vario integrator"], color=color3, label="vario integrator")
-p3 = ax3.plot(t, df["TAS"], color=color4, label="TAS")
+p1 = host.plot(t, df["Pressure-altitude"].to_numpy(), color=color1, label="Pressure-altitude")
+p2 = ax2.plot(t, df["vario"].to_numpy(), color=color2, label="vario")
+p2b = ax2.plot(t, df["vario integrator"].to_numpy(), color=color3, label="vario integrator")
+p3 = ax3.plot(t, df["TAS"].to_numpy(), color=color4, label="TAS")
 
 host.legend(handles=p1 + p2 + p2b + p3, loc='best')
 
