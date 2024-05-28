@@ -2,6 +2,7 @@
 
 ## Sensor Data Analyzer
 Software-In-The-Loop Simulator for the Larus Glider Flight Sensor. Details here: [README](sensor_data_analyzer/README.md)
+Supported Dataformats can be found here: [Formats](analysis/dataformats.py)
 
 ## Analysis
 Python scripts to plot the from the sensor recorded and via the Sensor Data Analyzer converted raw data logfiles

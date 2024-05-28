@@ -57,4 +57,8 @@ The "3600" - argument means: Go for real-time processing, skip the first flight 
   
 The Doxygen-generated documentation of the simulator can be found [here](https://schaefer.eit.h-da.de/Larus_SIL/)
 
+
+## Links
+Supported binary data formats are defined here: [Formats](../analysis/dataformats.py)
+
 The sorftware is licensed under the GNU Public License V3.
