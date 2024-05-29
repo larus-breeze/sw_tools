@@ -34,6 +34,8 @@ class FlightData():
             dataformat = data_f120
         elif file_name.endswith('.f110'):
             dataformat = data_f110
+        elif file_name.endswith('.f114'):
+            dataformat = data_f114
         else:
             raise NotImplementedError("Format not supported")
 

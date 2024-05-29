@@ -18,7 +18,7 @@ class BaroWidget(FigureCanvasQTAgg):
         
         self.axes.set_ylim(data.altitude_min(), data.altitude_max())
         t, altitude = data.altitude_series()
-        self.axes.plot(t, altitude, label="Altitude")
+        self.axes.plot(t.to_numpy(), altitude.to_numpy(), label="Altitude")
 
     def clear(self):
         for ax in self.fig.axes:
