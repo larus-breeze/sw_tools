@@ -61,4 +61,4 @@ The Doxygen-generated documentation of the simulator can be found [here](https:/
 ## Links
 Supported binary data formats are defined here: [Formats](../analysis/dataformats.py)
 
-The sorftware is licensed under the GNU Public License V3.
+The software is licensed under the GNU Public License V3.
