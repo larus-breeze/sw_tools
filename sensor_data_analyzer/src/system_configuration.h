@@ -30,6 +30,7 @@
 #define TCP_PORT 8880	// XCsoar wants this one
 
 #define DATA_FORMAT_2022	0 // use this to analyze year 2022 and older data files
+#define CAN_FORMAT_2021		1
 
 #if DATA_FORMAT_2022
 
@@ -57,5 +58,6 @@
 #define DISABLE_SAT_COMPASS		0
 #define USE_LARUS_NMEA_EXTENSIONS	1
 #define ENABLE_LINUX_CAN_INTERFACE	0
+#define LONGTIME_MAG_TEST		1
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */

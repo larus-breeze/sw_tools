@@ -120,11 +120,31 @@ int main (int argc, char *argv[])
     *dot=0; // cut off .f37 extension
 #endif
 
+#if LONGTIME_MAG_TEST
+// try to read "config.EEPROM" first
+  char config_path[200];
+  strcpy( config_path, basename);
+  char * slash_location = strrchr( config_path, '/');
+  *slash_location = 0;
+  strcat( config_path, "/config");
+
+  if( read_EEPROM_file ( config_path) == EXIT_FAILURE)
+    {
+      // try to read the EEPROM file accompanying the data file
+      if( read_EEPROM_file ( basename) == EXIT_FAILURE)
+	{
+	  cout << "Unable to open EEPROM file";
+	  return -1;
+	}
+    }
+#else // read the accompanying *.EEPROM only
   if( read_EEPROM_file ( basename) == EXIT_FAILURE)
     {
       cout << "Unable to open EEPROM file";
       return -1;
     }
+#endif
+  ensure_EEPROM_parameter_integrity();
 
   organizer_t organizer;
 
@@ -169,6 +189,8 @@ int main (int argc, char *argv[])
   unsigned counter_10Hz = 10;
   auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
 
+  bool have_GNSS_fix = false;
+
   unsigned count;
   for ( count = 1; count < records; ++count)
     {
@@ -179,6 +201,15 @@ int main (int argc, char *argv[])
       new_format_from_old( output_data[count].m, output_data[count].c, in_data[count]);
 #endif
       organizer.on_new_pressure_data( output_data[count]);
+
+      if( have_GNSS_fix == false)
+	{
+	  if( output_data[count].c.sat_fix_type > 0)
+	    {
+	      organizer.update_magnetic_induction_data( output_data[count].c.latitude, output_data[count].c.longitude);
+	      have_GNSS_fix = true;
+	    }
+	}
 
 #if NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
@@ -262,6 +293,12 @@ int main (int argc, char *argv[])
 			 records * sizeof(output_data_t));
 	  outfile.close ();
 	}
+
+#if LONGTIME_MAG_TEST
+      char * path_end = strrchr( buf, '/');
+      *path_end=0;
+      write_EEPROM_dump(buf); // make new magnetic data permanent
+#endif
     }
 
   delete[] in_data;
