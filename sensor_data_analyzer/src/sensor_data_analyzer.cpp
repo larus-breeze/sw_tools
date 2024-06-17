@@ -51,6 +51,7 @@
 #include "magnetic_induction_report.h"
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
+#include "CAN_gateway.h"
 
 #ifdef _WIN32
 # pragma float_control(except, on)
@@ -352,4 +353,9 @@ void report_magnetic_calibration_has_changed (
 #else
   printf ("\n");
 #endif
+}
+
+bool CAN_gateway_poll(CANpacket&, unsigned int)
+{
+  return false; // presently just an empty stub
 }
