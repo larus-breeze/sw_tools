@@ -265,7 +265,7 @@ int main (int argc, char *argv[])
 		write_TCP_port( buffer.string, buffer.length);
 
 #if ENABLE_LINUX_CAN_INTERFACE
-	      CAN_output( (const output_data_t&) *(output_data+count));
+	      CAN_output( (const output_data_t&) *(output_data+count), true);
 #endif
 
 	      if (until <= std::chrono::steady_clock::now())
