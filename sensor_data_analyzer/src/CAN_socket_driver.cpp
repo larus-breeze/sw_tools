@@ -57,11 +57,13 @@ int CAN_socket_initialize(void)
   addr.can_family = AF_CAN;
   addr.can_ifindex = ifr.ifr_ifindex;
 
-  if (bind (CAN_socket, (struct sockaddr*) &addr, sizeof(addr)) < 0)
+  int result = bind (CAN_socket, (struct sockaddr*) &addr, sizeof(addr));
+  if( result  < 0)
     {
       perror ("CAN Bind");
       return 1;
     }
+  return 0;
 }
 
 bool CAN_socket_is_open( void)
