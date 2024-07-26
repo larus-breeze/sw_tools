@@ -76,7 +76,9 @@ double randn()
 int
 main (int argc, char *argv[])
 {
-  unsigned skiptime;
+  bool do_optimize = false;
+  unsigned start_count;
+  unsigned stop_count;
 
 #ifndef _WIN32
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
@@ -84,17 +86,22 @@ main (int argc, char *argv[])
   feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-  if (argc != 4)
+  if (argc == 2)
+    {
+      do_optimize = false;
+      stop_count = 1;
+    }
+  else if (argc != 4)
     {
       printf ("usage: %s infile.f37 count_start count_stop\n", argv[0]);
       return -1;
     }
-
-  unsigned start_count = atoi (argv[2]);
-  unsigned stop_count = atoi (argv[3]);
-
-  if ((start_count == 0) || (stop_count == 0))
-    return -1;
+  else
+    {
+      start_count = atoi (argv[2]);
+      stop_count = atoi (argv[3]);
+      do_optimize = true;
+    }
 
   output_data_t *output_data;
 
@@ -164,168 +171,170 @@ main (int argc, char *argv[])
   int delta_time;
   unsigned counter_10Hz = 10;
 
-  float tweaks[N_TWEAKS] = { 0.0f };
-
-  // run algorithms until test sequence starts
-  for (unsigned count = 1; count < start_count; ++count)
+  float tweaks[N_TWEAKS] =
+    { 0.0f };
+  if (do_optimize)
     {
-      output_data[count].m = in_data[count].m;
-      output_data[count].c = in_data[count].c;
-      organizer.on_new_pressure_data (output_data[count]);
-
-      if (have_GNSS_fix == false)
+      // run algorithms until test sequence starts
+      for (unsigned count = 1; count < start_count; ++count)
 	{
-	  if (output_data[count].c.sat_fix_type > 0)
+	  output_data[count].m = in_data[count].m;
+	  output_data[count].c = in_data[count].c;
+	  organizer.on_new_pressure_data (output_data[count]);
+
+	  if (have_GNSS_fix == false)
 	    {
-	      organizer.update_magnetic_induction_data (
-		  output_data[count].c.latitude,
-		  output_data[count].c.longitude);
-	      have_GNSS_fix = true;
-	    }
-	}
-
-      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
-	{
-	  delta_time = output_data[count].c.nano - nano;
-	  if (delta_time < 0)
-	    delta_time += 1000000000;
-	  nano = output_data[count].c.nano;
-
-	  organizer.update_GNSS_data (output_data[count].c);
-	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
-	}
-
-      organizer.update_every_10ms (output_data[count], tweaks);
-
-      --counter_10Hz;
-      if (counter_10Hz == 0)
-	{
-	  organizer.update_every_100ms (output_data[count]);
-	  counter_10Hz = 10;
-	}
-      organizer.report_data (output_data[count]);
-    }
-
-  double average_error = 0.0f;
-  unsigned error_count = 0;
-
-  organizer_t start_organizer = organizer;
-
-  // run algorithms through segment of interest
-  // to initialize the quality indicator
-  for (unsigned count = start_count; count < stop_count; ++count)
-    {
-      output_data[count].m = in_data[count].m;
-      output_data[count].c = in_data[count].c;
-      organizer.on_new_pressure_data (output_data[count]);
-
-      if (have_GNSS_fix == false)
-	{
-	  if (output_data[count].c.sat_fix_type > 0)
-	    {
-	      organizer.update_magnetic_induction_data (
-		  output_data[count].c.latitude,
-		  output_data[count].c.longitude);
-	      have_GNSS_fix = true;
-	    }
-	}
-
-      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
-	{
-	  delta_time = output_data[count].c.nano - nano;
-	  if (delta_time < 0)
-	    delta_time += 1000000000;
-	  nano = output_data[count].c.nano;
-
-	  organizer.update_GNSS_data (output_data[count].c);
-	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
-	}
-
-      organizer.update_every_10ms (output_data[count], tweaks);
-
-      --counter_10Hz;
-      if (counter_10Hz == 0)
-	{
-	  organizer.update_every_100ms (output_data[count]);
-	  counter_10Hz = 10;
-	}
-      organizer.report_data (output_data[count]);
-
-      average_error += output_data[count].gyro_correction_power;
-      ++error_count;
-    }
-
-  double reference_error = average_error / error_count;
-  printf ("%e\n", reference_error);
-
-  for (unsigned trial = 0; trial < N_TRIALS; ++trial)
-    {
-      for (unsigned try_this = 0; try_this < N_TWEAKS; ++try_this)
-	{
-	  organizer = start_organizer;
-
-	  float old_tweak = tweaks[try_this];
-	  tweaks[try_this] += ( randn () * TRIAL_STEPSIZE);
-	  average_error = 0.0;
-	  error_count = 0;
-
-	  // run algorithms through segment of interest
-	  for (unsigned count = start_count; count < stop_count; ++count)
-	    {
-	      output_data[count].m = in_data[count].m;
-	      output_data[count].c = in_data[count].c;
-	      organizer.on_new_pressure_data (output_data[count]);
-
-	      if (have_GNSS_fix == false)
+	      if (output_data[count].c.sat_fix_type > 0)
 		{
-		  if (output_data[count].c.sat_fix_type > 0)
+		  organizer.update_magnetic_induction_data (
+		      output_data[count].c.latitude,
+		      output_data[count].c.longitude);
+		  have_GNSS_fix = true;
+		}
+	    }
+
+	  if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	    {
+	      delta_time = output_data[count].c.nano - nano;
+	      if (delta_time < 0)
+		delta_time += 1000000000;
+	      nano = output_data[count].c.nano;
+
+	      organizer.update_GNSS_data (output_data[count].c);
+	      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	    }
+
+	  organizer.update_every_10ms (output_data[count], tweaks);
+
+	  --counter_10Hz;
+	  if (counter_10Hz == 0)
+	    {
+	      organizer.update_every_100ms (output_data[count]);
+	      counter_10Hz = 10;
+	    }
+	  organizer.report_data (output_data[count]);
+	}
+
+      double average_error = 0.0f;
+      unsigned error_count = 0;
+
+      organizer_t start_organizer = organizer;
+
+      // run algorithms through segment of interest
+      // to initialize the quality indicator
+      for (unsigned count = start_count; count < stop_count; ++count)
+	{
+	  output_data[count].m = in_data[count].m;
+	  output_data[count].c = in_data[count].c;
+	  organizer.on_new_pressure_data (output_data[count]);
+
+	  if (have_GNSS_fix == false)
+	    {
+	      if (output_data[count].c.sat_fix_type > 0)
+		{
+		  organizer.update_magnetic_induction_data (
+		      output_data[count].c.latitude,
+		      output_data[count].c.longitude);
+		  have_GNSS_fix = true;
+		}
+	    }
+
+	  if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	    {
+	      delta_time = output_data[count].c.nano - nano;
+	      if (delta_time < 0)
+		delta_time += 1000000000;
+	      nano = output_data[count].c.nano;
+
+	      organizer.update_GNSS_data (output_data[count].c);
+	      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	    }
+
+	  organizer.update_every_10ms (output_data[count], tweaks);
+
+	  --counter_10Hz;
+	  if (counter_10Hz == 0)
+	    {
+	      organizer.update_every_100ms (output_data[count]);
+	      counter_10Hz = 10;
+	    }
+	  organizer.report_data (output_data[count]);
+
+	  average_error += output_data[count].gyro_correction_power;
+	  ++error_count;
+	}
+
+      double reference_error = average_error / error_count;
+      printf ("%e\n", reference_error);
+
+      for (unsigned trial = 0; trial < N_TRIALS; ++trial)
+	{
+	  for (unsigned try_this = 0; try_this < N_TWEAKS; ++try_this)
+	    {
+	      organizer = start_organizer;
+
+	      float old_tweak = tweaks[try_this];
+	      tweaks[try_this] += (randn () * TRIAL_STEPSIZE);
+	      average_error = 0.0;
+	      error_count = 0;
+
+	      // run algorithms through segment of interest
+	      for (unsigned count = start_count; count < stop_count; ++count)
+		{
+		  output_data[count].m = in_data[count].m;
+		  output_data[count].c = in_data[count].c;
+		  organizer.on_new_pressure_data (output_data[count]);
+
+		  if (have_GNSS_fix == false)
 		    {
-		      organizer.update_magnetic_induction_data (
-			  output_data[count].c.latitude,
-			  output_data[count].c.longitude);
-		      have_GNSS_fix = true;
+		      if (output_data[count].c.sat_fix_type > 0)
+			{
+			  organizer.update_magnetic_induction_data (
+			      output_data[count].c.latitude,
+			      output_data[count].c.longitude);
+			  have_GNSS_fix = true;
+			}
 		    }
+
+		  if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+		    {
+		      delta_time = output_data[count].c.nano - nano;
+		      if (delta_time < 0)
+			delta_time += 1000000000;
+		      nano = output_data[count].c.nano;
+
+		      organizer.update_GNSS_data (output_data[count].c);
+		      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+		    }
+
+		  organizer.update_every_10ms (output_data[count], tweaks);
+
+		  --counter_10Hz;
+		  if (counter_10Hz == 0)
+		    {
+		      organizer.update_every_100ms (output_data[count]);
+		      counter_10Hz = 10;
+		    }
+		  organizer.report_data (output_data[count]);
+
+		  average_error += output_data[count].gyro_correction_power;
+		  ++error_count;
 		}
 
-	      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	      double observed_error = average_error / error_count;
+	      if (observed_error < reference_error)
 		{
-		  delta_time = output_data[count].c.nano - nano;
-		  if (delta_time < 0)
-		    delta_time += 1000000000;
-		  nano = output_data[count].c.nano;
+		  reference_error = observed_error;
+		  printf ("%e ", reference_error);
+		  for (unsigned i = 0; i < N_TWEAKS; ++i)
+		    printf ("%f ", tweaks[i]);
 
-		  organizer.update_GNSS_data (output_data[count].c);
-		  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+		  printf ("\n");
 		}
-
-	      organizer.update_every_10ms (output_data[count], tweaks);
-
-	      --counter_10Hz;
-	      if (counter_10Hz == 0)
-		{
-		  organizer.update_every_100ms (output_data[count]);
-		  counter_10Hz = 10;
-		}
-	      organizer.report_data (output_data[count]);
-
-	      average_error += output_data[count].gyro_correction_power;
-	      ++error_count;
+	      else
+		tweaks[try_this] = old_tweak; // keep old setting
 	    }
-
-	  double observed_error = average_error / error_count;
-	  if (observed_error < reference_error)
-	    {
-	      reference_error = observed_error;
-	      printf ("%e ", reference_error);
-	      for (unsigned i = 0; i < N_TWEAKS; ++i)
-		printf ("%f ", tweaks[i]);
-
-	      printf ("\n");
-	    }
-	  else
-	    tweaks[try_this] = old_tweak; // keep old setting
 	}
-    }
 
 #if 0 // many parameters optimized
   for (unsigned trial = 0; trial < 100; ++trial)
@@ -393,49 +402,49 @@ main (int argc, char *argv[])
 	  printf ("\r");
 	}
 #endif
-    // run algorithms a last time through segment of interest with all parameters optimized
-    for (unsigned count = start_count; count < stop_count; ++count)
-      {
-	output_data[count].m = in_data[count].m;
-	output_data[count].c = in_data[count].c;
-	organizer.on_new_pressure_data (output_data[count]);
+      // run algorithms a last time through segment of interest with all parameters optimized
+      for (unsigned count = start_count; count < stop_count; ++count)
+	{
+	  output_data[count].m = in_data[count].m;
+	  output_data[count].c = in_data[count].c;
+	  organizer.on_new_pressure_data (output_data[count]);
 
-	if (have_GNSS_fix == false)
-	  {
-	    if (output_data[count].c.sat_fix_type > 0)
-	      {
-		organizer.update_magnetic_induction_data (
-		    output_data[count].c.latitude,
-		    output_data[count].c.longitude);
-		have_GNSS_fix = true;
-	      }
-	  }
+	  if (have_GNSS_fix == false)
+	    {
+	      if (output_data[count].c.sat_fix_type > 0)
+		{
+		  organizer.update_magnetic_induction_data (
+		      output_data[count].c.latitude,
+		      output_data[count].c.longitude);
+		  have_GNSS_fix = true;
+		}
+	    }
 
-	if (output_data[count].c.nano != nano) // 10 Hz by GNSS
-	  {
-	    delta_time = output_data[count].c.nano - nano;
-	    if (delta_time < 0)
-	      delta_time += 1000000000;
-	    nano = output_data[count].c.nano;
+	  if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	    {
+	      delta_time = output_data[count].c.nano - nano;
+	      if (delta_time < 0)
+		delta_time += 1000000000;
+	      nano = output_data[count].c.nano;
 
-	    organizer.update_GNSS_data (output_data[count].c);
-	    counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
-	  }
+	      organizer.update_GNSS_data (output_data[count].c);
+	      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	    }
 
-	organizer.update_every_10ms (output_data[count], tweaks);
+	  organizer.update_every_10ms (output_data[count], tweaks);
 
-	--counter_10Hz;
-	if (counter_10Hz == 0)
-	  {
-	    organizer.update_every_100ms (output_data[count]);
-	    counter_10Hz = 10;
-	  }
-	organizer.report_data (output_data[count]);
+	  --counter_10Hz;
+	  if (counter_10Hz == 0)
+	    {
+	      organizer.update_every_100ms (output_data[count]);
+	      counter_10Hz = 10;
+	    }
+	  organizer.report_data (output_data[count]);
 
-	average_error += output_data[count].gyro_correction_power;
-	++error_count;
-      }
-
+	  average_error += output_data[count].gyro_correction_power;
+	  ++error_count;
+	}
+    }
   // run algorithms until end of data
   for (unsigned count = stop_count; count < records; ++count)
     {
@@ -485,11 +494,11 @@ main (int argc, char *argv[])
 
   ofstream outfile (buf, ios::out | ios::binary | ios::ate);
   if (outfile.is_open ())
-      {
-	outfile.write ((const char*) output_data,
-		       records * sizeof(output_data_t));
-	outfile.close ();
-      }
+    {
+      outfile.write ((const char*) output_data,
+		     records * sizeof(output_data_t));
+      outfile.close ();
+    }
 
   char *path_end = strrchr (buf, '/');
   *path_end = 0;
