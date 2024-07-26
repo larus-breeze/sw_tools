@@ -60,7 +60,7 @@ using namespace std;
 uint32_t system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
-#define N_TWEAKS 9
+#define N_TWEAKS 6
 #define N_TRIALS 50
 #define TRIAL_STEPSIZE 0.003
 
@@ -261,6 +261,7 @@ main (int argc, char *argv[])
 	  organizer.report_data (output_data[count]);
 
 	  average_error += output_data[count].gyro_correction_power;
+//	  average_error += output_data[count].magnetic_disturbance;
 	  ++error_count;
 	}
 
@@ -318,6 +319,7 @@ main (int argc, char *argv[])
 		  organizer.report_data (output_data[count]);
 
 		  average_error += output_data[count].gyro_correction_power;
+	//	  average_error += output_data[count].magnetic_disturbance;
 		  ++error_count;
 		}
 
