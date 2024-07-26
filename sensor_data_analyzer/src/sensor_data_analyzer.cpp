@@ -52,42 +52,49 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
-
-#ifdef _WIN32
-# pragma float_control(except, on)
-#endif
+#include "math.h"
+#include "random"
 
 using namespace std;
-
-auto awake_time(std::chrono::steady_clock::time_point stime) {
-  using std::chrono::operator""ms;
-  return stime + 100ms;
-}
 
 uint32_t system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
-int main (int argc, char *argv[])
+#define N_TWEAKS 15
+
+double randn()
+{
+  // Standard normal random variable
+  static std::default_random_engine rn_generator = std::default_random_engine();
+  static std::normal_distribution<double> standard_normal_dist{0.0, 1.0};
+
+  return standard_normal_dist(rn_generator);
+}
+
+int
+main (int argc, char *argv[])
 {
   unsigned skiptime;
 
 #ifndef _WIN32
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
   // don't enable UNDERFLOW as this can happen regularly when filter outputs decay
-  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-  if ((argc != 2) && (argc != 3))
+  if (argc != 4)
     {
-      printf ("usage: %s infile.f50 [skiptime for TCP version]\n", argv[0]);
+      printf ("usage: %s infile.f37 count_start count_stop\n", argv[0]);
       return -1;
     }
 
-  bool realtime_with_TCP_server = argc == 3;
-  if( realtime_with_TCP_server)
-    skiptime = 10 * atoi( argv[2]); // at 10Hz output rate
+  unsigned start_count = atoi (argv[2]);
+  unsigned stop_count = atoi (argv[3]);
 
-  output_data_t * output_data;
+  if ((start_count == 0) || (stop_count == 0))
+    return -1;
+
+  output_data_t *output_data;
 
   ifstream file (argv[1], ios::in | ios::binary | ios::ate);
   if (!file.is_open ())
@@ -96,69 +103,39 @@ int main (int argc, char *argv[])
       return -1;
     }
 
-  if( realtime_with_TCP_server)
-    {
-      realtime_with_TCP_server = open_TCP_port();
-      realtime_with_TCP_server = accept_TCP_client(true);
-    }
-
-#ifndef _WIN32
-  if( realtime_with_TCP_server)
-    {
-      open_USB_serial ( (char*)"/dev/ttyUSB0");
-#if ENABLE_LINUX_CAN_INTERFACE
-      CAN_socket_initialize();
-#endif
-    }
-#endif
-
   // cut off file extension
   char basename[100];
-  strcpy( basename, argv[1]);
-#if NEW_DATA_FORMAT
-  char * dot = strchr( basename, '.');
-  if( (dot != 0) && (dot[1] == 'f')) // old format: filename.f37.EEPROM new: filename.EEPROM
-    *dot=0; // cut off .f37 extension
-#endif
+  strcpy (basename, argv[1]);
+  char *dot = strchr (basename, '.');
+  if ((dot != 0) && (dot[1] == 'f')) // old format: filename.f37.EEPROM new: filename.EEPROM
+    *dot = 0; // cut off .f37 extension
 
-#if LONGTIME_MAG_TEST
 // try to read "config.EEPROM" first
   char config_path[200];
-  strcpy( config_path, basename);
-  char * slash_location = strrchr( config_path, '/');
+  strcpy (config_path, basename);
+  char *slash_location = strrchr (config_path, '/');
   *slash_location = 0;
-  strcat( config_path, "/config");
+  strcat (config_path, "/config");
 
-  if( read_EEPROM_file ( config_path) == EXIT_FAILURE)
+  if (read_EEPROM_file (config_path) == EXIT_FAILURE)
     {
       // try to read the EEPROM file accompanying the data file
-      if( read_EEPROM_file ( basename) == EXIT_FAILURE)
+      if (read_EEPROM_file (basename) == EXIT_FAILURE)
 	{
 	  cout << "Unable to open EEPROM file";
 	  return -1;
 	}
     }
-#else // read the accompanying *.EEPROM only
-  if( read_EEPROM_file ( basename) == EXIT_FAILURE)
-    {
-      cout << "Unable to open EEPROM file";
-      return -1;
-    }
-#endif
-  ensure_EEPROM_parameter_integrity();
+
+  ensure_EEPROM_parameter_integrity ();
 
   organizer_t organizer;
 
   streampos size = file.tellg ();
-#if NEW_DATA_FORMAT
-  observations_type  * in_data;
+
+  observations_type *in_data;
   in_data = (observations_type*) new char[size];
   unsigned records = size / sizeof(observations_type);
-#else
-  old_input_data_t  * in_data;
-  in_data = (old_input_data_t*) new char[size];
-  unsigned records = size / sizeof(old_input_data_t);
-#endif
 
   size_t outfile_size = records * sizeof(output_data_t);
   output_data = (output_data_t*) new char[outfile_size];
@@ -169,144 +146,233 @@ int main (int argc, char *argv[])
 
 // ************************************************************
 
-  organizer.initialize_before_measurement();
-
-#if NEW_DATA_FORMAT
-
-  int32_t nano = 0;
-  unsigned fife_hertz_counter = 0;
-  int delta_time;
+  organizer.initialize_before_measurement ();
 
   output_data[0].m = in_data[0].m;
   output_data[0].c = in_data[0].c;
-#else
-  new_format_from_old( output_data[0].m, output_data[0].c, in_data[0]);
-#endif
 
-  organizer.initialize_after_first_measurement( output_data[0]);
-  organizer.update_GNSS_data(output_data[0].c);
-  organizer.update_magnetic_induction_data( output_data[0].c.latitude, output_data[0].c.longitude);
-
-  unsigned counter_10Hz = 10;
-  auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
+  organizer.initialize_after_first_measurement (output_data[0]);
+  organizer.update_GNSS_data (output_data[0].c);
+  organizer.update_magnetic_induction_data (output_data[0].c.latitude,
+					    output_data[0].c.longitude);
 
   bool have_GNSS_fix = false;
 
-  unsigned count;
-  for ( count = 1; count < records; ++count)
+  int32_t nano = 0;
+  int delta_time;
+  unsigned counter_10Hz = 10;
+
+  float tweaks[N_TWEAKS] =
+    { 0.0f };
+
+  // run algorithms until test sequence starts
+  for (unsigned count = 1; count < start_count; ++count)
     {
-#if NEW_DATA_FORMAT
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
-#else
-      new_format_from_old( output_data[count].m, output_data[count].c, in_data[count]);
-#endif
-      organizer.on_new_pressure_data( output_data[count]);
+      organizer.on_new_pressure_data (output_data[count]);
 
-      if( have_GNSS_fix == false)
+      if (have_GNSS_fix == false)
 	{
-	  if( output_data[count].c.sat_fix_type > 0)
+	  if (output_data[count].c.sat_fix_type > 0)
 	    {
-	      organizer.update_magnetic_induction_data( output_data[count].c.latitude, output_data[count].c.longitude);
+	      organizer.update_magnetic_induction_data (
+		  output_data[count].c.latitude,
+		  output_data[count].c.longitude);
 	      have_GNSS_fix = true;
 	    }
 	}
 
-#if NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
 	  delta_time = output_data[count].c.nano - nano;
-	  if( delta_time < 0 )
+	  if (delta_time < 0)
 	    delta_time += 1000000000;
 	  nano = output_data[count].c.nano;
 
-	  organizer.update_GNSS_data(output_data[count].c);
+	  organizer.update_GNSS_data (output_data[count].c);
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
-#else
-      if( count % 10 ==0)
-	{
-	  organizer.update_GNSS_data(output_data[count].c);
-	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
-	}
-#endif
 
-      organizer.update_every_10ms( output_data[count]);
+      organizer.update_every_10ms (output_data[count], tweaks);
 
       --counter_10Hz;
-      if(counter_10Hz == 0)
+      if (counter_10Hz == 0)
 	{
-	  organizer.update_every_100ms( output_data[count]);
+	  organizer.update_every_100ms (output_data[count]);
 	  counter_10Hz = 10;
 	}
+      organizer.report_data (output_data[count]);
+    }
 
-      organizer.report_data(output_data[count]);
+  double magnetic_error = 0.0f;
+  unsigned magnetic_error_count = 0;
 
-      if( count % 10 == 0)
+  // run algorithms through segment of interest
+  // to initialize the quality indicator
+  for (unsigned count = start_count; count < stop_count; ++count)
+    {
+      output_data[count].m = in_data[count].m;
+      output_data[count].c = in_data[count].c;
+      organizer.on_new_pressure_data (output_data[count]);
+
+      if (have_GNSS_fix == false)
 	{
-	  if( realtime_with_TCP_server)
+	  if (output_data[count].c.sat_fix_type > 0)
 	    {
-	      if( skiptime > 0)
-		{
-		  --skiptime;
-		  continue;
-		}
-
-	      string_buffer_t buffer;
-	      buffer.length=0;
-
-	      if( count % 40 == 0)
-		format_NMEA_string_fast( (const output_data_t&) *(output_data+count), buffer, true);
-
-	      if( count % 160 == 0)
-		format_NMEA_string_slow( (const output_data_t&) *(output_data+count), buffer);
-
-	      if( buffer.length != 0)
-		write_TCP_port( buffer.string, buffer.length);
-
-#if ENABLE_LINUX_CAN_INTERFACE
-	      CAN_output( (const output_data_t&) *(output_data+count), true);
-#endif
-
-	      if (until <= std::chrono::steady_clock::now())
-			    until = awake_time(std::chrono::steady_clock::now());
-	      std::this_thread::sleep_until(until);
-	      until = awake_time(until);
+	      organizer.update_magnetic_induction_data (
+		  output_data[count].c.latitude,
+		  output_data[count].c.longitude);
+	      have_GNSS_fix = true;
 	    }
 	}
 
+      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	{
+	  delta_time = output_data[count].c.nano - nano;
+	  if (delta_time < 0)
+	    delta_time += 1000000000;
+	  nano = output_data[count].c.nano;
+
+	  organizer.update_GNSS_data (output_data[count].c);
+	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	}
+
+      organizer.update_every_10ms (output_data[count], tweaks);
+
+      --counter_10Hz;
+      if (counter_10Hz == 0)
+	{
+	  organizer.update_every_100ms (output_data[count]);
+	  counter_10Hz = 10;
+	}
+      organizer.report_data (output_data[count]);
+
+      magnetic_error += output_data[count].magnetic_disturbance;
+      ++magnetic_error_count;
     }
-  printf ("%d records\n", count);
+
+  double reference_error = magnetic_error / magnetic_error_count;
+
+  for (unsigned trial = 0; trial < 100; ++trial)
+    {
+      for (unsigned try_this = 0; try_this < N_TWEAKS; ++try_this)
+	{
+	  float old_tweak = tweaks[try_this];
+	  tweaks[try_this] = randn () * 0.01f;
+	  magnetic_error = 0.0;
+	  magnetic_error_count = 0;
+
+	  // run algorithms through segment of interest
+	  for (unsigned count = start_count; count < stop_count; ++count)
+	    {
+	      output_data[count].m = in_data[count].m;
+	      output_data[count].c = in_data[count].c;
+	      organizer.on_new_pressure_data (output_data[count]);
+
+	      if (have_GNSS_fix == false)
+		{
+		  if (output_data[count].c.sat_fix_type > 0)
+		    {
+		      organizer.update_magnetic_induction_data (
+			  output_data[count].c.latitude,
+			  output_data[count].c.longitude);
+		      have_GNSS_fix = true;
+		    }
+		}
+
+	      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+		{
+		  delta_time = output_data[count].c.nano - nano;
+		  if (delta_time < 0)
+		    delta_time += 1000000000;
+		  nano = output_data[count].c.nano;
+
+		  organizer.update_GNSS_data (output_data[count].c);
+		  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+		}
+
+	      organizer.update_every_10ms (output_data[count], tweaks);
+
+	      --counter_10Hz;
+	      if (counter_10Hz == 0)
+		{
+		  organizer.update_every_100ms (output_data[count]);
+		  counter_10Hz = 10;
+		}
+	      organizer.report_data (output_data[count]);
+
+	      magnetic_error += output_data[count].magnetic_disturbance;
+	      ++magnetic_error_count;
+	    }
+
+	  double observed_error = magnetic_error / magnetic_error_count;
+	  if (observed_error < reference_error)
+	    reference_error = observed_error;
+	  else
+	    tweaks[try_this] = old_tweak; // keep old setting
+
+	  printf ("%f ", reference_error);
+	  for (unsigned i = 0; i < N_TWEAKS; ++i)
+	    printf ("%f ", tweaks[i]);
+
+	  printf ("\r");
+	}
+    }
+
+  // run algorithms until end of data
+  for (unsigned count = stop_count; count < records; ++count)
+    {
+      output_data[count].m = in_data[count].m;
+      output_data[count].c = in_data[count].c;
+      organizer.on_new_pressure_data (output_data[count]);
+
+      if (have_GNSS_fix == false)
+	{
+	  if (output_data[count].c.sat_fix_type > 0)
+	    {
+	      organizer.update_magnetic_induction_data (
+		  output_data[count].c.latitude,
+		  output_data[count].c.longitude);
+	      have_GNSS_fix = true;
+	    }
+	}
+
+      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	{
+	  delta_time = output_data[count].c.nano - nano;
+	  if (delta_time < 0)
+	    delta_time += 1000000000;
+	  nano = output_data[count].c.nano;
+
+	  organizer.update_GNSS_data (output_data[count].c);
+	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	}
+
+      organizer.update_every_10ms (output_data[count], tweaks);
+
+      --counter_10Hz;
+      if (counter_10Hz == 0)
+	{
+	  organizer.update_every_100ms (output_data[count]);
+	  counter_10Hz = 10;
+	}
+      organizer.report_data (output_data[count]);
+    }
 
   char buf[200];
   char ascii_len[10];
-  sprintf (ascii_len, "%d", (int)(sizeof(output_data_t) / sizeof(float)));
+  sprintf (ascii_len, "%d", (int) (sizeof(output_data_t) / sizeof(float)));
   strcpy (buf, argv[1]);
   strcat (buf, ".f");
   strcat (buf, ascii_len);
 
-  if( ! realtime_with_TCP_server)
-    {
-      ofstream outfile (buf, ios::out | ios::binary | ios::ate);
-      if (outfile.is_open ())
-	{
-	  outfile.write ((const char*) output_data,
-			 records * sizeof(output_data_t));
-	  outfile.close ();
-	}
-
-#if LONGTIME_MAG_TEST
-      char * path_end = strrchr( buf, '/');
-      *path_end=0;
-      write_EEPROM_dump(buf); // make new magnetic data permanent
-#endif
-    }
+  char *path_end = strrchr (buf, '/');
+  *path_end = 0;
+  write_EEPROM_dump (buf); // make new magnetic data permanent
 
   delete[] in_data;
   delete[] output_data;
-
-  if( realtime_with_TCP_server)
-    close_TCP_port();
 }
 
 void report_magnetic_calibration_has_changed (
