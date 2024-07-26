@@ -61,6 +61,8 @@ uint32_t system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
 #define N_TWEAKS 9
+#define N_TRIALS 50
+#define TRIAL_STEPSIZE 0.003
 
 double randn()
 {
@@ -207,6 +209,8 @@ main (int argc, char *argv[])
   double average_error = 0.0f;
   unsigned error_count = 0;
 
+  organizer_t start_organizer = organizer;
+
   // run algorithms through segment of interest
   // to initialize the quality indicator
   for (unsigned count = start_count; count < stop_count; ++count)
@@ -252,14 +256,16 @@ main (int argc, char *argv[])
     }
 
   double reference_error = average_error / error_count;
-  printf ("%f\n", reference_error);
+  printf ("%e\n", reference_error);
 
-  for (unsigned trial = 0; trial < 20; ++trial)
+  for (unsigned trial = 0; trial < N_TRIALS; ++trial)
     {
       for (unsigned try_this = 0; try_this < N_TWEAKS; ++try_this)
 	{
+	  organizer = start_organizer;
+
 	  float old_tweak = tweaks[try_this];
-	  tweaks[try_this] += ( randn () * 0.005f);
+	  tweaks[try_this] += ( randn () * TRIAL_STEPSIZE);
 	  average_error = 0.0;
 	  error_count = 0;
 
@@ -310,15 +316,14 @@ main (int argc, char *argv[])
 	  if (observed_error < reference_error)
 	    {
 	      reference_error = observed_error;
-	      printf ("%f ", reference_error);
+	      printf ("%e ", reference_error);
 	      for (unsigned i = 0; i < N_TWEAKS; ++i)
 		printf ("%f ", tweaks[i]);
 
-	      printf ("\r");
+	      printf ("\n");
 	    }
 	  else
 	    tweaks[try_this] = old_tweak; // keep old setting
-
 	}
     }
 
