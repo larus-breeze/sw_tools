@@ -60,7 +60,7 @@ using namespace std;
 uint32_t system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
-#define N_TWEAKS 15
+#define N_TWEAKS 9
 
 double randn()
 {
@@ -162,8 +162,7 @@ main (int argc, char *argv[])
   int delta_time;
   unsigned counter_10Hz = 10;
 
-  float tweaks[N_TWEAKS] =
-    { 0.0f };
+  float tweaks[N_TWEAKS] = { 0.0f };
 
   // run algorithms until test sequence starts
   for (unsigned count = 1; count < start_count; ++count)
@@ -205,8 +204,8 @@ main (int argc, char *argv[])
       organizer.report_data (output_data[count]);
     }
 
-  double magnetic_error = 0.0f;
-  unsigned magnetic_error_count = 0;
+  double average_error = 0.0f;
+  unsigned error_count = 0;
 
   // run algorithms through segment of interest
   // to initialize the quality indicator
@@ -248,20 +247,21 @@ main (int argc, char *argv[])
 	}
       organizer.report_data (output_data[count]);
 
-      magnetic_error += output_data[count].magnetic_disturbance;
-      ++magnetic_error_count;
+      average_error += output_data[count].gyro_correction_power;
+      ++error_count;
     }
 
-  double reference_error = magnetic_error / magnetic_error_count;
+  double reference_error = average_error / error_count;
+  printf ("%f\n", reference_error);
 
-  for (unsigned trial = 0; trial < 100; ++trial)
+  for (unsigned trial = 0; trial < 20; ++trial)
     {
       for (unsigned try_this = 0; try_this < N_TWEAKS; ++try_this)
 	{
 	  float old_tweak = tweaks[try_this];
-	  tweaks[try_this] = randn () * 0.01f;
-	  magnetic_error = 0.0;
-	  magnetic_error_count = 0;
+	  tweaks[try_this] += ( randn () * 0.005f);
+	  average_error = 0.0;
+	  error_count = 0;
 
 	  // run algorithms through segment of interest
 	  for (unsigned count = start_count; count < stop_count; ++count)
@@ -302,11 +302,80 @@ main (int argc, char *argv[])
 		}
 	      organizer.report_data (output_data[count]);
 
-	      magnetic_error += output_data[count].magnetic_disturbance;
-	      ++magnetic_error_count;
+	      average_error += output_data[count].gyro_correction_power;
+	      ++error_count;
 	    }
 
-	  double observed_error = magnetic_error / magnetic_error_count;
+	  double observed_error = average_error / error_count;
+	  if (observed_error < reference_error)
+	    {
+	      reference_error = observed_error;
+	      printf ("%f ", reference_error);
+	      for (unsigned i = 0; i < N_TWEAKS; ++i)
+		printf ("%f ", tweaks[i]);
+
+	      printf ("\r");
+	    }
+	  else
+	    tweaks[try_this] = old_tweak; // keep old setting
+
+	}
+    }
+
+#if 0 // many parameters optimized
+  for (unsigned trial = 0; trial < 100; ++trial)
+    {
+      for (unsigned try_this = 0; try_this < N_TWEAKS; ++try_this)
+	{
+	  float old_tweak = tweaks[try_this];
+	  tweaks[try_this] += randn () * 0.01f;
+	  average_error = 0.0;
+	  error_count = 0;
+
+	  // run algorithms through segment of interest
+	  for (unsigned count = start_count; count < stop_count; ++count)
+	    {
+	      output_data[count].m = in_data[count].m;
+	      output_data[count].c = in_data[count].c;
+	      organizer.on_new_pressure_data (output_data[count]);
+
+	      if (have_GNSS_fix == false)
+		{
+		  if (output_data[count].c.sat_fix_type > 0)
+		    {
+		      organizer.update_magnetic_induction_data (
+			  output_data[count].c.latitude,
+			  output_data[count].c.longitude);
+		      have_GNSS_fix = true;
+		    }
+		}
+
+	      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+		{
+		  delta_time = output_data[count].c.nano - nano;
+		  if (delta_time < 0)
+		    delta_time += 1000000000;
+		  nano = output_data[count].c.nano;
+
+		  organizer.update_GNSS_data (output_data[count].c);
+		  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+		}
+
+	      organizer.update_every_10ms (output_data[count], tweaks);
+
+	      --counter_10Hz;
+	      if (counter_10Hz == 0)
+		{
+		  organizer.update_every_100ms (output_data[count]);
+		  counter_10Hz = 10;
+		}
+	      organizer.report_data (output_data[count]);
+
+	      average_error += output_data[count].magnetic_disturbance;
+	      ++error_count;
+	    }
+
+	  double observed_error = average_error / error_count;
 	  if (observed_error < reference_error)
 	    reference_error = observed_error;
 	  else
@@ -318,7 +387,49 @@ main (int argc, char *argv[])
 
 	  printf ("\r");
 	}
-    }
+#endif
+    // run algorithms a last time through segment of interest with all parameters optimized
+    for (unsigned count = start_count; count < stop_count; ++count)
+      {
+	output_data[count].m = in_data[count].m;
+	output_data[count].c = in_data[count].c;
+	organizer.on_new_pressure_data (output_data[count]);
+
+	if (have_GNSS_fix == false)
+	  {
+	    if (output_data[count].c.sat_fix_type > 0)
+	      {
+		organizer.update_magnetic_induction_data (
+		    output_data[count].c.latitude,
+		    output_data[count].c.longitude);
+		have_GNSS_fix = true;
+	      }
+	  }
+
+	if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+	  {
+	    delta_time = output_data[count].c.nano - nano;
+	    if (delta_time < 0)
+	      delta_time += 1000000000;
+	    nano = output_data[count].c.nano;
+
+	    organizer.update_GNSS_data (output_data[count].c);
+	    counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
+	  }
+
+	organizer.update_every_10ms (output_data[count], tweaks);
+
+	--counter_10Hz;
+	if (counter_10Hz == 0)
+	  {
+	    organizer.update_every_100ms (output_data[count]);
+	    counter_10Hz = 10;
+	  }
+	organizer.report_data (output_data[count]);
+
+	average_error += output_data[count].gyro_correction_power;
+	++error_count;
+      }
 
   // run algorithms until end of data
   for (unsigned count = stop_count; count < records; ++count)
@@ -367,6 +478,14 @@ main (int argc, char *argv[])
   strcat (buf, ".f");
   strcat (buf, ascii_len);
 
+  ofstream outfile (buf, ios::out | ios::binary | ios::ate);
+  if (outfile.is_open ())
+      {
+	outfile.write ((const char*) output_data,
+		       records * sizeof(output_data_t));
+	outfile.close ();
+      }
+
   char *path_end = strrchr (buf, '/');
   *path_end = 0;
   write_EEPROM_dump (buf); // make new magnetic data permanent
@@ -378,6 +497,8 @@ main (int argc, char *argv[])
 void report_magnetic_calibration_has_changed (
     magnetic_induction_report_t *p_magnetic_induction_report, char type)
 {
+  return;
+
   magnetic_induction_report_t magnetic_induction_report = *p_magnetic_induction_report;
   char buffer[50];
   char *next = buffer;
