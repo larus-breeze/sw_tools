@@ -41,6 +41,8 @@ char* itoa( int value, char* result, int base=10);
 #include "float.h"
 #include "assert.h"
 
+#define TARGET_MACHINE PC
+
 #define ftype float
 typedef float float32_t;
 
