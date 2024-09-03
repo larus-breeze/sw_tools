@@ -48,6 +48,7 @@
 #include "USB_serial.h"
 #include "system_state.h"
 #include "magnetic_induction_report.h"
+#include "compass_calibrator_3D.h"
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
@@ -137,7 +138,8 @@ main (int argc, char *argv[])
 
   ensure_EEPROM_parameter_integrity ();
 
-  organizer_t organizer;
+  compass_calibrator_3D::compass_calibrator_3D_data_t calibration_matrix_data;
+  organizer_t organizer( &calibration_matrix_data);
 
   streampos size = file.tellg ();
 
