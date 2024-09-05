@@ -64,6 +64,16 @@ uint32_t system_state // fake system state here in lack of hardware
 #define N_TRIALS 50
 #define TRIAL_STEPSIZE 0.003
 
+// we use a global object here
+// as this is required in the multi-threading environment of the sensor
+compass_calibrator_3D_t compass_calibrator_3D;
+
+// here in the SIL we do the calculation synchronously
+void trigger_compass_calibrator_3D_calculation( void)
+{
+  compass_calibrator_3D.calculate();
+}
+
 double randn()
 {
   // Standard normal random variable
@@ -138,8 +148,7 @@ main (int argc, char *argv[])
 
   ensure_EEPROM_parameter_integrity ();
 
-  compass_calibrator_3D::compass_calibrator_3D_data_t calibration_matrix_data;
-  organizer_t organizer( &calibration_matrix_data);
+  organizer_t organizer;
 
   streampos size = file.tellg ();
 
@@ -205,7 +214,7 @@ main (int argc, char *argv[])
 	      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	    }
 
-	  organizer.update_every_10ms (output_data[count], tweaks);
+	  organizer.update_every_10ms (output_data[count]);
 
 	  --counter_10Hz;
 	  if (counter_10Hz == 0)
@@ -251,7 +260,7 @@ main (int argc, char *argv[])
 	      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	    }
 
-	  organizer.update_every_10ms (output_data[count], tweaks);
+	  organizer.update_every_10ms (output_data[count]);
 
 	  --counter_10Hz;
 	  if (counter_10Hz == 0)
@@ -309,7 +318,7 @@ main (int argc, char *argv[])
 		      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 		    }
 
-		  organizer.update_every_10ms (output_data[count], tweaks);
+		  organizer.update_every_10ms (output_data[count]);
 
 		  --counter_10Hz;
 		  if (counter_10Hz == 0)
@@ -434,7 +443,7 @@ main (int argc, char *argv[])
 	      counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	    }
 
-	  organizer.update_every_10ms (output_data[count], tweaks);
+	  organizer.update_every_10ms (output_data[count]);
 
 	  --counter_10Hz;
 	  if (counter_10Hz == 0)
@@ -477,7 +486,7 @@ main (int argc, char *argv[])
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
-      organizer.update_every_10ms (output_data[count], tweaks);
+      organizer.update_every_10ms (output_data[count]);
 
       --counter_10Hz;
       if (counter_10Hz == 0)
