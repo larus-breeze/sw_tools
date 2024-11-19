@@ -1,0 +1,4 @@
+# Python module requirements of this project.
+# use pip install -r requirements.txt to automatically install all the modules
+pandas~=2.2.2
+plotly~=5.22.0
