@@ -1,7 +1,8 @@
 #!/user/bin/env python3
 import sys
 import time
-
+import time
+import traceback, sys
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,105 +11,130 @@ from larus_to_df import Larus2Df
 from plot_essentials import *
 
 # PyQT6 imports
-from PyQt6.QtWidgets import QMainWindow, QApplication, QPushButton, QFileDialog, QRadioButton, QProgressBar, QLabel, QMessageBox, QDialog, QSplashScreen
-from PyQt6.QtCore import pyqtSlot, Qt
-from PyQt6.QtGui import QMovie, QPixmap
-from PyQt6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
 
+
+class WorkerSignals(QObject):
+    finished = pyqtSignal()
+    error = pyqtSignal(tuple)
+    result = pyqtSignal(object)
+    progress = pyqtSignal(int)
+
+class Worker(QRunnable):
+    def __init__(self, fn, *args, **kwargs):
+        super().__init__()
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+        self.kwargs['progress_callback'] = self.signals.progress
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exc_type, value = sys.exc_info()[:2]
+            self.signals.error.emit((exc_type, value, traceback.format_exc()))
+        finally:
+            self.signals.finished.emit()
 
 
 class Window(QWidget):
     df = None
+    fileButtonHandle = None
     magButtonHandle = None
     ahrsButtonHandle = None
     csvButtonHandle = None
     sourceFile = None
+    waitingWidget = None
+    worker = None
+    threadpool = QThreadPool()
 
     def __init__(self):
         super().__init__()
-        fileBtn = QPushButton(text="Open file dialog", parent=self)
-        fileBtn.clicked.connect(self.open_dialog)
+        file_button = QPushButton(text="Open file dialog", parent=self)
+        self.fileButtonHandle = file_button
+        file_button.clicked.connect(self.open_dialog)
 
-        magBtn = QPushButton(text="Plot Mag", parent=self)
-        self.magButtonHandle = magBtn
-        magBtn.clicked.connect(self.plot_mag)
-        magBtn.setEnabled(False)
+        mag_button = QPushButton(text="Plot Mag", parent=self)
+        self.magButtonHandle = mag_button
+        mag_button.clicked.connect(self.plot_mag)
+        mag_button.setEnabled(False)
 
-        ahrsBtn = QPushButton(text="Plot AHRS", parent=self)
-        self.ahrsButtonHandle = ahrsBtn
-        ahrsBtn.clicked.connect(self.plot_ahrs)
-        ahrsBtn.setEnabled(False)
+        ahrs_button = QPushButton(text="Plot AHRS", parent=self)
+        self.ahrsButtonHandle = ahrs_button
+        ahrs_button.clicked.connect(self.plot_ahrs)
+        ahrs_button.setEnabled(False)
 
-        csvBtn = QPushButton(text="Export csv", parent=self)
-        self.csvButtonHandle = csvBtn
-        csvBtn.clicked.connect(self.export_csv)
-        csvBtn.setEnabled(False)
+        csv_button = QPushButton(text="Export csv", parent=self)
+        self.csvButtonHandle = csv_button
+        csv_button.clicked.connect(self.export_csv)
+        csv_button.setEnabled(False)
 
-
-        fileBtn.setFixedSize(200, 60)
-        magBtn.setFixedSize(200, 60)
-        ahrsBtn.setFixedSize(200, 60)
-        csvBtn.setFixedSize(200, 60)
+        file_button.setFixedSize(200, 60)
+        mag_button.setFixedSize(200, 60)
+        ahrs_button.setFixedSize(200, 60)
+        csv_button.setFixedSize(200, 60)
         layout = QVBoxLayout()
-        layout.addWidget(fileBtn)
-        layout.addWidget(magBtn)
-        layout.addWidget(ahrsBtn)
-        layout.addWidget(csvBtn)
+        layout.addWidget(file_button)
+        layout.addWidget(mag_button)
+        layout.addWidget(ahrs_button)
+        layout.addWidget(csv_button)
         self.setLayout(layout)
 
+    def disable_buttons(self):
+        self.fileButtonHandle.setEnabled(False)
+        self.magButtonHandle.setEnabled(False)
+        self.ahrsButtonHandle.setEnabled(False)
+        self.csvButtonHandle.setEnabled(False)
+
+    def enable_buttons(self):
+        self.fileButtonHandle.setEnabled(True)
+        self.magButtonHandle.setEnabled(True)
+        self.ahrsButtonHandle.setEnabled(True)
+        self.csvButtonHandle.setEnabled(True)
+
+    def execute_this_fn(self, progress_callback):
+        self.df = Larus2Df(self.sourceFile).get_df()
+
+    def thread_complete(self):
+        self.waitingWidget.close()
+        self.enable_buttons()
+  
     @pyqtSlot()
     def open_dialog(self):
         file = QFileDialog.getOpenFileName(
             self,
             "Select a Larus File",
-            "${HOME}",
+            QDir.homePath(),
             "Larus raw File (*.f37);; Larus Processed File (*.f114)",
         )
         self.sourceFile = file[0]
 
+        self.waitingWidget = QDialog()
+        self.waitingWidget.setFixedSize(200,100)
+        self.waitingWidget.setWindowTitle("Loading data")
 
+        # Create a label with a message
+        label = QLabel("Please wait...")
 
-        #w1 = QMessageBox.information(self, 'Loading data', 'Please wait ... ',
-        #w1 = QMessageBox()
-        #w1 = QProgressBar()
-        #w1.information(self,'Loading data', "Please wait ...")
+        dialog_layout = QVBoxLayout()
+        dialog_layout.addWidget(label)
+        self.waitingWidget.setLayout(dialog_layout)
+        self.waitingWidget.setDisabled(True)
 
+        worker = Worker(self.execute_this_fn)  # Any other args, kwargs are passed to the run function
+        worker.signals.result.connect(print)
+        worker.signals.finished.connect(self.thread_complete)
+        self.threadpool.start(worker)
 
-        #img = QPixmap("Loading.gif")
-        #w1 = QSplashScreen(img)
-        #w1.setWindowTitle("Loading data")
-
-
-
-
-        #w1.setValue(50)
-
-
-
-        #w1.setWindowFlags(w1.windowFlags())# | Qt.WindowStaysOnTopHint)
-
-        #w1.setEnabled(True)
-        #w1.setAutoFillBackground(True)
-        #w1.setDetailedText('Hier jetzt?')
-        #w1.setText('Please wait ...')
-        #w1.setWindowTitle('Loading data')
-        #w1.exec()
-        #w1.open()
-        #w1.show()
-        # QApplication::processEvents()
-        #TODO: load in thread and signal finish here.
-
-
-
-
-
-
-        self.df = Larus2Df(self.sourceFile).get_df()
-        #w1.close()
+        self.disable_buttons()
+        self.waitingWidget.show()
         print("Loaded file {} in dataframe".format(self.sourceFile))
-        self.magButtonHandle.setEnabled(True)
-        self.ahrsButtonHandle.setEnabled(True)
-        self.csvButtonHandle.setEnabled(True)
 
     @pyqtSlot()
     def plot_mag(self):
@@ -130,11 +156,6 @@ class Window(QWidget):
         )
         print(destination_file[0])
         self.df.to_csv(destination_file[0])
-
-
-
-
-
 
 
 if __name__ == "__main__":
