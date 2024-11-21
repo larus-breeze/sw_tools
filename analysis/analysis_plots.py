@@ -1,21 +1,10 @@
 #!/user/bin/env python3
-import sys
-import time
-import time
 import traceback, sys
-import matplotlib.pyplot as plt
-import numpy as np
-
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
 
 from larus_to_df import Larus2Df
 from plot_essentials import *
-
-# PyQT6 imports
-from PyQt6.QtWidgets import *
-from PyQt6.QtCore import *
-from PyQt6.QtGui import *
-
-
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
@@ -56,34 +45,32 @@ class Window(QWidget):
 
     def __init__(self):
         super().__init__()
-        file_button = QPushButton(text="Open file dialog", parent=self)
-        self.fileButtonHandle = file_button
-        file_button.clicked.connect(self.open_dialog)
+        self.setWindowTitle("Larus Analyzer")
 
-        mag_button = QPushButton(text="Plot Mag", parent=self)
-        self.magButtonHandle = mag_button
-        mag_button.clicked.connect(self.plot_mag)
-        mag_button.setEnabled(False)
+        self.fileButtonHandle = QPushButton(text="Open Larus Logfile", parent=self)
+        self.fileButtonHandle.clicked.connect(self.open_dialog)
 
-        ahrs_button = QPushButton(text="Plot AHRS", parent=self)
-        self.ahrsButtonHandle = ahrs_button
-        ahrs_button.clicked.connect(self.plot_ahrs)
-        ahrs_button.setEnabled(False)
+        self.magButtonHandle = QPushButton(text="Plot Mag", parent=self)
+        self.magButtonHandle.clicked.connect(self.plot_mag)
+        self.magButtonHandle.setEnabled(False)
 
-        csv_button = QPushButton(text="Export csv", parent=self)
-        self.csvButtonHandle = csv_button
-        csv_button.clicked.connect(self.export_csv)
-        csv_button.setEnabled(False)
+        self.ahrsButtonHandle = QPushButton(text="Plot AHRS", parent=self)
+        self.ahrsButtonHandle.clicked.connect(self.plot_ahrs)
+        self.ahrsButtonHandle.setEnabled(False)
 
-        file_button.setFixedSize(200, 60)
-        mag_button.setFixedSize(200, 60)
-        ahrs_button.setFixedSize(200, 60)
-        csv_button.setFixedSize(200, 60)
+        self.csvButtonHandle = QPushButton(text="Export csv", parent=self)
+        self.csvButtonHandle.clicked.connect(self.export_csv)
+        self.csvButtonHandle.setEnabled(False)
+
+        self.fileButtonHandle.setFixedSize(300, 60)
+        self.magButtonHandle.setFixedSize(300, 60)
+        self.ahrsButtonHandle.setFixedSize(300, 60)
+        self.csvButtonHandle.setFixedSize(300, 60)
         layout = QVBoxLayout()
-        layout.addWidget(file_button)
-        layout.addWidget(mag_button)
-        layout.addWidget(ahrs_button)
-        layout.addWidget(csv_button)
+        layout.addWidget(self.fileButtonHandle)
+        layout.addWidget(self.magButtonHandle)
+        layout.addWidget(self.ahrsButtonHandle)
+        layout.addWidget(self.csvButtonHandle)
         self.setLayout(layout)
 
     def disable_buttons(self):
@@ -104,7 +91,7 @@ class Window(QWidget):
     def thread_complete(self):
         self.waitingWidget.close()
         self.enable_buttons()
-  
+
     @pyqtSlot()
     def open_dialog(self):
         file = QFileDialog.getOpenFileName(
