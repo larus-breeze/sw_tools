@@ -25,3 +25,25 @@ which contains the raw measurement values and the calculated values (AHRS, WIND,
 ![Induction in earth system plot](example_plots/induction_earth_zoom.svg)
 ![Induction in earth system plot](example_plots/wind.svg)
 
+
+### Create binaries for Linux and Windows
+- Cd into analysis directory
+- Create virtual python environment via ```python3 -m virtualenv myvenv```
+- Activate myvenv with 
+  - Linux: ```source myvenv/bin/activate``` 
+  - Windows: ```.\myvenv/Scripts/activate.ps1```
+- Install dependencies with pip install -r requirements.txt
+- Create binary with pyinstaller analysis_plots.py
+
+- TODO Distribution:  
+  - Linux appimage  https://python-appimage.readthedocs.io/en/latest/   https://docs.appimage.org/packaging-guide/manual.html
+  - Windows installer: https://nsis.sourceforge.io/Main_Page
+- Test on Ubuntu 24.10, 22.04,  Windows 11
+
+
+## Wishlist
+- Plot for GNSS Quality and Signal Losses  D-GNSS and GNSS
+
+
+
+

@@ -5,8 +5,8 @@ import pandas as pd
 import os
 import sys
 
-# Class to import a Larus data logfile into a pandas dataframe.
-class ProcessLarus2Df:
+# Class to load a binary larus logfile into a pandas dataframe.  Converts *.f37 files into *.f114 files.
+class Larus2Df:
     df = None
     file = None
     def __init__(self, file):
@@ -51,5 +51,5 @@ class ProcessLarus2Df:
 
 
 if __name__ == "__main__":
-    df = ProcessLarus2Df('240520_091630.f37')
+    df = Larus2Df('240520_091630.f37')
     print(df.get_df().columns)

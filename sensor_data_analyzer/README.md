@@ -59,7 +59,9 @@ The Doxygen-generated documentation of the simulator can be found [here](https:/
 
 
 ### How to use on Windows
-The MiniGW linker requires to link this lib  -lws2_32  
+- w64devkit recommended for compiling within Eclipse
+- The MiniGW linker requires to link this lib  -lws2_32  
+- In system_configuration.h  set #define _WIN32 1 
 
 ## Links
 Supported binary data formats are defined here: [Formats](../analysis/dataformats.py)
