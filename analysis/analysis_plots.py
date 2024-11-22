@@ -1,10 +1,13 @@
 #!/user/bin/env python3
 import traceback, sys
+
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 
-from larus_to_df import Larus2Df
+from larus_to_df import Larus2Df, check_if_larus_file
 from plot_essentials import *
+
+
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
@@ -33,12 +36,14 @@ class Worker(QRunnable):
 
 
 class Window(QWidget):
+    app = None
     df = None
     fileButtonHandle = None
     magButtonHandle = None
     ahrsButtonHandle = None
     csvButtonHandle = None
     sourceFile = None
+    destinationCsvFile = None
     waitingWidget = None
     worker = None
     threadpool = QThreadPool()
@@ -73,6 +78,23 @@ class Window(QWidget):
         layout.addWidget(self.csvButtonHandle)
         self.setLayout(layout)
 
+        self.location_on_screen()
+
+    def location_on_screen(self):
+        pass
+        #app = QApplication.instance()
+
+        #x = self.layoutDirection()
+        #print(x)
+        #widget = self.geometry()
+        #x = screen.width() - widget.width()
+        #y = screen.height() - widget.height()
+        #x = 500
+        #y = 500
+        #self.move(self.pos().x() + 100,self.pos().y() + 100)
+
+
+
     def disable_buttons(self):
         self.fileButtonHandle.setEnabled(False)
         self.magButtonHandle.setEnabled(False)
@@ -85,8 +107,13 @@ class Window(QWidget):
         self.ahrsButtonHandle.setEnabled(True)
         self.csvButtonHandle.setEnabled(True)
 
-    def execute_this_fn(self, progress_callback):
+    def execute_open_data(self, progress_callback):
         self.df = Larus2Df(self.sourceFile).get_df()
+        print("Loaded file {} in dataframe".format(self.sourceFile))
+
+    def execute_export_csv(self, progress_callback):
+        self.df.to_csv(self.destinationCsvFile)
+        print("Stored csv file {}".format(self.destinationCsvFile))
 
     def thread_complete(self):
         self.waitingWidget.close()
@@ -100,38 +127,33 @@ class Window(QWidget):
             QDir.homePath(),
             "Larus raw File (*.f37);; Larus Processed File (*.f114)",
         )
-        self.sourceFile = file[0]
+        if check_if_larus_file(file[0]):
+            self.sourceFile = file[0]
+            self.waitingWidget = QDialog()  #QSplashScreen() #Splash displayed on wrong monitor
+            self.waitingWidget.setFixedSize(200,80)
+            self.waitingWidget.setWindowTitle("Loading data")
 
-        self.waitingWidget = QDialog()
-        self.waitingWidget.setFixedSize(200,100)
-        self.waitingWidget.setWindowTitle("Loading data")
+            # Create a label with a message
+            label = QLabel("Please wait...")
 
-        # Create a label with a message
-        label = QLabel("Please wait...")
+            dialog_layout = QVBoxLayout()
+            dialog_layout.addWidget(label)
+            self.waitingWidget.setLayout(dialog_layout)
 
-        dialog_layout = QVBoxLayout()
-        dialog_layout.addWidget(label)
-        self.waitingWidget.setLayout(dialog_layout)
-        self.waitingWidget.setDisabled(True)
+            worker = Worker(self.execute_open_data)  # Any other args, kwargs are passed to the run function
+            worker.signals.result.connect(print)
+            worker.signals.finished.connect(self.thread_complete)
+            self.threadpool.start(worker)
 
-        worker = Worker(self.execute_this_fn)  # Any other args, kwargs are passed to the run function
-        worker.signals.result.connect(print)
-        worker.signals.finished.connect(self.thread_complete)
-        self.threadpool.start(worker)
+            self.disable_buttons()
+            self.waitingWidget.show()
 
-        self.disable_buttons()
-        self.waitingWidget.show()
-        print("Loaded file {} in dataframe".format(self.sourceFile))
 
     @pyqtSlot()
     def plot_mag(self):
-        if self.df is not None:
-            print(self.df)
         plot_mag(self.df)
 
     def plot_ahrs(self):
-        if self.df is not None:
-            print(self.df)
         plot_wind(self.df)
 
     def export_csv(self):
@@ -139,14 +161,34 @@ class Window(QWidget):
             self,
             "Select a Larus File",
             "{}.csv".format(self.sourceFile),
-            "Larus Processed File (*.f114)",
+
         )
-        print(destination_file[0])
-        self.df.to_csv(destination_file[0])
+        self.destinationCsvFile = destination_file[0]
+        self.waitingWidget = QDialog()
+        self.waitingWidget.setFixedSize(200, 80)
+        self.waitingWidget.setWindowTitle("Saving data")
+
+        # Create a label with a message
+        label = QLabel("Please wait...")
+
+        dialog_layout = QVBoxLayout()
+        dialog_layout.addWidget(label)
+        self.waitingWidget.setLayout(dialog_layout)
+
+        worker = Worker(self.execute_export_csv)  # Any other args, kwargs are passed to the run function
+        worker.signals.result.connect(print)
+        worker.signals.finished.connect(self.thread_complete)
+        self.threadpool.start(worker)
+
+        self.disable_buttons()
+        self.waitingWidget.show()
+
+
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = Window()
     window.show()
+
     sys.exit(app.exec())

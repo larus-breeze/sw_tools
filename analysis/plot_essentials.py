@@ -5,7 +5,6 @@ from geopy.distance import great_circle
 
 def plot_mag(df):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
-    print(df.columns)
 
     nav_ind_abs = np.sqrt(
         np.square(df['nav ind mag N']) + np.square(df['nav ind mag E']) + np.square(df['nav ind mag D']))
@@ -145,10 +144,8 @@ def plot_vario(df):
     ax3.yaxis.label.set_color(p3[0].get_color())
     plt.show()
 
-
 if __name__ == "__main__":
     from larus_to_df import Larus2Df
-
     obj = Larus2Df('240520_091630.f37')
     data_frame = obj.get_df()
 
