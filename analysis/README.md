@@ -32,7 +32,7 @@ which contains the raw measurement values and the calculated values (AHRS, WIND,
 - Activate myvenv with 
   - Linux: ```source myvenv/bin/activate``` 
   - Windows: ```.\myvenv/Scripts/activate.ps1```
-- Install dependencies with pip install -r requirements.txt
+- Install dependencies with ```pip install -r requirements.txt```
 - Create binary with pyinstaller analysis_plots.py
 
 - TODO Distribution:  
