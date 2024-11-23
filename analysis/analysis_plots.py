@@ -41,6 +41,7 @@ class Window(QWidget):
     fileButtonHandle = None
     magButtonHandle = None
     ahrsButtonHandle = None
+    altitudeButtonHandle = None
     csvButtonHandle = None
     sourceFile = None
     destinationCsvFile = None
@@ -55,13 +56,17 @@ class Window(QWidget):
         self.fileButtonHandle = QPushButton(text="Open Larus Logfile", parent=self)
         self.fileButtonHandle.clicked.connect(self.open_dialog)
 
-        self.magButtonHandle = QPushButton(text="Plot Mag", parent=self)
+        self.magButtonHandle = QPushButton(text="Plot Magnetics", parent=self)
         self.magButtonHandle.clicked.connect(self.plot_mag)
         self.magButtonHandle.setEnabled(False)
 
         self.ahrsButtonHandle = QPushButton(text="Plot AHRS", parent=self)
         self.ahrsButtonHandle.clicked.connect(self.plot_ahrs)
         self.ahrsButtonHandle.setEnabled(False)
+
+        self.altitudeButtonHandle = QPushButton(text="Plot Altitude", parent=self)
+        self.altitudeButtonHandle.clicked.connect(self.plot_altitude)
+        self.altitudeButtonHandle.setEnabled(False)
 
         self.csvButtonHandle = QPushButton(text="Export csv", parent=self)
         self.csvButtonHandle.clicked.connect(self.export_csv)
@@ -70,41 +75,28 @@ class Window(QWidget):
         self.fileButtonHandle.setFixedSize(300, 60)
         self.magButtonHandle.setFixedSize(300, 60)
         self.ahrsButtonHandle.setFixedSize(300, 60)
+        self.altitudeButtonHandle.setFixedSize(300, 60)
         self.csvButtonHandle.setFixedSize(300, 60)
         layout = QVBoxLayout()
         layout.addWidget(self.fileButtonHandle)
         layout.addWidget(self.magButtonHandle)
         layout.addWidget(self.ahrsButtonHandle)
+        layout.addWidget(self.altitudeButtonHandle)
         layout.addWidget(self.csvButtonHandle)
         self.setLayout(layout)
-
-        self.location_on_screen()
-
-    def location_on_screen(self):
-        pass
-        #app = QApplication.instance()
-
-        #x = self.layoutDirection()
-        #print(x)
-        #widget = self.geometry()
-        #x = screen.width() - widget.width()
-        #y = screen.height() - widget.height()
-        #x = 500
-        #y = 500
-        #self.move(self.pos().x() + 100,self.pos().y() + 100)
-
-
 
     def disable_buttons(self):
         self.fileButtonHandle.setEnabled(False)
         self.magButtonHandle.setEnabled(False)
         self.ahrsButtonHandle.setEnabled(False)
+        self.altitudeButtonHandle.setEnabled(False)
         self.csvButtonHandle.setEnabled(False)
 
     def enable_buttons(self):
         self.fileButtonHandle.setEnabled(True)
         self.magButtonHandle.setEnabled(True)
         self.ahrsButtonHandle.setEnabled(True)
+        self.altitudeButtonHandle.setEnabled(True)
         self.csvButtonHandle.setEnabled(True)
 
     def execute_open_data(self, progress_callback):
@@ -151,10 +143,13 @@ class Window(QWidget):
 
     @pyqtSlot()
     def plot_mag(self):
-        plot_mag(self.df)
+        plot_mag(self.df, self.sourceFile)
 
     def plot_ahrs(self):
-        plot_wind(self.df)
+        plot_ahrs(self.df, self.sourceFile)
+
+    def plot_altitude(self):
+        plot_altitude_speed(self.df, self.sourceFile)
 
     def export_csv(self):
         destination_file = QFileDialog.getSaveFileName(
