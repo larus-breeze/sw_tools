@@ -36,6 +36,7 @@ class Worker(QRunnable):
 
 
 class Window(QWidget):
+    rootDir = None
     app = None
     df = None
     fileButtonHandle = None
@@ -113,14 +114,22 @@ class Window(QWidget):
 
     @pyqtSlot()
     def open_dialog(self):
-        file = QFileDialog.getOpenFileName(
+        if self.rootDir is None:
+            self.rootDir = QDir.homePath()
+
+        print("Root: {}".format(self.rootDir))
+        source_file = QFileDialog.getOpenFileName(
             self,
-            "Select a Larus File",
-            QDir.homePath(),
-            "Larus raw File (*.f37);; Larus Processed File (*.f114)",
+            caption="Select a Larus File",
+            directory=self.rootDir,
+            filter="Larus raw File (*.f37)",
         )
-        if check_if_larus_file(file[0]):
-            self.sourceFile = file[0]
+        # Set dir so that the file manager opens again here
+        print("Return value: {}".format(source_file))
+        self.rootDir = source_file[0].replace(os.path.basename(source_file[0]),"")
+
+        if check_if_larus_file(source_file[0]):
+            self.sourceFile = source_file[0]
             self.waitingWidget = QDialog()  #QSplashScreen() #Splash displayed on wrong monitor
             self.waitingWidget.setFixedSize(200,80)
             self.waitingWidget.setWindowTitle("Loading data")
