@@ -197,7 +197,6 @@ if __name__ == "__main__":
 
     data = Larus2Df(file).get_df()
 
-
     plot_ahrs(data, file)
     plot_mag(data, file)
     plot_altitude_speed(data, file)

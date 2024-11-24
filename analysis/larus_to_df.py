@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import sys
+import subprocess
 
 # Check if files has larus format file ending
 def check_if_larus_file(file):
@@ -45,9 +46,10 @@ class Larus2Df:
 
                 if not os.path.isfile(result_file):
                     if "linux" in sys.platform:
-                        os.system("{}/data_analyzer_commit_6598331_linux {}".format(os.getcwd(), file))
+                        subprocess.call(["{}/data_analyzer_commit_6598331_linux".format(os.getcwd()), file])
                     elif "win" in sys.platform:
-                        os.system("{}/data_analyzer_commit_6598331_windows.exe {}".format(os.getcwd(), file))
+                        subprocess.call(["{}/data_analyzer_commit_6598331_windows.exe".format(os.getcwd()), file])
+
                 file = result_file
                 self.dataformat = data_f114
                 self.datatype = 'PROCESSED_DATA'

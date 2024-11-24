@@ -41,9 +41,9 @@ which contains the raw measurement values and the calculated values (AHRS, WIND,
 - Test on Ubuntu 24.10, 22.04,  Windows 11
 
 
-## Wishlist
-- Plot for GNSS Quality and Signal Losses  D-GNSS and GNSS
+## Wishlist / TODOs
 
-
-
+- Add GNSS sat status and velocity error to ahrs plot. Plot for GNSS Quality and Signal Losses  D-GNSS and GNSS
+- Provide Functionality to only export a timeframe via csv
+- Float csv precision. 
 
