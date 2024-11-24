@@ -4,6 +4,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from geopy.distance import great_circle
+from sqlalchemy.sql import label
+from sympy.abc import alpha
+
 
 def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
@@ -126,8 +129,8 @@ def plot_ahrs(df, path = None):
     nick_deg = df['nick'] / 2 / np.pi * 360
     slip_deg = df['slip angle'] / 2 / np.pi * 360
 
-    # Plot the data:
-    figure, axis = plt.subplots(3, 1, sharex=True)
+    # Plot the data
+    figure, axis = plt.subplots(4, 1, sharex=True)
     title = "AHRS data \n {}".format(path)
     figure.suptitle(title, size="small" )
     plt.autoscale(enable=True, axis='y')
@@ -148,9 +151,44 @@ def plot_ahrs(df, path = None):
     axis[2,].plot(t, slip_deg.to_numpy(), "g", linewidth=0.5)
     axis[2,].legend(["slip angle"], loc="lower left")
     axis[2,].grid()
-    axis[2,].set_xlabel('t [minutes]')
     par1 = axis[2,].twinx()
+
+
+    # Plot GNSS status
+    host = axis[3,]
+    ax2 = axis[3,].twinx()
+    ax3 = axis[3,].twinx()
+
+    color1, color2, color3 = plt.cm.viridis([0, .5, .9])
+
+    df_sat_fix_type = df['sat fix type']
+
+    df_sat_fix_type.replace(0, '(0) no-fix', inplace=True)
+    df_sat_fix_type.replace(1, '(1) fix', inplace=True)
+    df_sat_fix_type.replace(3, '(3) head\ning-fix', inplace=True)
+    p1 = host.plot(t, df_sat_fix_type, color=color1, linewidth=0.5, label='Sat Fix Type', alpha=0.3)
+
+    p2 = ax2.plot(t, df['sat number'].to_numpy(), color=color2, linewidth=0.5, label='Satellites')
+    ax2.set_ylabel('Satellites', color=color2)
+    ax2.set_ylim(0, 50)
+
+    p3 = ax3.plot(t, df['speed acc'].to_numpy(), color=color3, linewidth=0.5, alpha=0.5, label='Speed accuracy [m/s]')
+    ax3.set_ylim(0, 0.5)
+
+    ax3.spines['right'].set_position(('outward', 60))
+    ax3.set_ylabel('Speed accuracy [m/s]', color=color3)
+
+    host.set_xlabel('t [minutes]')
+    host.legend(handles=p1 + p2 + p3, loc='lower left')
+
+
+
+    host.yaxis.label.set_color(p1[0].get_color())
+    ax2.yaxis.label.set_color(p2[0].get_color())
+    ax3.yaxis.label.set_color(p3[0].get_color())
+
     plt.show()
+
 
 
 def plot_altitude_speed(df, path = None):
@@ -198,7 +236,7 @@ if __name__ == "__main__":
     data = Larus2Df(file).get_df()
 
     plot_ahrs(data, file)
-    plot_mag(data, file)
-    plot_altitude_speed(data, file)
-    plot_wind(data, file)
-    plot_track(data, file)
+    #plot_mag(data, file)
+    #plot_altitude_speed(data, file)
+    #plot_wind(data, file)
+    #plot_track(data, file)
