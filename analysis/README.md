@@ -42,8 +42,5 @@ which contains the raw measurement values and the calculated values (AHRS, WIND,
 
 
 ## Wishlist / TODOs
-
-- Add GNSS sat status and velocity error to ahrs plot. Plot for GNSS Quality and Signal Losses  D-GNSS and GNSS
 - Provide Functionality to only export a timeframe via csv
-- Float csv precision. 
 
