@@ -1,12 +1,8 @@
 #!/user/bin/env python3
 import os
-
 import numpy as np
 import matplotlib.pyplot as plt
 from geopy.distance import great_circle
-from sqlalchemy.sql import label
-from sympy.abc import alpha
-
 
 def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
@@ -271,7 +267,6 @@ if __name__ == "__main__":
     file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
 
     data = Larus2Df(file).get_df()
-
     plot_gnss(data, file)
     plot_ahrs(data, file)
     plot_mag(data, file)
