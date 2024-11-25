@@ -126,18 +126,18 @@ def plot_ahrs(df, path = None):
 
     heading = df['yaw'] / 2 / np.pi * 360
     roll_deg = df['roll'] / 2 / np.pi * 360
-    nick_deg = df['nick'] / 2 / np.pi * 360
+    pitch_deg = df['pitch'] / 2 / np.pi * 360
     slip_deg = df['slip angle'] / 2 / np.pi * 360
 
     # Plot the data
-    figure, axis = plt.subplots(4, 1, sharex=True)
+    figure, axis = plt.subplots(3, 1, sharex=True)
     title = "AHRS data \n {}".format(path)
     figure.suptitle(title, size="small" )
     plt.autoscale(enable=True, axis='y')
 
-    # Plot nick
-    axis[0,].plot(t, nick_deg.to_numpy(), "b", linewidth=0.5)
-    axis[0,].legend(["nick angle"], loc="lower left")
+    # Plot pitch
+    axis[0,].plot(t, pitch_deg.to_numpy(), "b", linewidth=0.5)
+    axis[0,].legend(["pitch angle"], loc="lower left")
     axis[0,].grid()
     par1 = axis[0,].twinx()
 
@@ -153,42 +153,86 @@ def plot_ahrs(df, path = None):
     axis[2,].grid()
     par1 = axis[2,].twinx()
 
+    plt.show()
 
-    # Plot GNSS status
-    host = axis[3,]
-    ax2 = axis[3,].twinx()
-    ax3 = axis[3,].twinx()
+def plot_gnss(df, path = None):
+    # Prepare the data
+    t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
+
+    roll_deg = df['roll'] / 2 / np.pi * 360
+    pitch_deg = df['pitch'] / 2 / np.pi * 360
+
+    # Plot the data
+    figure, host = plt.subplots()
+    ax1 = host
+
+    title = "GNSS status \n {}".format(path)
+    figure.suptitle(title, size="small")
+    plt.autoscale(enable=True, axis='y')
+    ax1.grid()
+    ax1.set_xlabel('t [minutes]')
+
+    # Plot pitch
+    p1 = ax1.plot(t, pitch_deg.to_numpy(), "b", linewidth=0.5, alpha=0.5, label="pitch angle")
+    p2 = ax1.plot(t, roll_deg.to_numpy(), "r", linewidth=0.5, alpha=0.8, label="roll angle")
+    ax1.grid()
+    ax1.set_ylabel('deg [°]')
 
     color1, color2, color3 = plt.cm.viridis([0, .5, .9])
 
-    df_sat_fix_type = df['sat fix type']
-
-    df_sat_fix_type.replace(0, '(0) no-fix', inplace=True)
-    df_sat_fix_type.replace(1, '(1) fix', inplace=True)
-    df_sat_fix_type.replace(3, '(3) head\ning-fix', inplace=True)
-    p1 = host.plot(t, df_sat_fix_type, color=color1, linewidth=0.5, label='Sat Fix Type', alpha=0.3)
-
-    p2 = ax2.plot(t, df['sat number'].to_numpy(), color=color2, linewidth=0.5, label='Satellites')
+    # Plot number of satellites
+    ax2 = host.twinx()
+    p3 = ax2.plot(t, df['sat number'].to_numpy(), color=color2, linewidth=0.5, label='Satellites', alpha=0.5)
     ax2.set_ylabel('Satellites', color=color2)
-    ax2.set_ylim(0, 50)
-
-    p3 = ax3.plot(t, df['speed acc'].to_numpy(), color=color3, linewidth=0.5, alpha=0.5, label='Speed accuracy [m/s]')
-    ax3.set_ylim(0, 0.5)
-
-    ax3.spines['right'].set_position(('outward', 60))
-    ax3.set_ylabel('Speed accuracy [m/s]', color=color3)
-
-    host.set_xlabel('t [minutes]')
-    host.legend(handles=p1 + p2 + p3, loc='lower left')
+    ax2.set_ylim(0, 40)
 
 
+    # Plot GNSS status
+    ax3 = host.twinx()
 
-    host.yaxis.label.set_color(p1[0].get_color())
-    ax2.yaxis.label.set_color(p2[0].get_color())
-    ax3.yaxis.label.set_color(p3[0].get_color())
+    ax3.spines['right'].set_position(('outward', 60))  # Separate scale
+    df_sat_fix_type = df['sat fix type'] # 0(no-fix), 1(normal fix), 3(dgnss heading fix)
+    d_gnss_heading_info = ""
+    if 3 not in df_sat_fix_type.values:
+        # There is no gnss heading fix at all. So probably a single gnss version.
+        d_gnss_label = 'No GNSS Fix'
+        df_sat_fix_type = df_sat_fix_type.loc[df_sat_fix_type != 1]
+        t_sat_fix_type = (df_sat_fix_type.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
 
+        # Drop normal fixes
+        df_sat_fix_type.replace(0, 'x', inplace=True)
+        df_sat_fix_type.replace(3, 'x', inplace=True)
+
+    else:
+        longest_interval = 0
+        tick = 0
+        index = 0
+        minute = 0
+        for i in df_sat_fix_type:
+            index = index +1
+            if i != 3:
+                tick = tick + 1
+            else:
+                if tick > longest_interval:
+                    longest_interval = tick
+                    minute =  index / 100 / 60
+                tick = 0
+
+        if longest_interval > 0:
+            d_gnss_heading_info = "Longest DGNSS Heading Gap \n duration {}s \n position: {}m ".format(longest_interval / 100.0, round(minute,2))
+
+        # Drop d_gnss fixes (3)
+        d_gnss_label = 'No DGNSS Heading'
+        df_sat_fix_type = df_sat_fix_type.loc[df_sat_fix_type != 3]
+        t_sat_fix_type = (df_sat_fix_type.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
+        df_sat_fix_type.replace(0, 'x', inplace=True)
+        df_sat_fix_type.replace(1, 'x', inplace=True)
+
+    p4 = ax3.plot(t_sat_fix_type, df_sat_fix_type, color=color1, linewidth=0.0, label=d_gnss_label, alpha=0.3, marker='x')
+
+    host.legend(handles=p1 + p2 + p3 + p4, loc='lower right')
+    host.text(0, 40, d_gnss_heading_info, fontsize=10, bbox = dict(facecolor = 'white', alpha = 1))
     plt.show()
-
 
 
 def plot_altitude_speed(df, path = None):
@@ -222,21 +266,15 @@ def plot_altitude_speed(df, path = None):
 if __name__ == "__main__":
     from larus_to_df import Larus2Df
 
-    value = 'nick'
-    value = 'sat fix type f'
-    value = 'sat number'
-    value = 'sat fix type'
-    #value = 'ubatt'
-    #value = 'Magnetic Disturbance'
-
-
     file = os.getcwd() + '/240520_091630.f37'
     file = os.getcwd() + '/230430.f37'
+    file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
 
     data = Larus2Df(file).get_df()
 
+    plot_gnss(data, file)
     plot_ahrs(data, file)
-    #plot_mag(data, file)
-    #plot_altitude_speed(data, file)
-    #plot_wind(data, file)
-    #plot_track(data, file)
+    plot_mag(data, file)
+    plot_altitude_speed(data, file)
+    plot_wind(data, file)
+    plot_track(data, file)

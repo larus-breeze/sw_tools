@@ -43,6 +43,7 @@ class Window(QWidget):
     magButtonHandle = None
     ahrsButtonHandle = None
     altitudeButtonHandle = None
+    gnssButtonHandle = None
     csvButtonHandle = None
     sourceFile = None
     destinationCsvFile = None
@@ -69,6 +70,10 @@ class Window(QWidget):
         self.altitudeButtonHandle.clicked.connect(self.plot_altitude)
         self.altitudeButtonHandle.setEnabled(False)
 
+        self.gnssButtonHandle = QPushButton(text="Plot GNSS", parent=self)
+        self.gnssButtonHandle.clicked.connect(self.plot_gnss)
+        self.gnssButtonHandle.setEnabled(False)
+
         self.csvButtonHandle = QPushButton(text="Export csv", parent=self)
         self.csvButtonHandle.clicked.connect(self.export_csv)
         self.csvButtonHandle.setEnabled(False)
@@ -77,12 +82,14 @@ class Window(QWidget):
         self.magButtonHandle.setFixedSize(300, 60)
         self.ahrsButtonHandle.setFixedSize(300, 60)
         self.altitudeButtonHandle.setFixedSize(300, 60)
+        self.gnssButtonHandle.setFixedSize(300, 60)
         self.csvButtonHandle.setFixedSize(300, 60)
         layout = QVBoxLayout()
         layout.addWidget(self.fileButtonHandle)
         layout.addWidget(self.magButtonHandle)
         layout.addWidget(self.ahrsButtonHandle)
         layout.addWidget(self.altitudeButtonHandle)
+        layout.addWidget(self.gnssButtonHandle)
         layout.addWidget(self.csvButtonHandle)
         self.setLayout(layout)
 
@@ -91,6 +98,7 @@ class Window(QWidget):
         self.magButtonHandle.setEnabled(False)
         self.ahrsButtonHandle.setEnabled(False)
         self.altitudeButtonHandle.setEnabled(False)
+        self.gnssButtonHandle.setEnabled(False)
         self.csvButtonHandle.setEnabled(False)
 
     def enable_buttons(self):
@@ -98,6 +106,7 @@ class Window(QWidget):
         self.magButtonHandle.setEnabled(True)
         self.ahrsButtonHandle.setEnabled(True)
         self.altitudeButtonHandle.setEnabled(True)
+        self.gnssButtonHandle.setEnabled(True)
         self.csvButtonHandle.setEnabled(True)
 
     def execute_open_data(self, progress_callback):
@@ -159,6 +168,9 @@ class Window(QWidget):
 
     def plot_altitude(self):
         plot_altitude_speed(self.df, self.sourceFile)
+
+    def plot_gnss(self):
+        plot_gnss(self.df, self.sourceFile)
 
     def export_csv(self):
         destination_file = QFileDialog.getSaveFileName(
