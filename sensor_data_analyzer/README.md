@@ -58,6 +58,11 @@ The "3600" - argument means: Go for real-time processing, skip the first flight 
 The Doxygen-generated documentation of the simulator can be found [here](https://schaefer.eit.h-da.de/Larus_SIL/)
 
 
+### How to use on Windows
+- w64devkit recommended for compiling within Eclipse
+- The MiniGW linker requires to link this lib  -lws2_32  
+- In system_configuration.h  set #define _WIN32 1 
+
 ## Links
 Supported binary data formats are defined here: [Formats](../analysis/dataformats.py)
 

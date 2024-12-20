@@ -1,8 +1,12 @@
-*.f110
+*.f11*
+*.f37
+*.EEPROM
 *.pyc
+analysis/build
 sw_update/target
 sw_update/stm32f407_1m/target
 sw_update/stm32h743_1m/target
 .idea/*
 flight_player/.vscode/*
 *language.settings.xml
+.settings
