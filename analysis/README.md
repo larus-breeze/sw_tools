@@ -41,5 +41,14 @@ a problematic antenna installation.
 The following can be used to check if the TAS and altitude signal is plausible.
 ![TAS and Altitude](example_plots/altitude-tas.png)
 
+### Attitude Balance
+A histogram can be used to fine-tune the pitch and roll configuration angles and to analyze
+the pilots flying style. In a normal thermal gliding flight there shall be three main areas 
+which represent: Flying straight, circling left and circling right. Ideally the center spot 
+is at 0° roll and 0° pitch angle. The roll and pitch configuration parameters in the EEPROM 
+file can be modified to achieve this.
+![TAS and Altitude](example_plots/attitude.png)
+
+
 ## TODOs:
-- Add an info pop up widget and show:  github.com/larus-breeze and a program name 
+- TODO: add a plot to finetune the yaw / heading angle. But how?

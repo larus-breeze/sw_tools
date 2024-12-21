@@ -41,14 +41,18 @@ class Larus2Df:
                 eeprom_file_path = str(file).replace('.f37', '.EEPROM')
                 result_file = str(file) + '.f114'
 
+                if not os.path.isfile(file):
+                    raise Exception("There must be a {} file".format(eeprom_file_path))
+
                 if not os.path.isfile(eeprom_file_path):
                     raise Exception("There must be a {} file".format(eeprom_file_path))
 
-                if not os.path.isfile(result_file):
-                    if "linux" in sys.platform:
-                        subprocess.call(["{}/data_analyzer_commit_6598331_linux".format(os.getcwd()), file])
-                    elif "win" in sys.platform:
-                        subprocess.call(["{}/data_analyzer_commit_6598331_windows.exe".format(os.getcwd()), file])
+                if "linux" in sys.platform:
+                    subprocess.call(["{}/data_analyzer_commit_6598331_linux".format(os.getcwd()), file])
+                elif "win" in sys.platform:
+                    subprocess.call(["{}/data_analyzer_commit_6598331_windows.exe".format(os.getcwd()), file])
+                else:
+                    raise Exception("Platform not supported: {}".format(sys.platform))
 
                 file = result_file
                 self.dataformat = data_f114

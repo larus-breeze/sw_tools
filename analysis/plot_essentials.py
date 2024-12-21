@@ -2,6 +2,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from geopy.distance import great_circle
 
 def plot_mag(df, path = None):
@@ -112,7 +113,6 @@ def plot_wind(df, path = None):
     par1 = axis[1, 1].twinx()
     par1.plot(t, - df['pos DWN'].to_numpy(), "b--", alpha=1, linewidth=0.5)
     par1.legend(["pos UP"], loc="lower right")
-
     plt.show()
 
 
@@ -148,7 +148,6 @@ def plot_ahrs(df, path = None):
     axis[2,].legend(["slip angle"], loc="lower left")
     axis[2,].grid()
     par1 = axis[2,].twinx()
-
     plt.show()
 
 def plot_gnss(df, path = None):
@@ -256,7 +255,23 @@ def plot_altitude_speed(df, path = None):
     axis[1,].grid()
     axis[1,].set_xlabel('t [minutes]')
     par1 = axis[1,].twinx()
+    plt.show()
 
+
+def  plot_attitude_histogram(df, path = None):
+    # Plot the data
+    figure, axis = plt.subplots()
+    title = "Roll & Pitch Histogram \n {}".format(path)
+    figure.suptitle(title, size="small")
+    axis.grid()
+    axis.set_ylabel('nick angle [°]')
+    axis.set_xlabel('roll angle [°]')
+
+    x_data = df['roll'] / 2 / np.pi * 360
+    y_data = df['pitch'] / 2 / np.pi * 360
+
+    # We can increase the number of bins on each axis
+    axis.hist2d(x_data, y_data, bins=500, norm=colors.LogNorm())
     plt.show()
 
 if __name__ == "__main__":
@@ -267,6 +282,8 @@ if __name__ == "__main__":
     file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
 
     data = Larus2Df(file).get_df()
+
+    plot_attitude_histogram(data, file)
     plot_gnss(data, file)
     plot_ahrs(data, file)
     plot_mag(data, file)

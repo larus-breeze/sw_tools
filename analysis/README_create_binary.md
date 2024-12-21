@@ -15,7 +15,7 @@ https://github.com/larus-breeze/sw_algorithms_lib/ in a software loop.
 
 ## Wishlist / TODOs
 - Provide Functionality to only export a timeframe via csv
-- Sign application so that less false positiv virus warnings occur within windows
+- Sign application so that less false positive virus warnings occur within windows
 - Analysis plots for iOS/MAC
 - TODO Distribution:  
   - Linux appimage  https://python-appimage.readthedocs.io/en/latest/   https://docs.appimage.org/packaging-guide/manual.html
