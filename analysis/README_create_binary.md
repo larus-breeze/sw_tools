@@ -5,7 +5,7 @@
   - Linux: ```source myvenv/bin/activate``` 
   - Windows: ```.\myvenv/Scripts/activate.ps1```
 - Install dependencies with ```pip install -r requirements.txt```
-- Create binary with pyinstaller analysis_plots.py
+- Create binary with pyinstaller larus_analyzer.py
 
 # Create updates sensor_data_analyzer binaries
 The files data_analyzer_commit_*_[linux|windos.exe] are binaries from the 
