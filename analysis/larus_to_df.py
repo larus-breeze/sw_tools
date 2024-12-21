@@ -48,9 +48,9 @@ class Larus2Df:
                     raise Exception("There must be a {} file".format(eeprom_file_path))
 
                 if "linux" in sys.platform:
-                    subprocess.call(["{}/data_analyzer_commit_6598331_linux".format(os.getcwd()), file])
+                    subprocess.call(["{}/_internal/data_analyzer_commit_6598331_linux".format(os.getcwd()), file])
                 elif "win" in sys.platform:
-                    subprocess.call(["{}/data_analyzer_commit_6598331_windows.exe".format(os.getcwd()), file])
+                    subprocess.call(["{}/_internal/data_analyzer_commit_6598331_windows.exe".format(os.getcwd()), file])
                 else:
                     raise Exception("Platform not supported: {}".format(sys.platform))
 

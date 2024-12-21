@@ -218,7 +218,7 @@ class Window(QWidget):
         self.waitingWidget.setWindowTitle("Saving data")
 
         # Create a label with a message
-        label = QLabel("Please wait...")
+        label = QLabel("Please wait!\nthis will take \nsome minutes")
 
         dialog_layout = QVBoxLayout()
         dialog_layout.addWidget(label)
