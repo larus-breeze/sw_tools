@@ -41,10 +41,13 @@ class Window(QWidget):
     ahrsButtonHandle = None
     altitudeButtonHandle = None
     gnssButtonHandle = None
+    attitudeHistButtonHandle = None
     csvButtonHandle = None
+    infoButtonHandle = None
     sourceFile = None
     destinationCsvFile = None
     waitingWidget = None
+    aboutWidget = None
     worker = None
     threadpool = QThreadPool()
 
@@ -71,23 +74,37 @@ class Window(QWidget):
         self.gnssButtonHandle.clicked.connect(self.plot_gnss)
         self.gnssButtonHandle.setEnabled(False)
 
+        self.attitudeHistButtonHandle = QPushButton(text="Plot Attitude Histogram", parent=self)
+        self.attitudeHistButtonHandle.clicked.connect(self.plot_attitude_hist)
+        self.attitudeHistButtonHandle.setEnabled(False)
+
         self.csvButtonHandle = QPushButton(text="Export csv", parent=self)
         self.csvButtonHandle.clicked.connect(self.export_csv)
         self.csvButtonHandle.setEnabled(False)
+
+        self.infoButtonHandle = QPushButton(text="About", parent=self)
+        self.infoButtonHandle.clicked.connect(self.show_about_widget)
+        self.infoButtonHandle.setEnabled(True)
+
 
         self.fileButtonHandle.setFixedSize(300, 60)
         self.magButtonHandle.setFixedSize(300, 60)
         self.ahrsButtonHandle.setFixedSize(300, 60)
         self.altitudeButtonHandle.setFixedSize(300, 60)
         self.gnssButtonHandle.setFixedSize(300, 60)
+        self.attitudeHistButtonHandle.setFixedSize(300,60)
         self.csvButtonHandle.setFixedSize(300, 60)
+        self.infoButtonHandle.setFixedSize(300,60)
+
         layout = QVBoxLayout()
         layout.addWidget(self.fileButtonHandle)
         layout.addWidget(self.magButtonHandle)
         layout.addWidget(self.ahrsButtonHandle)
         layout.addWidget(self.altitudeButtonHandle)
         layout.addWidget(self.gnssButtonHandle)
+        layout.addWidget(self.attitudeHistButtonHandle)
         layout.addWidget(self.csvButtonHandle)
+        layout.addWidget(self.infoButtonHandle)
         self.setLayout(layout)
 
     def disable_buttons(self):
@@ -96,6 +113,7 @@ class Window(QWidget):
         self.ahrsButtonHandle.setEnabled(False)
         self.altitudeButtonHandle.setEnabled(False)
         self.gnssButtonHandle.setEnabled(False)
+        self.attitudeHistButtonHandle.setEnabled(False)
         self.csvButtonHandle.setEnabled(False)
 
     def enable_buttons(self):
@@ -104,6 +122,7 @@ class Window(QWidget):
         self.ahrsButtonHandle.setEnabled(True)
         self.altitudeButtonHandle.setEnabled(True)
         self.gnssButtonHandle.setEnabled(True)
+        self.attitudeHistButtonHandle.setEnabled(True)
         self.csvButtonHandle.setEnabled(True)
 
     def execute_open_data(self, progress_callback):
@@ -168,6 +187,23 @@ class Window(QWidget):
 
     def plot_gnss(self):
         plot_gnss(self.df, self.sourceFile)
+
+    def plot_attitude_hist(self):
+        plot_attitude_histogram(self.df, self.sourceFile)
+
+    def show_about_widget(self):
+        self.aboutWidget = QDialog()  # QSplashScreen() #Splash displayed on wrong monitor
+        self.aboutWidget.setFixedSize(250, 80)
+        self.aboutWidget.setWindowTitle("About")
+        # Create a label with a message
+        label = QLabel(
+            "Larus Analyzer \n Version 0.0.1 \n https://github.com/larus-breeze/"
+        )
+
+        dialog_layout = QVBoxLayout()
+        dialog_layout.addWidget(label)
+        self.aboutWidget.setLayout(dialog_layout)
+        self.aboutWidget.show()
 
     def export_csv(self):
         destination_file = QFileDialog.getSaveFileName(

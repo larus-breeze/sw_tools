@@ -258,10 +258,10 @@ def plot_altitude_speed(df, path = None):
     plt.show()
 
 
-def  plot_roll_pitch_hist(df, path = None):
+def  plot_attitude_histogram(df, path = None):
     # Plot the data
     figure, axis = plt.subplots()
-    title = "Roll & Pitch histogram \n {}".format(path)
+    title = "Roll & Pitch Histogram \n {}".format(path)
     figure.suptitle(title, size="small")
     axis.grid()
     axis.set_ylabel('nick angle [°]')
@@ -271,7 +271,7 @@ def  plot_roll_pitch_hist(df, path = None):
     y_data = df['pitch'] / 2 / np.pi * 360
 
     # We can increase the number of bins on each axis
-    axis.hist2d(x_data, y_data, bins=400, norm=colors.LogNorm())
+    axis.hist2d(x_data, y_data, bins=500, norm=colors.LogNorm())
     plt.show()
 
 if __name__ == "__main__":
@@ -283,7 +283,7 @@ if __name__ == "__main__":
 
     data = Larus2Df(file).get_df()
 
-    plot_roll_pitch_hist(data, file)
+    plot_attitude_histogram(data, file)
     plot_gnss(data, file)
     plot_ahrs(data, file)
     plot_mag(data, file)
