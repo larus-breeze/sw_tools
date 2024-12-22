@@ -1,8 +1,5 @@
 from datetime import date, time
-import numpy
-import pandas
-
-from dataformats import *
+from larus_data.larus_to_df import Larus2Df
 
 # This class provides access to the flight data. To realize this, dataframes from the Pandas 
 # project are used. The access is still supplemented by some comfort functions
@@ -24,34 +21,14 @@ class FlightData():
 
     def from_file(self, file_name):
         """Opens a Larus flight data file"""
-        if file_name.endswith('.f37'):
-            dataformat = data_f37
-        elif file_name.endswith('.f50'):
-            dataformat = data_f50
-        elif file_name.endswith('.f123'):
-            dataformat = data_f123
-        elif file_name.endswith('.f120'):
-            dataformat = data_f120
-        elif file_name.endswith('.f110'):
-            dataformat = data_f110
-        elif file_name.endswith('.f114'):
-            dataformat = data_f114
-        else:
-            raise NotImplementedError("Format not supported")
-
-        # Create a pandas dataframe
-        format = numpy.dtype(dataformat)
-        try:
-            data = numpy.fromfile(file_name, dtype=format, sep="")
-        except:
-            data = None
-
-        if data is None:
+        l2df = Larus2Df(file_name)
+        df = l2df.get_df()
+        if df is None:
             self.clear()
             raise ValueError
         else:
             # store references in class instance
-            self._df = pandas.DataFrame(data)
+            self._df = df
             self._last_idx = len(self._df.index) - 1
             self._idx = 0
             self._row = self._df.iloc[self._idx]

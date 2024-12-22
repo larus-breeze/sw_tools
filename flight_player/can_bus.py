@@ -44,7 +44,7 @@ class Can():
         # EULER ANGLES i16, i16, i16 roll nick yaw / 1/1000 rad
         self.can_send(0x0101,
                       to_i16(data['roll'] * 1000.0) +
-                      to_i16(data['nick '] * 1000.0) +
+                      to_i16(data['pitch'] * 1000.0) +
                       to_i16(data['yaw'] * 1000.0))
 
         # AIRSPEED tas, ias in km/h
@@ -117,7 +117,7 @@ class Can():
         self.can_send(0x10c,
                       to_i16(data['slip angle'] * 1000.0) +
                       to_i16(data['turn rate'] * 1000.0) +
-                      to_i16(data['nick angle'] * 1000.0))
+                      to_i16(data['pitch angle'] * 1000.0))
         
 
     def can_send(self, id: int, frame: bytes):

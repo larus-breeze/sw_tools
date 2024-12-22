@@ -1,8 +1,8 @@
 import sys, os
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from larus_data.larus_to_df import raw_data_formats, processed_data_formats
 from player import Player
-
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
@@ -57,9 +57,18 @@ class Window(QtWidgets.QMainWindow):
 
     def _open_file(self):
         """Opens the selected Larus Data File"""
+
+        larusFileFilter = "Larus files ("
+        for element in raw_data_formats:
+            larusFileFilter += "*{} ".format(element[0])
+        for element in processed_data_formats:
+            larusFileFilter += "*{} ".format(element[0])
+        larusFileFilter += ")"
+
         settings = QtCore.QSettings()
         fileName, x = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Open File", "", "Larus files (*.f110 *.f114)")
+            #self, "Open File", "", "Larus files (*.f110 *.f114)")
+            self, "Open File", "", larusFileFilter)
         if fileName != "":
             settings.setValue("fileName", fileName)
             self._player.open_file()
