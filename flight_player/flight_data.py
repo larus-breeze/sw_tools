@@ -21,7 +21,7 @@ class FlightData():
 
     def from_file(self, file_name):
         """Opens a Larus flight data file"""
-        l2df = Larus2Df(file_name)
+        l2df = Larus2Df(file_name, recalc=False)
         df = l2df.get_df()
         if df is None:
             self.clear()

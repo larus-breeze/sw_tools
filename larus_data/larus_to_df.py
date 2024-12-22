@@ -243,7 +243,7 @@ class Larus2Df:
     file = None
     datatype = None
     dataformat = None
-    def __init__(self, file):
+    def __init__(self, file, recalc=True):
         for file_format in processed_data_formats:
             if file.endswith(file_format[0]):
                 self.datatype = 'PROCESSED_DATA'
@@ -262,17 +262,21 @@ class Larus2Df:
                 result_file = str(file) + '.f114'
 
                 if not os.path.isfile(file):
-                    raise Exception("There must be a {} file".format(eeprom_file_path))
+                    raise Exception("File {} does not exist".format(file))
 
                 if not os.path.isfile(eeprom_file_path):
                     raise Exception("There must be a {} file".format(eeprom_file_path))
 
-                if "linux" in sys.platform:
-                    subprocess.call(["{}/_internal/data_analyzer_commit_6598331_linux".format(Path(__file__).parent.absolute()), file])
-                elif "win" in sys.platform:
-                    subprocess.call(["{}/_internal/data_analyzer_commit_6598331_windows.exe".format(Path(__file__).parent.absolute()), file])
+                if recalc is False and os.path.isfile(result_file):
+                    pass # Just use the existing result file and read it into the dataframe
+
                 else:
-                    raise Exception("Platform not supported: {}".format(sys.platform))
+                    if "linux" in sys.platform:
+                        subprocess.call(["{}/_internal/data_analyzer_commit_6598331_linux".format(Path(__file__).parent.absolute()), file])
+                    elif "win" in sys.platform:
+                        subprocess.call(["{}/_internal/data_analyzer_commit_6598331_windows.exe".format(Path(__file__).parent.absolute()), file])
+                    else:
+                        raise Exception("Platform not supported: {}".format(sys.platform))
 
                 file = result_file
                 self.dataformat = data_f114
