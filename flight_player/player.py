@@ -1,5 +1,4 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys, os
 
 from player_ui import Ui_Form
 from flight_data import FlightData
@@ -49,7 +48,7 @@ class Player(QtWidgets.QWidget):
         self.open_file()
 
     def start_flight_player(self):
-        """Play the larus fligth data"""
+        """Play the larus flight data"""
         self.timer.start(100)
         self.is_running = True
         self.blink = True
@@ -61,7 +60,7 @@ class Player(QtWidgets.QWidget):
         self.ui.lbBlink.setPixmap(self.no_led)
 
     def tick_100ms(self):
-        """This routine is call every 100ms and send the flight data through the canbaus channal"""
+        """This routine is call every 100ms and send the flight data through the canbus channel"""
         if self.file_open and self.is_running:
             self.data.tick()
             self.can.can_send_frames(self.data)
@@ -139,5 +138,5 @@ class Player(QtWidgets.QWidget):
             self.ui.lbFlightTimeA.setText(str(self.data.time()))
 
     def set_can_interface(self, interface):
-        """Select the can interface channal"""
+        """Select the can interface channel"""
         self.can.set_interface(interface)

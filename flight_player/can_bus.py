@@ -44,7 +44,7 @@ class Can():
         # EULER ANGLES i16, i16, i16 roll nick yaw / 1/1000 rad
         self.can_send(0x0101,
                       to_i16(data['roll'] * 1000.0) +
-                      to_i16(data['nick '] * 1000.0) +
+                      to_i16(data['pitch'] * 1000.0) +
                       to_i16(data['yaw'] * 1000.0))
 
         # AIRSPEED tas, ias in km/h
@@ -81,17 +81,17 @@ class Can():
                       to_i16((data['track GNSS'] * pi / 180)*1000.0) +
                       to_u16(data['speed GNSS'] * 3.6))
         
-        # GPS no sats & gps state
+        # GPS number of sats & gps state
         self.can_send(0x10a,
                       to_u8(data['sat number']) + 
                       to_u8(data['sat fix type']))
 
         # WIND wind 0.001 rad i16 km/h i16 avg wind 0.001 rad i16 km/h i16
         wind_direction = atan2(- data['wind E'], - data['wind N'])
-        if (wind_direction < 0.0):
+        if wind_direction < 0.0:
             wind_direction += 2 * pi
         av_wind_direction = atan2(- data['wind avg E'], - data['wind avg N'])
-        if (av_wind_direction < 0.0):
+        if av_wind_direction < 0.0:
             av_wind_direction += 2 * pi
 
         self.can_send(0x108,
@@ -100,13 +100,13 @@ class Can():
                       to_i16(av_wind_direction * 1000.0) +
                       to_i16(sqrt(data['wind avg E'] ** 2 + data['wind avg N'] ** 2) * 3.6))
 
-        # ATHMOSPHERE static pressure in Pa, air_density in g/m³
+        # ATMOSPHERE static pressure in Pa, air_density in g/m³
         self.can_send(0x109,
                       to_u32(data['Pressure-altitude']) +
                       to_u32(data['Air Density'] * 1000.0))
 
         # ACCELERATION g_load in mm/s², eff_vert_acc mm/s², vario_uncomp in mm/s,
-        #              circle_mode (0 straigt, 1 transition, 2 circling)
+        #              circle_mode (0 straight, 1 transition, 2 circling)
         self.can_send(0x10b,
                       to_i16(data['G_load'] * 1000.0) +
                       to_i16(data['acc vertical'] * -1000.0) +
@@ -117,7 +117,7 @@ class Can():
         self.can_send(0x10c,
                       to_i16(data['slip angle'] * 1000.0) +
                       to_i16(data['turn rate'] * 1000.0) +
-                      to_i16(data['nick angle'] * 1000.0))
+                      to_i16(data['pitch angle'] * 1000.0))
         
 
     def can_send(self, id: int, frame: bytes):

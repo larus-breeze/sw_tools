@@ -2,7 +2,7 @@
 import traceback, sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
-from larus_to_df import Larus2Df, check_if_larus_file
+from larus_data.larus_to_df import Larus2Df, check_if_larus_file
 from plot_essentials import *
 
 class WorkerSignals(QObject):

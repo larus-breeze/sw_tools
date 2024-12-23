@@ -1,17 +1,17 @@
 import sys, os
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from larus_data.larus_to_df import raw_data_formats, processed_data_formats
 from player import Player
-
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
         """Mainwindow of the Larus Flight Player"""
         super().__init__(parent=None)
         self.setWindowTitle('Larus Flight Player')
-        QtCore.QCoreApplication.setOrganizationName("larus");
-        QtCore.QCoreApplication.setOrganizationDomain("https://github.com/larus-breeze");
-        QtCore.QCoreApplication.setApplicationName("flight_player");
+        QtCore.QCoreApplication.setOrganizationName("larus")
+        QtCore.QCoreApplication.setOrganizationDomain("https://github.com/larus-breeze")
+        QtCore.QCoreApplication.setApplicationName("flight_player")
 
         dir = os.path.dirname(__file__)
 
@@ -57,11 +57,20 @@ class Window(QtWidgets.QMainWindow):
 
     def _open_file(self):
         """Opens the selected Larus Data File"""
+
+        larus_file_filter = "Larus files ("
+        for element in raw_data_formats:
+            larus_file_filter += "*{} ".format(element[0])
+        for element in processed_data_formats:
+            larus_file_filter += "*{} ".format(element[0])
+        larus_file_filter += ")"
+
         settings = QtCore.QSettings()
-        fileName, x = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Open File", "", "Larus files (*.f110 *.f114)")
-        if fileName != "":
-            settings.setValue("fileName", fileName)
+        file_name, x = QtWidgets.QFileDialog.getOpenFileName(
+            #self, "Open File", "", "Larus files (*.f110 *.f114)")
+            self, "Open File", "", larus_file_filter)
+        if file_name != "":
+            settings.setValue("fileName", file_name)
             self._player.open_file()
 
 

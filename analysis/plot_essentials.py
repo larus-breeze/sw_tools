@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from geopy.distance import great_circle
+from larus_data.larus_to_df import Larus2Df
 
 def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
@@ -275,7 +276,7 @@ def  plot_attitude_histogram(df, path = None):
     plt.show()
 
 if __name__ == "__main__":
-    from larus_to_df import Larus2Df
+    from larus_data.larus_to_df import Larus2Df
 
     file = os.getcwd() + '/240520_091630.f37'
     file = os.getcwd() + '/230430.f37'
