@@ -59,10 +59,10 @@ class Window(QtWidgets.QMainWindow):
         """Opens the selected Larus Data File"""
 
         larus_file_filter = "Larus files ("
-        for element in raw_data_formats:
-            larus_file_filter += "*{} ".format(element[0])
-        for element in processed_data_formats:
-            larus_file_filter += "*{} ".format(element[0])
+        for element in raw_data_formats.keys():
+            larus_file_filter += "*{} ".format(element)
+        for element in processed_data_formats.keys():
+            larus_file_filter += "*{} ".format(element)
         larus_file_filter += ")"
 
         settings = QtCore.QSettings()

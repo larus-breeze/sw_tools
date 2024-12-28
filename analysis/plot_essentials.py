@@ -1,5 +1,7 @@
 #!/user/bin/env python3
 import os
+import time
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -275,6 +277,7 @@ def  plot_attitude_histogram(df, path = None):
     axis.hist2d(x_data, y_data, bins=500, norm=colors.LogNorm())
     plt.show()
 
+
 if __name__ == "__main__":
     from larus_data.larus_to_df import Larus2Df
 
@@ -285,6 +288,7 @@ if __name__ == "__main__":
     data = Larus2Df(file).get_df()
 
     plot_attitude_histogram(data, file)
+    plot_mag(data, file)
     plot_gnss(data, file)
     plot_ahrs(data, file)
     plot_mag(data, file)
