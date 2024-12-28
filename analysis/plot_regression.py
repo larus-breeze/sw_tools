@@ -126,6 +126,19 @@ class LarusLibComparison:
         axis.legend(["{} vario".format(self.version1), "{} vario".format(self.version2)], loc="lower left")
         plt.show()
 
+    def plot_air_density_comparison(self):
+        figure, axis = plt.subplots()
+        title = "Air Density comparison between {} and {}".format(self.version1, self.version2)
+        figure.suptitle(title, size="small")
+        plt.autoscale(enable=True, axis='y')
+        axis.grid()
+        axis.set_ylabel('altitude [m]')
+
+        axis.plot(self.df1['Air Density'].to_numpy(),- self.df1['pos DWN'], "r", linewidth=1.5)
+        axis.plot(self.df2['Air Density'].to_numpy(), - self.df2['pos DWN'], "k--", linewidth=0.5)
+        axis.legend(["{} Air Density".format(self.version1), "{} Air Density".format(self.version2)], loc="lower left")
+        plt.show()
+
 
 if __name__ == "__main__":
     from larus_data.larus_to_df import Larus2Df
@@ -135,10 +148,12 @@ if __name__ == "__main__":
 
     #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2'
     cmp = LarusLibComparison(file,'v0.1.0', 'v0.1.2' )
+
     cmp.plot_mag_comparison()
     cmp.plot_wind_comparison()
     cmp.plot_vario_comparison()
     cmp.plot_ahrs_comparison()
+    cmp.plot_air_density_comparison()
 
 
 
