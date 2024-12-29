@@ -1,4 +1,7 @@
 from datetime import date, time
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
 from larus_data.larus_to_df import Larus2Df
 
 # This class provides access to the flight data. To realize this, dataframes from the Pandas 

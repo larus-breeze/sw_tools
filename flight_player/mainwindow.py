@@ -1,12 +1,13 @@
 import sys, os
 from PyQt5 import QtWidgets, QtGui, QtCore
-
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
 from larus_data.larus_to_df import raw_data_formats, processed_data_formats
 from player import Player
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
-        """Mainwindow of the Larus Flight Player"""
+        """Main window of the Larus Flight Player"""
         super().__init__(parent=None)
         self.setWindowTitle('Larus Flight Player')
         QtCore.QCoreApplication.setOrganizationName("larus")
@@ -59,10 +60,10 @@ class Window(QtWidgets.QMainWindow):
         """Opens the selected Larus Data File"""
 
         larus_file_filter = "Larus files ("
-        for element in raw_data_formats:
-            larus_file_filter += "*{} ".format(element[0])
-        for element in processed_data_formats:
-            larus_file_filter += "*{} ".format(element[0])
+        for element in raw_data_formats.keys():
+            larus_file_filter += "*{} ".format(element)
+        for element in processed_data_formats.keys():
+            larus_file_filter += "*{} ".format(element)
         larus_file_filter += ")"
 
         settings = QtCore.QSettings()

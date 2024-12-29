@@ -1,10 +1,14 @@
 #!/user/bin/env python3
-import os
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import sys
+
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
+from larus_data.larus_to_df import Larus2Df
+
 from matplotlib import colors
 from geopy.distance import great_circle
-from larus_data.larus_to_df import Larus2Df
 
 def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
@@ -275,9 +279,9 @@ def  plot_attitude_histogram(df, path = None):
     axis.hist2d(x_data, y_data, bins=500, norm=colors.LogNorm())
     plt.show()
 
-if __name__ == "__main__":
-    from larus_data.larus_to_df import Larus2Df
 
+if __name__ == "__main__":
+    import os
     file = os.getcwd() + '/240520_091630.f37'
     file = os.getcwd() + '/230430.f37'
     file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
@@ -285,6 +289,7 @@ if __name__ == "__main__":
     data = Larus2Df(file).get_df()
 
     plot_attitude_histogram(data, file)
+    plot_mag(data, file)
     plot_gnss(data, file)
     plot_ahrs(data, file)
     plot_mag(data, file)
