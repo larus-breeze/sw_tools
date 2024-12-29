@@ -146,12 +146,12 @@ class LarusLibComparison:
 if __name__ == "__main__":
     import os
     #file = os.getcwd() + '/240520_091630.f37'
-    file = os.getcwd() + '/230430.f37'
+    #file = os.getcwd() + '/230430.f37'
     file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
 
     #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2'
-    #cmp = LarusLibComparison(file,'v0.1.0', 'v0.1.2' )
-    cmp = LarusLibComparison(file,'v0.1.2', 'xyz' )
+    cmp = LarusLibComparison(file,'v0.1.0', 'v0.1.2' )
+    #cmp = LarusLibComparison(file,'v0.1.2', 'xyz' ) # Provide a xyz sensor data analyser binary in larus_data/_internal
 
     cmp.plot_mag_comparison()
     cmp.plot_wind_comparison()
