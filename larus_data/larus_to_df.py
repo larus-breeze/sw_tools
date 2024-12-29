@@ -274,7 +274,7 @@ raw_data_formats = {'.f37':data_f37, '.f50':data_f50}
 processed_data_formats = {'.f110':data_f110, '.f114':data_f114, '.f119':data_f119, '.f120':data_f120, '.f123':data_f123}
 
 # Supported Lib Versions and corresponding output formats for lib
-lib_versions = {'v0.1.0':'.f114', 'v0.1.1':'.f114', 'v0.1.2':'.f119'}
+lib_versions = {'v0.1.0':'.f114', 'v0.1.1':'.f114', 'v0.1.2':'.f119', 'xyz':'.f119'}
 
 # Check if files has larus format file ending
 def check_if_larus_file(file):

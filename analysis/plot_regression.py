@@ -1,7 +1,10 @@
 #!/user/bin/env python3
-import os
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import sys
+
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
 from larus_data.larus_to_df import Larus2Df
 
 class LarusLibComparison:
@@ -132,7 +135,7 @@ class LarusLibComparison:
         figure.suptitle(title, size="small")
         plt.autoscale(enable=True, axis='y')
         axis.grid()
-        axis.set_ylabel('altitude [m]')
+        axis.set_ylabel('GNSS altitude [m]')
 
         axis.plot(self.df1['Air Density'].to_numpy(),- self.df1['pos DWN'], "r", linewidth=1.5)
         axis.plot(self.df2['Air Density'].to_numpy(), - self.df2['pos DWN'], "k--", linewidth=0.5)
@@ -141,13 +144,14 @@ class LarusLibComparison:
 
 
 if __name__ == "__main__":
-    from larus_data.larus_to_df import Larus2Df
+    import os
     #file = os.getcwd() + '/240520_091630.f37'
-    #file = os.getcwd() + '/230430.f37'
+    file = os.getcwd() + '/230430.f37'
     file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
 
     #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2'
-    cmp = LarusLibComparison(file,'v0.1.0', 'v0.1.2' )
+    #cmp = LarusLibComparison(file,'v0.1.0', 'v0.1.2' )
+    cmp = LarusLibComparison(file,'v0.1.2', 'xyz' )
 
     cmp.plot_mag_comparison()
     cmp.plot_wind_comparison()
