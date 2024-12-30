@@ -3,7 +3,7 @@ Larus Flight Player
 
 The Larus Flight Player is a small Python tool for playing Larus flight recordings.
 
-![Screenshot](https://github.com/larus-breeze/sw_emulator_sil/blob/master/flight_player/screenshot.png)
+![flight_player](https://github.com/user-attachments/assets/0c8368e6-fc0d-484c-b3a2-e363310241fb)
 
 Installation
 ------------
