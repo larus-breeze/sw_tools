@@ -100,7 +100,7 @@ class Player(QtWidgets.QWidget):
                 self.ui.lbStopRecordingA.setText(str(self.data.end_recording()))
                 self.ui.verticalLayout.removeWidget(self.baroWidget)
                 self.baroWidget = BaroWidget(self.data)
-                self.baroWidget.setPos.connect(self.set_player_pos)
+                self.baroWidget.posChanged.connect(self.set_player_pos)
                 self.ui.verticalLayout.insertWidget(3, self.baroWidget)
                 QtWidgets.QApplication.restoreOverrideCursor()
             else:
@@ -108,7 +108,6 @@ class Player(QtWidgets.QWidget):
                 self.ui.lbDateA.setText("")
                 self.ui.lbStartRecordingA.setText("")
                 self.ui.lbStopRecordingA.setText("")
-                self.baroWidget.clear()
     
                 QtWidgets.QApplication.restoreOverrideCursor()
                 msgBox = QtWidgets.QMessageBox()
