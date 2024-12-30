@@ -42,15 +42,15 @@ class FlightData():
         self._check_idx_range()
         self._row = self._df.iloc[self._idx]
 
-    def set_relative(self, pos: int): # 0..999
+    def set_relative(self, pos: float): # 0.0 .. 1.0
         """Sets the time in scale 0..999"""
-        self._idx = int(pos * 0.001 * self._last_idx)
+        self._idx = int(pos * self._last_idx)
         self._check_idx_range()
         self._row = self._df.iloc[self._idx]
 
     def get_relative(self) -> int:
         """Returns the relative position"""
-        return round((999.0 * self._idx) / self._last_idx)
+        return self._idx / self._last_idx
 
     def tick(self):
         """Selects the next data set (default is plus 0.1 seconds)."""

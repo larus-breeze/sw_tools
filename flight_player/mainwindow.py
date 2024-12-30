@@ -68,7 +68,6 @@ class Window(QtWidgets.QMainWindow):
 
         settings = QtCore.QSettings()
         file_name, x = QtWidgets.QFileDialog.getOpenFileName(
-            #self, "Open File", "", "Larus files (*.f110 *.f114)")
             self, "Open File", "", larus_file_filter)
         if file_name != "":
             settings.setValue("fileName", file_name)

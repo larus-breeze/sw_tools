@@ -33,9 +33,6 @@ class Player(QtWidgets.QWidget):
         self.ui.cbNmea.addItem('UDP')
 
         self.ui.hsPlayerSpeed.valueChanged.connect(self.set_player_speed)
-        self.ui.hsEmulationTime.valueChanged.connect(self.set_player_pos)
-        self.ui.hsEmulationTime.setTracking(False)
-
 
         self.ui.lbBlink.setPixmap(self.no_led)
         self.timer = QtCore.QTimer()
@@ -76,7 +73,8 @@ class Player(QtWidgets.QWidget):
                 else:
                     self.ui.lbBlink.setPixmap(self.no_led)
                 self.blink = not self.blink
-                self.ui.hsEmulationTime.setSliderPosition(self.data.get_relative())
+                rel_pos = self.data.get_relative()
+                self.baroWidget.set_vline_rel(rel_pos)
                 self.ui.lbIasA.setText(f"{self.data['IAS']*3.6:3.0f}")
                 self.ui.lbAltitudeA.setText(f"{self.data['Pressure-altitude']:4.0f}")
 
@@ -102,6 +100,7 @@ class Player(QtWidgets.QWidget):
                 self.ui.lbStopRecordingA.setText(str(self.data.end_recording()))
                 self.ui.verticalLayout.removeWidget(self.baroWidget)
                 self.baroWidget = BaroWidget(self.data)
+                self.baroWidget.setPos.connect(self.set_player_pos)
                 self.ui.verticalLayout.insertWidget(3, self.baroWidget)
                 QtWidgets.QApplication.restoreOverrideCursor()
             else:
@@ -117,7 +116,7 @@ class Player(QtWidgets.QWidget):
                 msgBox.setText("Could not open file")
                 msgBox.exec()
 
-            self.set_player_pos()
+            self.set_player_pos(0.0)
             self.is_running = False
 
     def set_player_speed(self):
@@ -130,10 +129,9 @@ class Player(QtWidgets.QWidget):
         self.ui.lbSpeed.setText(f"{speed:3.1f}")
         self.data.set_speed(speed)
 
-    def set_player_pos(self):
+    def set_player_pos(self, pos):
         """Sets the temporal position within the opened flight"""
         if self.file_open:
-            pos = self.ui.hsEmulationTime.value()   # 0..999
             self.data.set_relative(pos)
             self.ui.lbFlightTimeA.setText(str(self.data.time()))
 
