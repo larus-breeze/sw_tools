@@ -29,8 +29,13 @@ class Player(QtWidgets.QWidget):
         self.ui.cbCan.addItem('UDP')
         if self.can.canbus_available():
             self.ui.cbCan.addItem('CAN')
-        self.ui.cbCan.currentTextChanged.connect(self.set_can_interface)
+        self.ui.cbCan.currentTextChanged.connect(self.can.set_interface)
+
         self.ui.cbNmea.addItem('UDP')
+
+        self.ui.cbProtocol.addItem('legacy')
+        self.ui.cbProtocol.addItem('new')
+        self.ui.cbProtocol.currentTextChanged.connect(self.can.set_protocol)
 
         self.ui.hsPlayerSpeed.valueChanged.connect(self.set_player_speed)
 
@@ -133,7 +138,3 @@ class Player(QtWidgets.QWidget):
         if self.file_open:
             self.data.set_relative(pos)
             self.ui.lbFlightTimeA.setText(str(self.data.time()))
-
-    def set_can_interface(self, interface):
-        """Select the can interface channel"""
-        self.can.set_interface(interface)

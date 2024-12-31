@@ -41,7 +41,7 @@ class CanInterface():
         else:
             raise ValueError("Unknown Interface '%s'" % interface)
 
-    def set_can_protocol(self, protocol: str):
+    def set_protocol(self, protocol: str):
         "Set the CAN protocol variant ('legacy' or 'new')"
         if protocol in ("legacy", "new"):
             self._protocol = protocol
