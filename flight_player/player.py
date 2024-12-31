@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from player_ui import Ui_Form
 from flight_data import FlightData
-from can_bus import Can
+from can_bus.interface import CanInterface
 from nmea import Nmea
 from baro_widget import BaroWidget
 
@@ -16,7 +16,7 @@ class Player(QtWidgets.QWidget):
         self.ui.setupUi(self)
 
         self.data = FlightData()
-        self.can = Can(5005)
+        self.can = CanInterface(5005)
         self.nmea = Nmea(8881)
         self.file_open = False
         self.tick_cnt = 0
