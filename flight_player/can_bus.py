@@ -6,17 +6,6 @@ import numpy as np
 
 from flight_data import FlightData
 
-# Patch: there is no static pressure in the date, we calculate the pressure from pressure altitude
-ALT_TO_PRES = [-1.08815563e-08, 5.57230085e-04, -1.19665733e+01, 1.01302034e+05]
-
-# Patch: there is no static pressure in the date, we calculate the pressure from pressure altitude
-def alt_to_pres(alt):
-    accu = ALT_TO_PRES[0]
-    for coef in ALT_TO_PRES[1:]:
-        accu = accu * alt + coef
-    return accu
-
-
 # This class generates Larus Can packets and sends them either over a UDP port or over a USB canbus 
 # adapter. If the canbus adapter is to be used, it must be plugged in and enabled.
 
@@ -111,10 +100,8 @@ class Can():
                       to_i16(sqrt(data['wind avg E'] ** 2 + data['wind avg N'] ** 2) * 3.6))
 
         # ATHMOSPHERE static pressure in Pa, air_density in g/m³
-        # Patch: there is no static pressure in the date, we calculate the pressure from pressure altitude
-        pressure = alt_to_pres(data["Pressure-altitude"])
         self.can_send(0x109,
-                      to_u32(pressure) +
+                      to_u32(data['static p']) +
                       to_u32(data['Air Density'] * 1000))
 
         # ACCELERATION g_load in mm/s², eff_vert_acc mm/s², vario_uncomp in mm/s,
