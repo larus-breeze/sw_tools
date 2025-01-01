@@ -11,7 +11,7 @@ Installation
 An executable python 3 installation is required. Besides the standard library the following modules are required:
 
 ```
-$ pip3 install python-can pandas pyqt5 pyqtcharts numpy pyqtgraph
+$ pip3 install python-can pandas pyqt5 pyqtcharts numpy
 ```
 
 Usage
