@@ -1,4 +1,5 @@
 #!/user/bin/env python3
+import os
 import traceback, sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
