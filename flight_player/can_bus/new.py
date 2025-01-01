@@ -1,5 +1,6 @@
 from flight_data import FlightData
 from can_bus.data import *
+import math
 
 def can_new_protocol(data: FlightData, datagrams: CanData):
     
@@ -15,9 +16,10 @@ def can_new_protocol(data: FlightData, datagrams: CanData):
                   to_f32(data['roll']) +
                   to_f32(data['pitch']))
 
-    # Yaw Angle
+    # Yaw Angle and Turn Rate
     datagrams.add(0x121,
-                  to_f32(data['yaw']))
+                  to_f32(data['yaw']) +
+                  to_f32(data['turn rate']))
 
     # TAS (True Airspeed) and IAS (Indicated Airspeed)
     datagrams.add(0x122,
@@ -56,25 +58,20 @@ def can_new_protocol(data: FlightData, datagrams: CanData):
                   to_f32(data['static p']) + 
                   to_f32(data['Air Density']))
     
-    # Acceleration Angle Front and Angle Right
+    # G Force and Vertical G Force
     datagrams.add(0x127,
-                  to_f32(data['acc_F']) +
-                  to_f32(data['acc_R']))
-    
-    # Acceleration Down and Turn Rate
-    datagrams.add(0x128,
-                  to_f32(data['acc_D']) +
-                  to_f32(data['turn rate']))
+                  to_f32(data['G_load']) +
+                  to_f32(data['acc vertical']))
     
     # Calculated Slip Angle and Pitch Angle
-    datagrams.add(0x129,
+    datagrams.add(0x128,
                   to_f32(data['slip angle']) +
                   to_f32(data['pitch angle']))
     
-    # Circle Mode and Supply Voltage
-    datagrams.add(0x12a,
-                  to_u32(data['circle mode']) +
-                  to_f32(data['ubatt']))
+    # Supply Voltage an Circle Mode
+    datagrams.add(0x129,
+                  to_f32(data['ubatt']) +
+                  to_u8(data['circle mode']))
 
     #########################################################
     # Heartbeat GPS Device
@@ -92,22 +89,25 @@ def can_new_protocol(data: FlightData, datagrams: CanData):
                   to_u8(data['minute']) + 
                   to_u8(data['second']))
 
-    # Latitude and Longitude
+    # Latitude
     datagrams.add(0x141,
-                  to_f32(data['Lat']) +
-                  to_f32(data['Long']))
+                  to_f64(data['Lat']*math.pi/180))
+    
+    # Longitude
+    datagrams.add(0x142,
+                  to_f64(data['Long']*math.pi/180))
     
     # MSL Altitude and Geo Separation
-    datagrams.add(0x142,
-                  to_f32(data['pos DWN']) +
-                  to_f32(data["geo separation dm"]))
+    datagrams.add(0x143,
+                  to_f32(-data['pos DWN']) +
+                  to_f32(data["geo separation dm"]*0.1))
 
     # Ground Track and Ground Speed
-    datagrams.add(0x143,
-                  to_f32(data['track GNSS']) +
+    datagrams.add(0x144,
+                  to_f32(data['track GNSS']*math.pi/180) +
                   to_f32(data['speed GNSS']))
     
     # Number of Sattelites and Sat Fix Type
-    datagrams.add(0x144,
+    datagrams.add(0x145,
                   to_u8(data['sat number']) + 
                   to_u8(data['sat fix type']))

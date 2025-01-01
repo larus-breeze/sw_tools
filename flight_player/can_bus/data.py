@@ -46,3 +46,6 @@ def to_i8(val: int|float) -> bytes:
 def to_f32(val: float) -> bytes:
     return struct.pack('<f', val)
 
+def to_f64(val: float) -> bytes:
+    return struct.pack('<d', val)
+
