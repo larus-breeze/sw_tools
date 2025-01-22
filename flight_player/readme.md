@@ -8,19 +8,23 @@ The Larus Flight Player is a small Python tool for playing Larus flight recordin
 Installation
 ------------
 
-An executable python 3 installation is required. Besides the standard library the following modules are required:
+An executable python 3 installation is required. Besides the standard library some modules are required. First, 
+we create a virtual environment and activate it. The corresponding packages are then installed:
 
 ```
-$ pip3 install python-can pandas pyqt5 pyqtcharts numpy
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+(.venv) $ pip3 install python-can pandas pyqt5 pyqtgraph numpy
 ```
 
 Usage
 -----
 
-The tool can be used under Linux and Windows. 
+The virtual environment must be activated if it is not already activated by the installation.
 
 ```
-$ python3 mainwindow.py
+$ source .venv/bin/activate
+(.venv) $ python mainwindow.py
 ```
 
 It is possible to analyze different fxx files of the sensor box (*.f37, *.f110, *.f114, ...). Some of the data is
