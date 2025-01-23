@@ -40,3 +40,24 @@ Configure a generic CAN output to the can0 network interface on Linux systems vi
 
       sudo ip link set can0 up type can bitrate 1000000
       sudo ifconfig can0 txqueuelen 1000
+
+Alternatively, the USB stick can also be activated automatically when it is plugged in or started. To do this, create the file /etc/udev/rules.d/98-can-stick.rules
+
+```
+SUBSYSTEM==“usb”, ATTR{idVendor}==“1d50”, ATTR{idProduct}==“606f”, MODE="0666”
+```
+and the file /etc/systemd/network/80-can.network
+
+```
+[Match]
+Name=can*
+
+[CAN]
+BitRate=1000000
+```
+
+Activating the changes 
+
+```
+$ systemctl restart systemd-networkd
+```
