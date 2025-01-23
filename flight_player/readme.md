@@ -24,7 +24,7 @@ The virtual environment must be activated if it is not already activated by the 
 
 ```
 $ source .venv/bin/activate
-(.venv) $ python mainwindow.py
+(.venv) $ python flight_player.py
 ```
 
 It is possible to analyze different fxx files of the sensor box (*.f37, *.f110, *.f114, ...). Some of the data is
