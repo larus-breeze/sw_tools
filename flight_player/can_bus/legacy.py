@@ -79,4 +79,9 @@ def can_legacy_protocol(data: FlightData, datagrams: CanData):
                     to_i16(data['slip angle'] * 1000.0) +
                     to_i16(data['turn rate'] * 1000.0) +
                     to_i16(data['pitch angle'] * 1000.0))
+    
+    # STATUS
+    datagrams.add(0x10d,
+                    to_i32(0xffffffff) +
+                    to_i32(0x03030001))
 
