@@ -1,8 +1,8 @@
 from flight_data import FlightData
-from can_bus.data import *
+from can_bus.can_frames import *
 import math
 
-def can_new_protocol(data: FlightData, datagrams: CanData):
+def can_new_protocol(data: FlightData, datagrams: CanFrames):
     
     #########################################################
     # Heartbeat Sensorbox

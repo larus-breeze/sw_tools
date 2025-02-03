@@ -1,7 +1,7 @@
 from flight_data import FlightData
-from can_bus.data import *
+from can_bus.can_frames import *
 
-def can_legacy_protocol(data: FlightData, datagrams: CanData):
+def can_legacy_protocol(data: FlightData, datagrams: CanFrames):
     # EULER ANGLES i16, i16, i16 roll nick yaw / 1/1000 rad
     datagrams.add(0x0101,
                     to_i16(data['roll'] * 1000.0) +
