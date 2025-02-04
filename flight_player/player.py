@@ -29,16 +29,20 @@ class Player(QtWidgets.QWidget):
         self.led = QtGui.QPixmap(dir + "/icons/green_led.png")
         self.no_led = QtGui.QPixmap(dir + "/icons/no_led.png")
 
+        settings = QtCore.QSettings()
+
         self.ui.cbCan.addItem('UDP')
+        self.ui.cbCan.currentTextChanged.connect(self.can.set_interface)
         if self.can.canbus_available():
             self.ui.cbCan.addItem('CAN')
-        self.ui.cbCan.currentTextChanged.connect(self.can.set_interface)
+            self.ui.cbCan.setCurrentText(settings.value('interface', 'CAN'))
 
         self.ui.cbNmea.addItem('UDP')
 
         self.ui.cbProtocol.addItem('legacy')
         self.ui.cbProtocol.addItem('new')
         self.ui.cbProtocol.currentTextChanged.connect(self.can.set_protocol)
+        self.ui.cbProtocol.setCurrentText(settings.value('protocol', 'new'))
 
         self.ui.hsPlayerSpeed.valueChanged.connect(self.set_player_speed)
 
@@ -50,6 +54,7 @@ class Player(QtWidgets.QWidget):
         self.timer2.start(1000)
         self.set_player_speed()
         self.baroWidget = self.ui.baroWidget
+
         self.open_file()
 
     def start_flight_player(self):
