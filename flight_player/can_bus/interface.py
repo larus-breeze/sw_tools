@@ -1,5 +1,6 @@
 import socket
 import can
+from PyQt5 import QtCore
 
 from flight_data import FlightData
 from can_bus.can_frames import CanFrame, CanFrames, to_i16
@@ -43,6 +44,8 @@ class CanInterface():
         """Set the interface ('CAN' or 'UDP')"""
         if interface in ("UDP", "CAN"):
             self._interface = interface
+            settings = QtCore.QSettings()
+            settings.setValue('interface', interface)
         else:
             raise ValueError("Unknown Interface '%s'" % interface)
 
@@ -50,6 +53,8 @@ class CanInterface():
         "Set the CAN protocol variant ('legacy' or 'new')"
         if protocol in ("legacy", "new"):
             self._protocol = protocol
+            settings = QtCore.QSettings()
+            settings.setValue('protocol', protocol)
         else:
             raise ValueError("Unknown CAN Protocol")
 
@@ -61,20 +66,20 @@ class CanInterface():
         else:
             can_new_protocol(data, can_data)
 
-        self._generic_settings.parse
-        
+        if self._interface == 'CAN':
+            while True:
+                msg = self._canbus.recv(0.000_1)
+                if msg == None:
+                    break
+                can_frame = CanFrame(msg.arbitration_id, msg.data)
+                self._generic_settings.parse(can_frame, can_data, self._logger)
+                self._sensor_box.parse(can_frame, can_data, self._logger)
+       
         for frame in can_data.can_frames:
             if self._interface == 'UDP':
                 payload = to_i16(frame.id) + frame.data
                 self._socket.sendto(payload, (self._ip, self._port))
             elif self._interface == 'CAN':
-                while True:
-                    msg = self._canbus.recv(0.000_1)
-                    if msg == None:
-                        break
-                    can_frame = CanFrame(msg.arbitration_id, msg.data)
-                    self._generic_settings.parse(can_frame, can_data, self._logger)
-                    self._sensor_box.parse(can_frame, can_data, self._logger)
                 msg = can.Message(arbitration_id=frame.id, data=frame.data, is_extended_id=False)
                 self._canbus.send(msg)
             else:

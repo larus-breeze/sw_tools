@@ -10,14 +10,11 @@ class Setting():
         
     @property
     def value(self):
-        return self.value
+        return self._value
     
     @value.setter
-    def value(self, value: bytes|str):
-        if type(value) == bytes: 
-            self._value = struct.unpack("<f", value[:4])
-        elif type(value) == str:
-            self._value = float(value)
+    def value(self, value: str):
+        self._value = float(value)
 
     @property
     def data(self):
@@ -25,30 +22,30 @@ class Setting():
     
     @data.setter
     def data(self, data):
-        self._value = struct.unpack("<f", data[:4])
+        self._value = struct.unpack("<f", data[-4:])[0]
 
     @property
     def line(self):
         return f"{self._name} = {self._value}\n"
     
     def __repr__(self):
-        return f"<Sensorbox Setting name {self._name}, value {self._value}>"
+        return f"<Sensorbox Setting name '{self._name}', value '{self._value:.3f}'>"
 
 
 SETTINGS_LIST = (
-    ("Pitot_Offset", 0.0, 0x000),
-    ("Pitot_Span", 1.0, 0x001),
-    ("QNH-delta", 0.0, 0x002),
+    ("SensTilt_Roll", 0.0, 0x000),
+    ("SensTilt_Pitch", 0.0, 0x001),
+    ("SensTilt_Yaw", 0.0, 0x002),
 
-    ("Mag_Auto_Calib", 1.0, 0x003),
-    ("Vario_TC", 2.0, 0x004),
-    ("Vario_Int_TC", 3.0, 0x005),
-    ("Wind_TC", 5.0, 0x006),
-    ("Mean_Wind_TC", 30.0, 0x007),
+    ("Pitot_Offset", 0.0, 0x003),
+    ("Pitot_Span", 1.0, 0x004),
+    ("QNH-delta", 0.0, 0x005),
 
-    ("SensTilt_Roll", 0.0, 0x008),
-    ("SensTilt_Pitch", 0.0, 0x009),
-    ("SensTilt_Yaw", 0.0, 0x00a),
+    ("Mag_Auto_Calib", 1.0, 0x006),
+    ("Vario_TC", 2.0, 0x007),
+    ("Vario_Int_TC", 30.0, 0x008),
+    ("Wind_TC", 5.0, 0x009),
+    ("Mean_Wind_TC", 30.0, 0x00a),
 
     ("GNSS_CONFIG", 1.0, 0x00b),
 
@@ -114,7 +111,7 @@ class Settings():
             if config_data[0] == 0: # get
                 data = to_u32(config_id) + setting.data
                 log.info(f"Get {setting}")
-                can_frames.add(CanFrame(0x12f, data)) # Send value back
+                can_frames.add(0x12f, data) # Send value back
             elif config_data[0] == 1: #set
                 setting.data = config_data
                 log.info(f"Set {setting}")
@@ -139,12 +136,14 @@ class SensorBox(CanDataParser):
             return
         
         if can_frame.is_setting:
-            config_id = struct.unpack('<H', can_frame.data[:2]) and 0x0fff
+            config_id = struct.unpack('<H', can_frame.data[:2])[0]
             config_data = can_frame.data[2:]
-            if can_frame.data[0] == 0x02: # Specific Config Data
-                self._settings.parse(config_id, config_data, can_frames, log)
-            elif can_frame.data[0] == 0x03:
-                if config_id < 5:
-                    log(f"Sensor Command '{COMMANDS[config_id]}'")
+            idx = config_id & 0x0f 
+    
+            if config_id >= 0x2000 and config_id <= 0x2fff: # Specific Config Data
+                self._settings.parse(idx, config_data, can_frames, log)
+            elif config_id >= 0x3000 and config_id <= 0x3fff: # Specific Command
+                if idx < 5:
+                    log.info(f"Sensor Command '{COMMANDS[idx]}'")
 
 

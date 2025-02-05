@@ -9,6 +9,6 @@ sw_update/stm32h743_1m/target
 .idea/*
 flight_player/.vscode/*
 flight_player/.venv
-flight_player/can_bus/larus_sensor_config.ini
+flight_player/sensor_config.ini
 *language.settings.xml
 .settings
