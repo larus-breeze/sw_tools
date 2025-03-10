@@ -1,8 +1,8 @@
 from datetime import date, time
-import numpy
-import pandas
-
-from dataformats import *
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
+from larus_data.larus_to_df import Larus2Df
 
 # This class provides access to the flight data. To realize this, dataframes from the Pandas 
 # project are used. The access is still supplemented by some comfort functions
@@ -24,34 +24,14 @@ class FlightData():
 
     def from_file(self, file_name):
         """Opens a Larus flight data file"""
-        if file_name.endswith('.f37'):
-            dataformat = data_f37
-        elif file_name.endswith('.f50'):
-            dataformat = data_f50
-        elif file_name.endswith('.f123'):
-            dataformat = data_f123
-        elif file_name.endswith('.f120'):
-            dataformat = data_f120
-        elif file_name.endswith('.f110'):
-            dataformat = data_f110
-        elif file_name.endswith('.f114'):
-            dataformat = data_f114
-        else:
-            raise NotImplementedError("Format not supported")
-
-        # Create a pandas dataframe
-        format = numpy.dtype(dataformat)
-        try:
-            data = numpy.fromfile(file_name, dtype=format, sep="")
-        except:
-            data = None
-
-        if data is None:
+        l2df = Larus2Df(file_name, recalc=False)
+        df = l2df.get_df()
+        if df is None:
             self.clear()
             raise ValueError
         else:
             # store references in class instance
-            self._df = pandas.DataFrame(data)
+            self._df = df
             self._last_idx = len(self._df.index) - 1
             self._idx = 0
             self._row = self._df.iloc[self._idx]
@@ -62,15 +42,15 @@ class FlightData():
         self._check_idx_range()
         self._row = self._df.iloc[self._idx]
 
-    def set_relative(self, pos: int): # 0..999
+    def set_relative(self, pos: float): # 0.0 .. 1.0
         """Sets the time in scale 0..999"""
-        self._idx = int(pos * 0.001 * self._last_idx)
+        self._idx = int(pos * self._last_idx)
         self._check_idx_range()
         self._row = self._df.iloc[self._idx]
 
     def get_relative(self) -> int:
         """Returns the relative position"""
-        return round((999.0 * self._idx) / self._last_idx)
+        return self._idx / self._last_idx
 
     def tick(self):
         """Selects the next data set (default is plus 0.1 seconds)."""
@@ -132,16 +112,16 @@ class FlightData():
 
     def altitude_min(self):
         """Returns the lowest flight height"""
-        return self._df["Pressure-altitude"].min()
+        return -self._df["pos DWN"].min()
         
     def altitude_max(self):
         """Returns the highest flight height"""
-        return self._df["Pressure-altitude"].max()
+        return -self._df["pos DWN"].max()
 
     def altitude_series(self):
         """Returns the altitude series for plotting the barogram"""
         t = self._df.index / 100.0 / 60.0   # 100Hz ticks to minutes for the time axis
-        altitude = self._df["Pressure-altitude"]
+        altitude = -self._df["pos DWN"]
         return t, altitude
 
     def _check_idx_range(self):
