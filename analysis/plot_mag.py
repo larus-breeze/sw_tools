@@ -11,7 +11,7 @@ data = LoadLarus2Df(file)
 df = data.df
 
 # Prepare the data
-t = df.index / 100.0 / 60.0   # 100Hz ticks to minutes for the time axis
+t = (df.index / 100.0 / 60.0).to_numpy()   # 100Hz ticks to minutes for the time axis
 nav_ind_abs = np.sqrt(np.square(df['nav ind mag N']) + np.square(df['nav ind mag E']) + np.square(df['nav ind mag D']))
 
 # Plot the data
@@ -21,12 +21,12 @@ plt.autoscale(enable=True, axis='y')
 axis.grid()
 axis.set_xlabel('t [minutes]')
 
-axis.plot(t, nav_ind_abs, "k", linewidth=1)
+axis.plot(t, nav_ind_abs.to_numpy(), "k", linewidth=1)
 axis.legend(["nav ind abs"], loc="lower left")
 par1 = axis.twinx()
-par1.plot(t, df['nav ind mag N'], "r-", linewidth=0.5)
-par1.plot(t, df['nav ind mag E'], "g-", linewidth=0.5)
-par1.plot(t, df['nav ind mag D'], "b-", linewidth=0.5)
+par1.plot(t, df['nav ind mag N'].to_numpy(), "r-", linewidth=0.5)
+par1.plot(t, df['nav ind mag E'].to_numpy(), "g-", linewidth=0.5)
+par1.plot(t, df['nav ind mag D'].to_numpy(), "b-", linewidth=0.5)
 
 minimum = df['nav ind mag N'].min()
 maximum = df['nav ind mag N'].max()
@@ -47,9 +47,9 @@ plt.autoscale(enable=True, axis='y')
 axis.grid()
 axis.set_xlabel('t [minutes]')
 
-axis.plot(t, df['mag x'], "r-", linewidth=0.5)
-axis.plot(t, df['mag y'], "g-", linewidth=0.5)
-axis.plot(t, df['mag z'], "b-", linewidth=0.5)
+axis.plot(t, df['mag x'].to_numpy(), "r-", linewidth=0.5)
+axis.plot(t, df['mag y'].to_numpy(), "g-", linewidth=0.5)
+axis.plot(t, df['mag z'].to_numpy(), "b-", linewidth=0.5)
 axis.legend(['mag x', 'mag y', 'mag z'], loc="lower right")
 plt.show()
 

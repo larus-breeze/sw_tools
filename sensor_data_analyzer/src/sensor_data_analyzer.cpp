@@ -46,12 +46,31 @@
 #include "NMEA_format.h"
 #include "TCP_server.h"
 #include "USB_serial.h"
-#include "old_data_structures.h"
 #include "system_state.h"
 #include "magnetic_induction_report.h"
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
+
+#if 0
+#include "soft_iron_compensator.h"
+soft_iron_compensator_t soft_iron_compensator;
+//#include "compass_calibrator_3D.h"
+//compass_calibrator_3D_t compass_calibrator_3D;
+
+void trigger_soft_iron_compensator_calculation()
+{
+  soft_iron_compensator.calculate();
+  printf( "soft iron calibration done \n");
+}
+
+#if 0
+void trigger_compass_calibrator_3D_calculation(void)
+{
+  compass_calibrator_3D.calculate();
+}
+#endif
+#endif
 
 #ifdef _WIN32
 # pragma float_control(except, on)
@@ -66,6 +85,8 @@ auto awake_time(std::chrono::steady_clock::time_point stime) {
 
 uint32_t system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
+
+void setup_tester(void);
 
 int main (int argc, char *argv[])
 {
@@ -115,11 +136,9 @@ int main (int argc, char *argv[])
   // cut off file extension
   char basename[100];
   strcpy( basename, argv[1]);
-#if NEW_DATA_FORMAT
-  char * dot = strchr( basename, '.');
+  char * dot = strrchr( basename, '.');
   if( (dot != 0) && (dot[1] == 'f')) // old format: filename.f37.EEPROM new: filename.EEPROM
     *dot=0; // cut off .f37 extension
-#endif
 
 #if LONGTIME_MAG_TEST
 // try to read "config.EEPROM" first
@@ -150,15 +169,9 @@ int main (int argc, char *argv[])
   organizer_t organizer;
 
   streampos size = file.tellg ();
-#if NEW_DATA_FORMAT
   observations_type  * in_data;
   in_data = (observations_type*) new char[size];
   unsigned records = size / sizeof(observations_type);
-#else
-  old_input_data_t  * in_data;
-  in_data = (old_input_data_t*) new char[size];
-  unsigned records = size / sizeof(old_input_data_t);
-#endif
 
   size_t outfile_size = records * sizeof(output_data_t);
   output_data = (output_data_t*) new char[outfile_size];
@@ -171,19 +184,12 @@ int main (int argc, char *argv[])
 
   organizer.initialize_before_measurement();
 
-#if NEW_DATA_FORMAT
-
   int32_t nano = 0;
-  unsigned fife_hertz_counter = 0;
   int delta_time;
 
   output_data[0].m = in_data[0].m;
   output_data[0].c = in_data[0].c;
-#else
-  new_format_from_old( output_data[0].m, output_data[0].c, in_data[0]);
-#endif
 
-  organizer.initialize_after_first_measurement( output_data[0]);
   organizer.update_GNSS_data(output_data[0].c);
   organizer.update_magnetic_induction_data( output_data[0].c.latitude, output_data[0].c.longitude);
 
@@ -195,12 +201,8 @@ int main (int argc, char *argv[])
   unsigned count;
   for ( count = 1; count < records; ++count)
     {
-#if NEW_DATA_FORMAT
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
-#else
-      new_format_from_old( output_data[count].m, output_data[count].c, in_data[count]);
-#endif
       organizer.on_new_pressure_data( output_data[count]);
 
       if( have_GNSS_fix == false)
@@ -208,11 +210,11 @@ int main (int argc, char *argv[])
 	  if( output_data[count].c.sat_fix_type > 0)
 	    {
 	      organizer.update_magnetic_induction_data( output_data[count].c.latitude, output_data[count].c.longitude);
+	      organizer.initialize_after_first_measurement( output_data[count]);
 	      have_GNSS_fix = true;
 	    }
 	}
 
-#if NEW_DATA_FORMAT
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
 	  delta_time = output_data[count].c.nano - nano;
@@ -223,13 +225,6 @@ int main (int argc, char *argv[])
 	  organizer.update_GNSS_data(output_data[count].c);
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
-#else
-      if( count % 10 ==0)
-	{
-	  organizer.update_GNSS_data(output_data[count].c);
-	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
-	}
-#endif
 
       organizer.update_every_10ms( output_data[count]);
 
@@ -265,7 +260,7 @@ int main (int argc, char *argv[])
 		write_TCP_port( buffer.string, buffer.length);
 
 #if ENABLE_LINUX_CAN_INTERFACE
-	      CAN_output( (const output_data_t&) *(output_data+count));
+	      CAN_output( (const output_data_t&) *(output_data+count), true);
 #endif
 
 	      if (until <= std::chrono::steady_clock::now())

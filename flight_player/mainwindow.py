@@ -59,7 +59,7 @@ class Window(QtWidgets.QMainWindow):
         """Opens the selected Larus Data File"""
         settings = QtCore.QSettings()
         fileName, x = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Open File", "", "Larus files (*.f110)")
+            self, "Open File", "", "Larus files (*.f110 *.f114)")
         if fileName != "":
             settings.setValue("fileName", fileName)
             self._player.open_file()

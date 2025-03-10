@@ -30,7 +30,7 @@ distance_east_west = great_circle((latitude_medium, df['Long'].min()), (latitude
 aspect_ratio = distance_north_south / distance_east_west
 
 fig, ax = plt.subplots()
-ax.plot(df['Long'], df['Lat'])
+ax.plot(df['Long'].to_numpy(), df['Lat'].to_numpy())
 ax.grid()
 ax.set_aspect(aspect_ratio)
 plt.show()

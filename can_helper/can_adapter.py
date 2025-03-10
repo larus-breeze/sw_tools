@@ -1,4 +1,4 @@
-from can.interfaces.seeedstudio.seeedstudio import SeeedBus
+import can
 import threading
 from datetime import datetime
 
@@ -13,6 +13,9 @@ class CanGet(threading.Thread):
     ias = 0.0
     static_pressure = 0.0
     air_density = 0.0
+
+    gnss_fixtype = 0
+    gnss_satnumber = 0
 
     vario = 0.0
     vario_integrator = 0.0
@@ -35,7 +38,7 @@ class CanGet(threading.Thread):
 
     def __init__(self, channel):
         super(CanGet, self).__init__()
-        self.bus = SeeedBus(bustype='seeedstudio', channel=channel, bitrate=1000000)
+        self.bus = can.interface.Bus(interface='socketcan', channel='can0', bitrate=1_000_000)
         filename = datetime.utcnow().strftime("%Y%m%d%H%M%S") + '_data.csv'
         self.file = open(filename, 'w')
         self.file.writelines(["Time,Temperature,Humidity,Pressure\n"]) # Write header
@@ -82,6 +85,10 @@ class CanGet(threading.Thread):
                     self.static_pressure = (int.from_bytes(rxMessage.data[0:3], 'little', signed="False"))
                     self.air_density = (int.from_bytes(rxMessage.data[4:7], 'little', signed="False"))
 
+                if rxMessage.arbitration_id == 0x10a:  # GPS Info
+                    self.gnss_satnumber = rxMessage.data[0]
+                    self.gnss_fixtype = rxMessage.data[1]
+
                 if rxMessage.arbitration_id == 0x10C:  # c_CAN_Id_TurnCoord
                     self.slip_angle = (int.from_bytes(rxMessage.data[0:1], 'little', signed="True")) / 1000.0 * 180 / 3.1415
                     self.yaw_rate = (int.from_bytes(rxMessage.data[2:3], 'little', signed="True")) / 1000.0 * 180 / 3.1415
@@ -89,6 +96,8 @@ class CanGet(threading.Thread):
 
                 if rxMessage.arbitration_id == 0x112:  # c_CID_KSB_Vdd; // 0x112
                     self.voltage = (int.from_bytes(rxMessage.data[0:1], 'little', signed="False"))/10.0
+
+
 
                 print("Voltage: ", self.voltage,
                       "Euler r n y: ", self.euler_r, self.euler_n, self.euler_y,
@@ -102,7 +111,9 @@ class CanGet(threading.Thread):
                       " Wind_Speed_Average: ", self.wind_speed_average,
                       " Slip Angle: ", self.slip_angle,
                       " Yaw Rate: ", self.yaw_rate,
-                      " Nick Angle: ", self.nick_angle
+                      " Nick Angle: ", self.nick_angle,
+                      " GNSS Sat number", self.gnss_satnumber,
+                      " GNSS Fix Type", self.gnss_fixtype
                       )
 
             if self.stop is True:

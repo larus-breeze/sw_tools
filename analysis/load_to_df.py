@@ -21,6 +21,8 @@ class LoadLarus2Df:
             dataformat = data_f120
         elif file.endswith('.f110'):
             dataformat = data_f110
+        elif file.endswith('.f114'):
+            dataformat = data_f114
         else:
             print('Format, not supported')
             exit()

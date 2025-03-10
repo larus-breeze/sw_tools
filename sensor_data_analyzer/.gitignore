@@ -4,3 +4,6 @@
 /Matlab/
 /log_channels_109.ods
 /log_channels.ods
+*.EEPROM
+*.f37
+*.f114

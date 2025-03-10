@@ -30,7 +30,7 @@
 #define TCP_PORT 8880	// XCsoar wants this one
 
 #define DATA_FORMAT_2022	0 // use this to analyze year 2022 and older data files
-#define CAN_FORMAT_2021		1
+#define CAN_FORMAT_2021		0
 
 #if DATA_FORMAT_2022
 
@@ -44,10 +44,8 @@
 
 #else // for MK2 (actual) sensor data
 
-#define WITH_LOWCOST_SENSORS	0
 #define WITH_DENSITY_DATA	0
 #define INCLUDING_NANO	 	1
-#define USE_LOWCOST_IMU		0
 #define NEW_DATA_FORMAT 	1
 
 #endif
@@ -57,7 +55,7 @@
 #define EEPROM_WRITES_LOGGED		1
 #define DISABLE_SAT_COMPASS		0
 #define USE_LARUS_NMEA_EXTENSIONS	1
-#define ENABLE_LINUX_CAN_INTERFACE	0
+#define ENABLE_LINUX_CAN_INTERFACE	1
 #define LONGTIME_MAG_TEST		1
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
