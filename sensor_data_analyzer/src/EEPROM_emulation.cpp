@@ -30,6 +30,7 @@
 #include "string.h"
 #include "math.h"
 #include "system_configuration.h"
+#include "ascii_support.h"
 
 using namespace std;
 
@@ -152,5 +153,45 @@ int read_EEPROM_file (char *basename)
 
   return 0;
 }
+
+bool write_EEPROM_dump( char * basename)
+{
+  char buffer[200];
+  char *next = buffer;
+
+  strcpy(buffer, basename);
+  strcat( buffer, "/config.EEPROM");
+  ofstream outfile ( buffer, ios::out | ios::binary | ios::ate);
+  if ( ! outfile.is_open ())
+    return true;
+
+  for( unsigned index = 0; index < PERSISTENT_DATA_ENTRIES; ++index)
+    {
+      float value;
+      bool result = read_EEPROM_value( PERSISTENT_DATA[index].id, value);
+      if( ! result)
+	{
+	  if( PERSISTENT_DATA[index].is_an_angle)
+	    value *= 180.0 / M_PI; // format it human readable
+
+	  next = buffer;
+	  next = format_2_digits(next, PERSISTENT_DATA[index].id);
+	  *next++=' ';
+	  next = append_string( next, PERSISTENT_DATA[index].mnemonic);
+	  next = append_string (next," = ");
+	  next = my_ftoa (next, value);
+	  *next++='\r';
+	  *next++='\n';
+	  *next=0;
+
+	  outfile.write ( (const char *)buffer, next-buffer);
+	}
+      }
+
+  outfile.close ();
+  return false;
+}
+
+
 
 
