@@ -4,7 +4,9 @@ import pandas as pd
 import os
 import sys
 import subprocess
+from datetime import date
 from pathlib import Path
+
 
 # Format with datatypes
 # dtypes  int32_t  = i4,  int8_t = i1, uint16_t = u2,  f4 = float, f8 = double
@@ -346,6 +348,16 @@ class Larus2Df:
         dt = np.dtype(self.dataformat)
         data = np.fromfile(file, dtype=dt, sep="")
         self.df = pd.DataFrame(data)
+
+        try:
+            # Simplified file validation which checks if the first and last row contains a valid date value.
+            count_row = self.df.shape[0]  # Gives number of rows
+            date(self.df['year'][0], self.df['month'][0], self.df['day'][0])
+            date(self.df['year'][count_row-1], self.df['month'][count_row-1], self.df['day'][count_row-1])
+
+        except Exception as e:
+            print(f'This is not a supported file format {e}')
+            raise Exception(f'This is not a supported file format{e}')
 
     def get_df(self):
         return self.df

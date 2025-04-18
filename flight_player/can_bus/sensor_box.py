@@ -1,12 +1,13 @@
  
-import os, struct
+import os, struct, math
 from can_bus.can_frames import *
 
 
 class Setting():
-    def __init__(self, name, value):
+    def __init__(self, name, value, id):
         self._name = name
         self._value = value
+        self._id = id
         
     @property
     def value(self):
@@ -18,11 +19,16 @@ class Setting():
 
     @property
     def data(self):
-        return struct.pack('<f', self._value)
+        value = self._value
+        if self._id in (0, 1, 2):
+            value = value * math.pi / 180.0
+        return struct.pack('<f', value)
     
     @data.setter
     def data(self, data):
         self._value = struct.unpack("<f", data[-4:])[0]
+        if self._id in (0, 1, 2):
+            self._value = self._value * 180.0 / math.pi
 
     @property
     def line(self):
@@ -69,7 +75,7 @@ class Settings():
         self._settings_by_id = {}
         self._settings_by_name = {}
         for name, value, id in settings_list:
-            setting = Setting(name, value)
+            setting = Setting(name, value, id)
             self._settings_by_id[id] = setting
             self._settings_by_name[name] = setting
 
@@ -109,7 +115,7 @@ class Settings():
         if config_id in self._settings_by_id:
             setting = self._settings_by_id[config_id]
             if config_data[0] == 0: # get
-                data = to_u32(config_id) + setting.data
+                data = to_u32(0x2000 + config_id) + setting.data
                 log.info(f"Get {setting}")
                 can_frames.add(0x12f, data) # Send value back
             elif config_data[0] == 1: #set
