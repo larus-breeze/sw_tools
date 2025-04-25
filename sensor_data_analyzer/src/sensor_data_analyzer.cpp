@@ -306,14 +306,11 @@ int main (int argc, char *argv[])
     close_TCP_port();
 }
 
-void report_magnetic_calibration_has_changed (
-    magnetic_induction_report_t *p_magnetic_induction_report, char type)
+void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report)
 {
   magnetic_induction_report_t magnetic_induction_report = *p_magnetic_induction_report;
   char buffer[50];
   char *next = buffer;
-
-  printf (type == 'm' ? "\nMagnetic:\n" : "\nSatellite:\n");
 
   for (unsigned i = 0; i < 3; ++i)
     {
