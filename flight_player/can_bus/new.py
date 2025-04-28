@@ -28,8 +28,8 @@ def can_new_protocol(data: FlightData, datagrams: CanFrames):
     
     # Vario and Vario Avarage
     datagrams.add(0x123,
-                    to_f32(data['vario']) +
-                    to_f32(data['vario integrator']))
+                  to_f32(data['vario']) +
+                  to_f32(data['vario integrator']))
 
     # WIND calculations
     wind_direction = atan2(- data['wind E'], - data['wind N'])
@@ -68,10 +68,15 @@ def can_new_protocol(data: FlightData, datagrams: CanFrames):
                   to_f32(data['slip angle']) +
                   to_f32(data['pitch angle']))
     
-    # Supply Voltage an Circle Mode
+    # Supply Voltage and Circle Mode
     datagrams.add(0x129,
                   to_f32(data['ubatt']) +
                   to_u8(data['circle mode']))
+    
+    # System State and Git Tag
+    datagrams.add(0x12a,
+                    to_u32(0xffffffff) +
+                    to_u32(0x03030001))
 
     #########################################################
     # Heartbeat GPS Device
