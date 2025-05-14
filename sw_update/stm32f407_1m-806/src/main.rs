@@ -26,7 +26,7 @@ fn copy_image() -> ! {
 
     let dp = unsafe { Peripherals::steal() };
 
-    const STORAGE: usize = 0x0808_0000;
+    const STORAGE: usize = 0x0806_0000;
     let meta_data = unsafe { core::mem::transmute::<usize, &MetaData>(STORAGE) };
     let upper_flash_u32 =  unsafe { core::mem::transmute::<usize, &[u32; 0x2_0000]>(STORAGE) };
     let upper_flash_u8 =  unsafe { core::mem::transmute::<usize, &[u8; 0x8_0000]>(STORAGE) };
