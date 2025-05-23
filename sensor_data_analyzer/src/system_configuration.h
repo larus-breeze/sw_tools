@@ -58,6 +58,6 @@
 #define DISABLE_SAT_COMPASS		0
 #define USE_LARUS_NMEA_EXTENSIONS	1
 #define ENABLE_LINUX_CAN_INTERFACE	1
-#define LONGTIME_MAG_TEST		1
+#define LONGTIME_MAG_TEST		0  //This shall not be set to 1 if creating binaries for the python plot tools
 
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
