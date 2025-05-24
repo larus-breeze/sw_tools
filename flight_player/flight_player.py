@@ -4,6 +4,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
 from larus_data.larus_to_df import raw_data_formats, processed_data_formats
 from player import Player
+from log_window import LogWindow
+from logger import Logger
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
@@ -16,9 +18,18 @@ class Window(QtWidgets.QMainWindow):
 
         dir = os.path.dirname(__file__)
 
-        self._player = Player(self, dir)
-        self.setCentralWidget(self._player)
+        self._logger = Logger()
+        self._log_window = LogWindow(self, self._logger)
+        self._log_window.hide()
 
+        self._player = Player(self, dir, self._logger)
+
+        self._splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
+        self._splitter.addWidget(self._player)
+        self._splitter.addWidget(self._log_window)
+        self._splitter.setStretchFactor(1, 1)
+
+        self.setCentralWidget(self._splitter)
         self.setWindowIcon(QtGui.QIcon(dir + '/icons/larus_breeze.png'))
         
         # QActions
@@ -34,12 +45,16 @@ class Window(QtWidgets.QMainWindow):
         self._exitAction = QtWidgets.QAction(QtGui.QIcon(dir + '/icons/exit.png'), 'Exit', self)
         self._exitAction.triggered.connect(self.close)
         self._exitAction.setStatusTip("Exit Larus Flight Player")
+        self._showLoggerAction = QtWidgets.QAction(QtGui.QIcon(dir + '/icons/file_log.png'), "Logging Window", self)
+        self._showLoggerAction.triggered.connect(self._show_logging)
+        self._showLoggerAction.setStatusTip("Show the Settings Logging Window")
 
         # QMenu
         menu = self.menuBar().addMenu("&Menu")
         menu.addAction(self._openAction)
         menu.addAction(self._playAction)
         menu.addAction(self._pauseAction)
+        menu.addAction(self._showLoggerAction)
         menu.addAction(self._exitAction)
 
         # QToolbar
@@ -47,6 +62,7 @@ class Window(QtWidgets.QMainWindow):
         tools.addAction(self._openAction)
         tools.addAction(self._playAction)
         tools.addAction(self._pauseAction)
+        tools.addAction(self._showLoggerAction)
         tools.addAction(self._exitAction)
         self.addToolBar(tools)
 
@@ -54,7 +70,11 @@ class Window(QtWidgets.QMainWindow):
         status = QtWidgets.QStatusBar()
         self.setStatusBar(status)
 
-        self.resize(800, 600)
+    def _show_logging(self):
+        if self._log_window.isVisible():
+            self._log_window.setVisible(False)
+        else:
+            self._log_window.setVisible(True)
 
     def _open_file(self):
         """Opens the selected Larus Data File"""
@@ -68,7 +88,6 @@ class Window(QtWidgets.QMainWindow):
 
         settings = QtCore.QSettings()
         file_name, x = QtWidgets.QFileDialog.getOpenFileName(
-            #self, "Open File", "", "Larus files (*.f110 *.f114)")
             self, "Open File", "", larus_file_filter)
         if file_name != "":
             settings.setValue("fileName", file_name)
@@ -78,5 +97,6 @@ class Window(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     window = Window()
+    window.resize(1100, 600)
     window.show()
     sys.exit(app.exec())

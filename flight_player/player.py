@@ -2,21 +2,24 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from player_ui import Ui_Form
 from flight_data import FlightData
-from can_bus import Can
+from can_bus.interface import CanInterface
+from logger import Logger
 from nmea import Nmea
 from baro_widget import BaroWidget
+from log_window import LogWindow
 
 # The player widget controls the playback of the larus flight data and displays the status
 
 class Player(QtWidgets.QWidget):
-    def __init__(self, parent: QtWidgets.QWidget, dir: str):
+    def __init__(self, parent: QtWidgets.QWidget, dir: str, logger: Logger):
         """Initialize the player widget (parent is parent widget, dir is directory of mainwindow)"""
         super().__init__(parent)
         self.ui = Ui_Form()
         self.ui.setupUi(self)
 
+        self.logger = logger
         self.data = FlightData()
-        self.can = Can(5005)
+        self.can = CanInterface(5005, logger)
         self.nmea = Nmea(8881)
         self.file_open = False
         self.tick_cnt = 0
@@ -26,16 +29,22 @@ class Player(QtWidgets.QWidget):
         self.led = QtGui.QPixmap(dir + "/icons/green_led.png")
         self.no_led = QtGui.QPixmap(dir + "/icons/no_led.png")
 
+        settings = QtCore.QSettings()
+
         self.ui.cbCan.addItem('UDP')
+        self.ui.cbCan.currentTextChanged.connect(self.can.set_interface)
         if self.can.canbus_available():
             self.ui.cbCan.addItem('CAN')
-        self.ui.cbCan.currentTextChanged.connect(self.set_can_interface)
+            self.ui.cbCan.setCurrentText(settings.value('interface', 'CAN'))
+
         self.ui.cbNmea.addItem('UDP')
 
-        self.ui.hsPlayerSpeed.valueChanged.connect(self.set_player_speed)
-        self.ui.hsEmulationTime.valueChanged.connect(self.set_player_pos)
-        self.ui.hsEmulationTime.setTracking(False)
+        self.ui.cbProtocol.addItem('legacy')
+        self.ui.cbProtocol.addItem('new')
+        self.ui.cbProtocol.currentTextChanged.connect(self.can.set_protocol)
+        self.ui.cbProtocol.setCurrentText(settings.value('protocol', 'new'))
 
+        self.ui.hsPlayerSpeed.valueChanged.connect(self.set_player_speed)
 
         self.ui.lbBlink.setPixmap(self.no_led)
         self.timer = QtCore.QTimer()
@@ -45,6 +54,7 @@ class Player(QtWidgets.QWidget):
         self.timer2.start(1000)
         self.set_player_speed()
         self.baroWidget = self.ui.baroWidget
+
         self.open_file()
 
     def start_flight_player(self):
@@ -76,9 +86,10 @@ class Player(QtWidgets.QWidget):
                 else:
                     self.ui.lbBlink.setPixmap(self.no_led)
                 self.blink = not self.blink
-                self.ui.hsEmulationTime.setSliderPosition(self.data.get_relative())
+                rel_pos = self.data.get_relative()
+                self.baroWidget.set_vline_rel(rel_pos)
                 self.ui.lbIasA.setText(f"{self.data['IAS']*3.6:3.0f}")
-                self.ui.lbAltitudeA.setText(f"{self.data['Pressure-altitude']:4.0f}")
+                self.ui.lbAltitudeA.setText(f"{-self.data['pos DWN']:4.0f}")
 
     def open_file(self):
         """Opens a file containing Larus flight data"""
@@ -102,6 +113,7 @@ class Player(QtWidgets.QWidget):
                 self.ui.lbStopRecordingA.setText(str(self.data.end_recording()))
                 self.ui.verticalLayout.removeWidget(self.baroWidget)
                 self.baroWidget = BaroWidget(self.data)
+                self.baroWidget.posChanged.connect(self.set_player_pos)
                 self.ui.verticalLayout.insertWidget(3, self.baroWidget)
                 QtWidgets.QApplication.restoreOverrideCursor()
             else:
@@ -109,7 +121,6 @@ class Player(QtWidgets.QWidget):
                 self.ui.lbDateA.setText("")
                 self.ui.lbStartRecordingA.setText("")
                 self.ui.lbStopRecordingA.setText("")
-                self.baroWidget.clear()
     
                 QtWidgets.QApplication.restoreOverrideCursor()
                 msgBox = QtWidgets.QMessageBox()
@@ -117,7 +128,7 @@ class Player(QtWidgets.QWidget):
                 msgBox.setText("Could not open file")
                 msgBox.exec()
 
-            self.set_player_pos()
+            self.set_player_pos(0.0)
             self.is_running = False
 
     def set_player_speed(self):
@@ -130,13 +141,8 @@ class Player(QtWidgets.QWidget):
         self.ui.lbSpeed.setText(f"{speed:3.1f}")
         self.data.set_speed(speed)
 
-    def set_player_pos(self):
+    def set_player_pos(self, pos):
         """Sets the temporal position within the opened flight"""
         if self.file_open:
-            pos = self.ui.hsEmulationTime.value()   # 0..999
             self.data.set_relative(pos)
             self.ui.lbFlightTimeA.setText(str(self.data.time()))
-
-    def set_can_interface(self, interface):
-        """Select the can interface channel"""
-        self.can.set_interface(interface)

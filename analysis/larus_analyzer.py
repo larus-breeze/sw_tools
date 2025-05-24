@@ -1,7 +1,10 @@
 #!/user/bin/env python3
+import os
 import traceback, sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
 from larus_data.larus_to_df import Larus2Df, check_if_larus_file
 from plot_essentials import *
 
