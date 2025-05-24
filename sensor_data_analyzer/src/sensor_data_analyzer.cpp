@@ -52,24 +52,26 @@
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
 
-#if 0
+#if USE_SOFT_IRON_COMPENSATION
+
 #include "soft_iron_compensator.h"
 soft_iron_compensator_t soft_iron_compensator;
-//#include "compass_calibrator_3D.h"
-//compass_calibrator_3D_t compass_calibrator_3D;
-
 void trigger_soft_iron_compensator_calculation()
 {
   soft_iron_compensator.calculate();
-  printf( "soft iron calibration done \n");
+  printf( "soft iron compensation done \n");
 }
 
+#endif
+
 #if 0
+#include "compass_calibrator_3D.h"
+compass_calibrator_3D_t compass_calibrator_3D;
+
 void trigger_compass_calibrator_3D_calculation(void)
 {
   compass_calibrator_3D.calculate();
 }
-#endif
 #endif
 
 #ifdef _WIN32
