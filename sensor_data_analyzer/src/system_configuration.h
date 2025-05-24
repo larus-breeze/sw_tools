@@ -26,6 +26,7 @@
 #define SRC_SYSTEM_CONFIGURATION_H_
 
 #define UNIX 1
+#define _WIN32 1
 
 #define TCP_PORT 8880	// XCsoar wants this one
 
