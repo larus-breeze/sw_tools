@@ -282,9 +282,9 @@ def  plot_attitude_histogram(df, path = None):
 
 if __name__ == "__main__":
     import os
-    file = os.getcwd() + '/240520_091630.f37'
-    file = os.getcwd() + '/230430.f37'
-    file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
+    file = os.getcwd() + '/240520_091630.f37'   # Single GNSS
+    #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
+    #file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
 
     data = Larus2Df(file).get_df()
 
@@ -292,7 +292,6 @@ if __name__ == "__main__":
     plot_mag(data, file)
     plot_gnss(data, file)
     plot_ahrs(data, file)
-    plot_mag(data, file)
     plot_altitude_speed(data, file)
     plot_wind(data, file)
     plot_track(data, file)

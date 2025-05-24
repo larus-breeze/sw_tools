@@ -168,18 +168,14 @@ class LarusLibComparison:
         axis.legend(["{} Air Density".format(self.version1), "{} Air Density".format(self.version2)], loc="lower left")
         plt.show()
 
-
 if __name__ == "__main__":
     import os
-    file = os.getcwd() + '/240520_091630.f37'   # Magnetic calibration test
-    #file = os.getcwd() + '/230430.f37'
-    file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
-    #file = os.getcwd() + '/peter_falscher_wind_250517_124938.f37'
+    file = os.getcwd() + '/240520_091630.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
+    #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
+    #file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
 
-
-    #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2'
+    #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2', 'v0.2.1',
     cmp = LarusLibComparison(file,'v0.1.2', 'v0.2.1' )
-    #cmp = LarusLibComparison(file,'v0.1.2', 'xyz' ) # Provide a xyz sensor data analyser binary in larus_data/_internal
 
     cmp.plot_mag_comparison()
     cmp.plot_ahrs_comparison()
