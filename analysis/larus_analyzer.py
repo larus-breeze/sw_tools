@@ -196,11 +196,12 @@ class Window(QWidget):
 
     def show_about_widget(self):
         self.aboutWidget = QDialog()  # QSplashScreen() #Splash displayed on wrong monitor
-        self.aboutWidget.setFixedSize(250, 80)
+        self.aboutWidget.setFixedSize(250, 100)
         self.aboutWidget.setWindowTitle("About")
         # Create a label with a message
         label = QLabel(
-            "Larus Analyzer \n Version 0.0.1 \n https://github.com/larus-breeze/"
+            "Larus Analyzer \n Version 0.1.0 \n https://github.com/larus-breeze/ \n "
+            "for sw_sensor release 0.5.0"
         )
 
         dialog_layout = QVBoxLayout()
