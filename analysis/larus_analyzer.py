@@ -8,6 +8,7 @@ sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make
 from larus_data.larus_to_df import Larus2Df, check_if_larus_file
 from plot_essentials import *
 
+
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
