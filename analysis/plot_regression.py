@@ -170,9 +170,13 @@ class LarusLibComparison:
 
 if __name__ == "__main__":
     import os
-    file = os.getcwd() + '/240520_091630.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
+    #file = os.getcwd() + '/240520_091630.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
     #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
     #file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
+
+    file = os.getcwd() + '/250522_142340.f37'  #HG no mag calibration
+    #file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
+    #file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
 
     #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2', 'v0.2.1',
     cmp = LarusLibComparison(file,'v0.1.2', 'v0.2.1' )
