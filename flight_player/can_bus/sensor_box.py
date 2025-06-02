@@ -131,6 +131,7 @@ COMMANDS = (
     "cmd_measure_pos_3", 
     "cmd_calc_sensor_orientation", 
     "cmd_fine_tune_calibration",
+    "cmd_reset_cold_start",
 )
 
 class SensorBox(CanDataParser):
@@ -149,7 +150,7 @@ class SensorBox(CanDataParser):
             if config_id >= 0x2000 and config_id <= 0x2fff: # Specific Config Data
                 self._settings.parse(idx, config_data, can_frames, log)
             elif config_id >= 0x3000 and config_id <= 0x3fff: # Specific Command
-                if idx < 5:
+                if idx < 6:
                     log.info(f"Sensor Command '{COMMANDS[idx]}'")
 
 

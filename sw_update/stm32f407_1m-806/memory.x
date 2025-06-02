@@ -1,8 +1,7 @@
 MEMORY
 {
-  FLASH : ORIGIN = 0x08000000, LENGTH = 512k
-  META_DATA : ORIGIN = 0x08080000, LENGTH = 4k
-  UPPER_FLASH : ORIGIN = 0x08081000, LENGTH = 508k
+  FLASH : ORIGIN = 0x08000000, LENGTH = 384k
+  UPPER_FLASH : ORIGIN = 0x08061000, LENGTH = 380k
   RAM : ORIGIN = 0x20000000, LENGTH = 112K
 }
 
@@ -23,8 +22,4 @@ SECTIONS
     *(..rodata .rodata.*);
   } > UPPER_FLASH
 
-  .metadata :
-  {
-    *(..metadata .metadata.*);
-  } > META_DATA
 }

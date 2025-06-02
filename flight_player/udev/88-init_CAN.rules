@@ -1,0 +1,2 @@
+SUBSYSTEM="usb", ACTION="add",ATRRS{idVendor}=="1d50",
+ATTRS{idProduct}=="606f", RUN+="/usr/local/initialize_CAN.sh"
