@@ -340,7 +340,9 @@ if __name__ == "__main__":
     # file = os.getcwd() + '/230430.f37'   # DGNSS  OM
     # file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
 
-    file = os.getcwd() + '/250522_142340.f37'  # HG no mag calibration
+    #file = os.getcwd() + '/250522_142340.f37'  # HG no mag calibration
+    file = os.getcwd() + '/250608_123835.f37'   #Flight with 0.5.1
+
     # file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
     # file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
 
