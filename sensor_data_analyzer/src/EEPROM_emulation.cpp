@@ -118,22 +118,50 @@ int read_EEPROM_file (char *basename)
 
   char *line = NULL;
   size_t len = 0;
+  const persistent_data_t *param;
+
   while ((getline(&line, &len, fp)) != -1)
     {
 #endif
+    bool new_format = false;
     EEPROM_PARAMETER_ID identifier = (EEPROM_PARAMETER_ID)read_identifier(line);
     if (identifier == EEPROM_PARAMETER_ID_END)
-      continue;
-    const persistent_data_t *param = find_parameter_from_ID(identifier);
+      {
+	param = find_parameter_from_name( line);
+	new_format = true;
+      }
+    else
+	param = find_parameter_from_ID(identifier);
+
     if( param == 0)
       continue;
+
+    identifier = param->id;
+
     unsigned name_len = strlen(param->mnemonic);
-    if (0 != strncmp((const char *)(param->mnemonic), (const char *)(line + 3),
-                     name_len))
+
+    if(
+	( ! new_format)
+	&&
+	(0 != strncmp( (const char *)(param->mnemonic), (const char *)line + 3, name_len))
+      )
       continue;
-    if (line[name_len + 4] != '=')
-      continue;
-    float value = atof(line + name_len + 6);
+
+      float value;
+
+      if ( new_format)
+	{
+	if( line[name_len + 1] != '=')
+	    continue;
+	value = atof(line + name_len + 3 );
+	}
+      else
+	{
+	  if( line[name_len + 4] != '=')
+	    continue;
+	  value = atof(line + name_len + 6 );
+	}
+
 
     if( param->is_an_angle)
       value *= (M_PI / 180.0);
