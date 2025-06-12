@@ -2,13 +2,61 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-
 from pathlib import Path
+
 sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make imports of parallel directory possible
 from larus_data.larus_to_df import Larus2Df
 
 from matplotlib import colors
 from geopy.distance import great_circle
+
+def plot_mag_track(df, path = None):
+    t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
+
+    nav_ind_abs = np.sqrt(
+        np.square(df['nav ind mag N']) + np.square(df['nav ind mag E']) + np.square(df['nav ind mag D']))
+
+    # Plot the data
+    figure, axis = plt.subplots(2, 1, sharex=True)
+    title = "Induction in earth system \n {}".format(path)
+    figure.suptitle(title, size="small")
+    plt.autoscale(enable=True, axis='y')
+    axis[0,].grid()
+    axis[0,].set_xlabel('t [minutes]')
+
+    axis[0,].plot(t, nav_ind_abs.to_numpy(), "k", linewidth=1)
+    axis[0,].legend(["nav ind abs"], loc="lower left")
+    par1 = axis[0,].twinx()
+    par1.plot(t, df['nav ind mag N'].to_numpy(), "r-", linewidth=0.5)
+    par1.plot(t, df['nav ind mag E'].to_numpy(), "g-", linewidth=0.5)
+    par1.plot(t, df['nav ind mag D'].to_numpy(), "b-", linewidth=0.5)
+
+    minimum = df['nav ind mag N'].min()
+    maximum = df['nav ind mag N'].max()
+    if df['nav ind mag E'].min() < minimum:
+        minimum = df['nav ind mag E'].min()
+    if df['nav ind mag E'].max() > maximum:
+        maximum = df['nav ind mag E'].max()
+    if df['nav ind mag D'].min() < minimum:
+        minimum = df['nav ind mag D'].min()
+    if df['nav ind mag D'].max() > maximum:
+        maximum = df['nav ind mag D'].max()
+    par1.set_ylim(minimum - 0.5, maximum + 1.5)
+    par1.legend(['nav ind mag N', 'nav ind mag E', 'nav ind mag D'], loc="lower right")
+
+
+    parameter = "track GNSS"
+    axis[1,].plot(t, df[parameter].to_numpy(), "k", linewidth=0.5)
+    axis[1,].legend([parameter], loc="lower left")
+    axis[1,].grid()
+
+    parameter = "turn rate"
+    par1 = axis[1,].twinx()
+    par1.plot(t, df[parameter].to_numpy(), "c", linewidth=0.5)
+    par1.legend([parameter], loc="lower right")
+    plt.show()
+
+
 
 def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
@@ -146,7 +194,13 @@ def plot_ahrs(df, path = None):
     axis[1,].plot(t, roll_deg.to_numpy(), "r", linewidth=0.5)
     axis[1,].legend(["roll angle"], loc="lower left")
     axis[1,].grid()
-    par1 = axis[1,].twinx()
+    #par1 = axis[1,].twinx()
+    #second_plot_param = "track GNSS"  # "turn rate"
+    #par1.plot(t, df[second_plot_param].to_numpy(), "c", linewidth=0.5)
+    #par1.legend([second_plot_param], loc="lower right")
+    #y_lim_max = 1.1 * df[second_plot_param].max()
+    #y_lim_min = 1.1 * df[second_plot_param].min()
+    #par1.set_ylim(y_lim_min, y_lim_max)
 
     # Plot slip angle
     axis[2,].plot(t, slip_deg.to_numpy(), "g", linewidth=0.5)
@@ -282,14 +336,19 @@ def  plot_attitude_histogram(df, path = None):
 
 if __name__ == "__main__":
     import os
-    file = os.getcwd() + '/240520_091630.f37'   # Single GNSS
-    #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
-    #file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
+    # file = os.getcwd() + '/240520_091630.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
+    # file = os.getcwd() + '/230430.f37'   # DGNSS  OM
+    # file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
+
+    #file = os.getcwd() + '/250522_142340.f37'  # HG no mag calibration
+    file = os.getcwd() + '/250608_123835.f37'   #Flight with 0.5.1
+
+    # file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
+    # file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
 
     data = Larus2Df(file).get_df()
-
     plot_attitude_histogram(data, file)
-    plot_mag(data, file)
+    plot_mag_track(data, file)
     plot_gnss(data, file)
     plot_ahrs(data, file)
     plot_altitude_speed(data, file)

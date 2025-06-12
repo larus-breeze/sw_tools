@@ -61,4 +61,6 @@
 #define ENABLE_LINUX_CAN_INTERFACE	1
 #define LONGTIME_MAG_TEST		0  //This shall not be set to 1 if creating binaries for the python plot tools
 
+#define LIMIT_DENSITY_CORRECTION( x)
+
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */
