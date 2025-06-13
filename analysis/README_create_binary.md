@@ -8,9 +8,9 @@
 - Create binary with pyinstaller larus_analyzer.py
 
 # Create updates sensor_data_analyzer binaries
-The files data_analyzer_commit_*_[linux|windos.exe] are binaries from the 
-sensor_data_analyzer for windows and linux. This binary calculates the AHRS, Vario and 
-Wind, ... values from the raw larus measurement data *.f37 files. It is the library:
+The files data_analyzer_lib_[linux|windos.exe]_tag_vx.y.z are binaries from the 
+sensor_data_analyzer for windows and linux for the corresponding tag. This binary calculates 
+the AHRS, Vario and Wind, ... values from the raw larus measurement data *.f37 files. It is the library:
 https://github.com/larus-breeze/sw_algorithms_lib/ in a software loop.
 
 ## Wishlist / TODOs

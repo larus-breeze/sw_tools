@@ -35,8 +35,8 @@ class LarusLibComparison:
         axis.set_xlabel('t [minutes]')
 
         axis.plot(t, nav_ind_abs_df1.to_numpy(), "m", linewidth=1.5)
-        axis.plot(t, nav_ind_abs_df2.to_numpy(), "k--", linewidth=0.5)
-        axis.legend(["nav ind abs {}".format(self.version1), "nav ind abs {}".format(self.version2)], loc="lower left")
+        axis.plot(t, nav_ind_abs_df2.to_numpy(), "y", linewidth=1.0)
+        axis.legend(["{} nav ind abs".format(self.version1), "{} nav ind abs".format(self.version2)], loc="lower left")
 
         par1 = axis.twinx()
         par1.plot(t, self.df1['nav ind mag N'].to_numpy(), "r", linewidth=1.5)
@@ -47,6 +47,14 @@ class LarusLibComparison:
 
         par1.plot(t, self.df1['nav ind mag D'].to_numpy(), "b", linewidth=1.5)
         par1.plot(t, self.df2['nav ind mag D'].to_numpy(), "k--", linewidth=0.5)
+
+        par1.legend(['{} nav ind mag N'.format(self.version1),'{} nav ind mag N'.format(self.version2),
+                     '{} nav ind mag E'.format(self.version1), '{} nav ind mag E'.format(self.version2),
+                     '{} nav ind mag D'.format(self.version1),'{} nav ind mag D'.format(self.version2),],
+                    loc="lower right")
+
+        # TODO: mark lib version in legend
+        #axis.legend(["{} nav ind abs".format(self.version1), "{} nav ind abs".format(self.version2)], loc="lower left")
 
         minimum = self.df1['nav ind mag N'].min()
         maximum = self.df1['nav ind mag N'].max()
@@ -59,35 +67,53 @@ class LarusLibComparison:
         if self.df1['nav ind mag D'].max() > maximum:
             maximum = self.df1['nav ind mag D'].max()
         par1.set_ylim(minimum - 0.5, maximum + 1.5)
-        par1.legend(['nav ind mag N', 'nav ind mag E', 'nav ind mag D'], loc="lower right")
         plt.show()
 
 
     def plot_wind_comparison(self):
         figure, axis = plt.subplots(2, 1, sharex=True)
-        title = "Wind data comparison between {} and {}".format(self.version1, self.version2)
+        title = "Wind data comparison between {} and {} in [m/s]".format(self.version1, self.version2)
         figure.suptitle(title, size="small")
 
         # Wind instantaneous comparison
         axis[0,].plot(self.t, self.df1['wind N'].to_numpy(), "r", linewidth=1.5)
         axis[0,].plot(self.t, self.df2['wind N'].to_numpy(), "k--", linewidth=0.5)
-        axis[0,].legend(["df1 wind N", "df2 wind N"], loc="lower left")
+        axis[0,].legend(["{} wind N".format(self.version1), "{} wind N".format(self.version2)], loc="lower left")
         axis[0,].grid()
         par1 = axis[0,].twinx()
         par1.plot(self.t, self.df1['wind E'].to_numpy(), "c", linewidth=1.5)
         par1.plot(self.t, self.df2['wind E'].to_numpy(), "k--", linewidth=0.5)
-        par1.legend(['df1 wind E', 'df2 wind E'], loc="lower right")
+        par1.legend(['{} wind E'.format(self.version1), '{} wind E'.format(self.version2)], loc="lower right")
 
-        # Wind average comparison
+        # Wind average comparison including absolute values
+
+        wind_abs_avg_df1 = np.sqrt(
+            np.square(self.df1['wind avg N']) + np.square(self.df1['wind avg E'])
+        )
+        wind_abs_avg_df2 = np.sqrt(
+            np.square(self.df2['wind avg N']) + np.square(self.df2['wind avg E'])
+        )
+
         axis[1,].plot(self.t, self.df1['wind avg N'].to_numpy(), "m", linewidth=1.5)
         axis[1,].plot(self.t, self.df2['wind avg N'].to_numpy(), "k--", linewidth=0.5)
-        axis[1,].legend(["df1 wind avg N", "df2 wind avg N"], loc="lower left")
+        axis[1,].legend(["{} wind avg N".format(self.version1), "{} wind avg N".format(self.version2)], loc="lower left")
         axis[1,].grid()
         par1 = axis[1,].twinx()
         par1.plot(self.t, self.df1['wind avg E'].to_numpy(), "y", linewidth=1.5)
         par1.plot(self.t, self.df2['wind avg E'].to_numpy(), "k--", linewidth=0.5)
-        par1.legend(['df1 wind avg E', 'df2 wind avg E'], loc="lower right")
+
+        par1.plot(self.t, wind_abs_avg_df1.to_numpy(), "c", linewidth=1.5)
+        par1.plot(self.t, wind_abs_avg_df2.to_numpy(), "r", linewidth=1.5)
+
+        par1.legend(['{} wind avg E'.format(self.version1),
+                     '{} wind avg E'.format(self.version2),
+                     '{} wind avg abs'.format(self.version1),
+                     '{} wind avg abs'.format(self.version2)
+                     ],
+                    loc="lower right")
         plt.show()
+
+
 
 
     def plot_ahrs_comparison(self):
@@ -106,13 +132,13 @@ class LarusLibComparison:
         # Plot pitch
         axis[0,].plot(self.t, pitch_deg_df1.to_numpy(), "r", linewidth=1.5)
         axis[0,].plot(self.t, pitch_deg_df2.to_numpy(), "k--", linewidth=0.5)
-        axis[0,].legend(["df1 pitch angle", "df2 pitch angle"], loc="lower left")
+        axis[0,].legend(["{} pitch angle".format(self.version1), "{} pitch angle".format(self.version2)], loc="lower left")
         axis[0,].grid()
 
         # Plot roll
         axis[1,].plot(self.t, roll_deg_df1.to_numpy(), "c", linewidth=1.5)
         axis[1,].plot(self.t, roll_deg_df2.to_numpy(), "k--", linewidth=0.5)
-        axis[1,].legend(["df1 roll angle", "df2 roll angle"], loc="lower left")
+        axis[1,].legend(["{} roll angle".format(self.version1), "{} roll angle".format(self.version2)], loc="lower left")
         axis[1,].grid()
         plt.show()
 
@@ -142,21 +168,26 @@ class LarusLibComparison:
         axis.legend(["{} Air Density".format(self.version1), "{} Air Density".format(self.version2)], loc="lower left")
         plt.show()
 
-
 if __name__ == "__main__":
     import os
-    #file = os.getcwd() + '/240520_091630.f37'
-    #file = os.getcwd() + '/230430.f37'
-    file = os.getcwd() + '/240830_short.f37'   # Stefly WM Flug
+    file = os.getcwd() + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
+    #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
+    file = os.getcwd() + '/240830_short_nomag.f37'   # DGNSS Stefly WM Flug   nomag means that simulation without prior calibration
 
-    #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2'
-    cmp = LarusLibComparison(file,'v0.1.0', 'v0.1.2' )
-    #cmp = LarusLibComparison(file,'v0.1.2', 'xyz' ) # Provide a xyz sensor data analyser binary in larus_data/_internal
+    #file = os.getcwd() + '/250522_142340.f37'  #HG no mag calibration
+    #file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
+    #file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
+
+    #file = os.getcwd() + '/250608_123835.f37'   #Flight with 0.5.1
+
+    #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2', 'v0.2.1', 'v0.2.2',
+    # versions  < v0.2.2 do not support EEPROM files without a leading numeric parameter id.
+    cmp = LarusLibComparison(file,'v0.1.2', 'v0.2.2' )
 
     cmp.plot_mag_comparison()
+    cmp.plot_ahrs_comparison()
     cmp.plot_wind_comparison()
     cmp.plot_vario_comparison()
-    cmp.plot_ahrs_comparison()
     cmp.plot_air_density_comparison()
 
 
