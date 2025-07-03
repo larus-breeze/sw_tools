@@ -75,7 +75,7 @@ def can_new_protocol(data: FlightData, datagrams: CanFrames):
     
     # System State and Git Tag
     datagrams.add(0x12a,
-                    to_u32(0x0000_0000) +
+                    to_u32(0x0000_0011) +
                     to_u32(0x03030001))
 
     #########################################################
