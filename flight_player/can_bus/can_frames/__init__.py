@@ -2,21 +2,25 @@ import  struct
 from math import atan2, pi, sqrt
 import numpy as np
 from logger import Logger
+from queue import Queue
 
 
 class CanFrames():
     def __init__(self):
         """Initialize datagram class"""
-        self._can_frames = []
+        self._can_frames = Queue()
     
     def add(self, id: int, data: bytes):
         """Add a datagram to list"""
-        self._can_frames.append(CanFrame(id, data))
+        self._can_frames.put(CanFrame(id, data))
 
     @property
-    def can_frames(self):
-        """Return list of datagrams"""
-        return self._can_frames
+    def can_frame(self):
+        """Return frame if available else None"""
+        try:
+            return self._can_frames.get(False)
+        except:
+            return None
    
 
 # Below are some functions that generate defined binary data

@@ -2,16 +2,15 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from player_ui import Ui_Form
 from flight_data import FlightData
-from can_bus.interface import CanInterface
+from can_bus.interface import CanInterface, CanFrames
 from logger import Logger
 from nmea import Nmea
 from baro_widget import BaroWidget
-from log_window import LogWindow
 
 # The player widget controls the playback of the larus flight data and displays the status
 
 class Player(QtWidgets.QWidget):
-    def __init__(self, parent: QtWidgets.QWidget, dir: str, logger: Logger):
+    def __init__(self, parent: QtWidgets.QWidget, dir: str, logger: Logger, can_frames: CanFrames):
         """Initialize the player widget (parent is parent widget, dir is directory of mainwindow)"""
         super().__init__(parent)
         self.ui = Ui_Form()
@@ -19,7 +18,7 @@ class Player(QtWidgets.QWidget):
 
         self.logger = logger
         self.data = FlightData()
-        self.can = CanInterface(5005, logger)
+        self.can = CanInterface(5005, logger, can_frames)
         self.nmea = Nmea(8881)
         self.file_open = False
         self.tick_cnt = 0
