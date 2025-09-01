@@ -202,10 +202,7 @@ bool write_EEPROM_dump( char * basename)
 	  if( PERSISTENT_DATA[index].is_an_angle)
 	    value *= 180.0 / M_PI; // format it human readable
 
-	  next = buffer;
-	  next = format_2_digits(next, PERSISTENT_DATA[index].id);
-	  *next++=' ';
-	  next = append_string( next, PERSISTENT_DATA[index].mnemonic);
+	  next = append_string( buffer, PERSISTENT_DATA[index].mnemonic);
 	  next = append_string (next," = ");
 	  next = my_ftoa (next, value);
 	  *next++='\r';
