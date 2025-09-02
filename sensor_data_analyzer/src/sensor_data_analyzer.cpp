@@ -59,7 +59,6 @@ soft_iron_compensator_t soft_iron_compensator;
 void trigger_soft_iron_compensator_calculation()
 {
   soft_iron_compensator.calculate();
-  printf( "soft iron compensation done \n");
 }
 
 #endif
@@ -90,8 +89,15 @@ uint32_t system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
+void ftoa_test( void);
+
 int main (int argc, char *argv[])
 {
+#if 1
+  srand(time(NULL)); // Seed the random number generator
+  ftoa_test();
+  exit(0);
+#endif
   unsigned skiptime;
 
 #ifndef _WIN32
