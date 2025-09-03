@@ -90,14 +90,11 @@ uint32_t system_state // fake system state here in lack of hardware
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
 void ftoa_test( void);
+bool write_soft_iron_parameters( const char * basename);
+void read_soft_iron_parameters( const char * basename);
 
 int main (int argc, char *argv[])
 {
-#if 1
-  srand(time(NULL)); // Seed the random number generator
-  ftoa_test();
-  exit(0);
-#endif
   unsigned skiptime;
 
 #ifndef _WIN32
@@ -173,6 +170,13 @@ int main (int argc, char *argv[])
     }
 #endif
   ensure_EEPROM_parameter_integrity();
+
+#if USE_SOFT_IRON_COMPENSATION
+
+  slash_location = strrchr( config_path, '/');
+  *slash_location = 0;
+  read_soft_iron_parameters( config_path);
+#endif
 
   organizer_t organizer;
 
@@ -303,6 +307,10 @@ int main (int argc, char *argv[])
       *path_end=0;
       write_EEPROM_dump(buf); // make new magnetic data permanent
 #endif
+
+#if USE_SOFT_IRON_COMPENSATION
+      write_soft_iron_parameters( buf);
+#endif
     }
 
   delete[] in_data;
@@ -311,6 +319,47 @@ int main (int argc, char *argv[])
   if( realtime_with_TCP_server)
     close_TCP_port();
 }
+
+#if USE_SOFT_IRON_COMPENSATION
+
+bool write_soft_iron_parameters( const char * basename)
+{
+  char buffer[200];
+  strcpy(buffer, basename);
+  strcat( buffer, "/soft_iron_parameters.f30");
+  ofstream outfile ( buffer, ios::out | ios::binary | ios::ate);
+  if ( ! outfile.is_open ())
+    return true;
+
+  const computation_float_type * data = soft_iron_compensator.get_current_parameters();
+  if( data == 0)
+    return true;
+
+  outfile.write ( (const char *)data, soft_iron_compensator.get_parameters_size());
+  outfile.close ();
+  return false;
+}
+
+void read_soft_iron_parameters( const char * basename)
+{
+  char buf[200];
+  strcpy (buf, basename);
+  strcat (buf, "/soft_iron_parameters.f30");
+
+  FILE *fp = fopen(buf, "r");
+  if (fp == NULL)
+    return;
+
+  char * pdata = new char[soft_iron_compensator.get_parameters_size()];
+  if( pdata == 0)
+    return;
+
+  fread ( pdata, soft_iron_compensator.get_parameters_size(), 1, fp);
+  soft_iron_compensator.set_current_parameters( (const float *)pdata);
+  fclose(fp);
+}
+
+#endif
 
 void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report, char )
 {
