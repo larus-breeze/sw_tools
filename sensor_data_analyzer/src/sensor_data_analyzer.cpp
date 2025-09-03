@@ -356,6 +356,8 @@ void read_soft_iron_parameters( const char * basename)
 
   fread ( pdata, soft_iron_compensator.get_parameters_size(), 1, fp);
   soft_iron_compensator.set_current_parameters( (const float *)pdata);
+
+  delete [] pdata;
   fclose(fp);
 }
 
