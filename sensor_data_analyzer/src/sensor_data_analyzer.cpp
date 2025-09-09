@@ -324,6 +324,10 @@ int main (int argc, char *argv[])
 
 bool write_soft_iron_parameters( const char * basename)
 {
+  const computation_float_type * data = soft_iron_compensator.get_current_parameters();
+  if( data == 0)
+    return true;
+
   char buffer[200];
   strcpy(buffer, basename);
   strcat( buffer, "/soft_iron_parameters.f30");
@@ -331,11 +335,8 @@ bool write_soft_iron_parameters( const char * basename)
   if ( ! outfile.is_open ())
     return true;
 
-  const computation_float_type * data = soft_iron_compensator.get_current_parameters();
-  if( data == 0)
-    return true;
-
   outfile.write ( (const char *)data, soft_iron_compensator.get_parameters_size());
+
   outfile.close ();
   return false;
 }
@@ -354,8 +355,9 @@ void read_soft_iron_parameters( const char * basename)
   if( pdata == 0)
     return;
 
-  fread ( pdata, soft_iron_compensator.get_parameters_size(), 1, fp);
-  soft_iron_compensator.set_current_parameters( (const float *)pdata);
+  unsigned size = fread ( pdata, soft_iron_compensator.get_parameters_size(), 1, fp);
+  if( size == 1)
+    soft_iron_compensator.set_current_parameters( (const float *)pdata);
 
   delete [] pdata;
   fclose(fp);
