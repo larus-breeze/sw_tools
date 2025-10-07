@@ -243,7 +243,9 @@ int main (int argc, char *argv[])
       --counter_10Hz;
       if(counter_10Hz == 0)
 	{
-	  organizer.update_every_100ms( output_data[count]);
+	  bool landing_detected = organizer.update_every_100ms( output_data[count]);
+	  if( landing_detected)
+	    printf( "landed at log time %d minutes.\n", count / 6000);
 	  counter_10Hz = 10;
 	}
 
