@@ -41,23 +41,41 @@ Configure a generic CAN output to the can0 network interface on Linux systems vi
       sudo ip link set can0 up type can bitrate 1000000
       sudo ifconfig can0 txqueuelen 1000
 
-Alternatively, the USB stick can also be activated automatically when it is plugged in or started. To do this, create the file /etc/udev/rules.d/98-can-stick.rules
+Config your Linux System
+---
+
+You can configure your Linux system to automatically recognize the CAN USB stick and start Flight Player with a single click. This can be done in 4 steps.
+
+**1. Activate Can Adapter when inserting**
+
+Create a file /usr/local/initialize_CAN.sh using sudo with following content
 
 ```
-SUBSYSTEM==“usb”, ATTR{idVendor}==“1d50”, ATTR{idProduct}==“606f”, MODE="0666”
-```
-and the file /etc/systemd/network/80-can.network
-
-```
-[Match]
-Name=can*
-
-[CAN]
-BitRate=1000000
+#!/bin/bash
+ip link set can0 up type can bitrate 1000000
+ifconfig can0 txqueuelen 1000
 ```
 
-Activating the changes 
+Create a file /etc/udev/rules.d/88-init_CAN.rules using sudo with the following content
+```
+SUBSYSTEM="usb", ACTION="add",ATRRS{idVendor}=="1d50",
+ATTRS{idProduct}=="606f", RUN+="/usr/local/initialize_CAN.sh"
+```
+
+**2. Create a virtual Python environment and install the Python packages as described in the “Installation” chapter**
+
+**3. Create a script to start the App**
+
+Create a file "flight_player.sh" somewhere under the home directory with the following content. The file must be executable.
 
 ```
-$ systemctl restart systemd-networkd
+#!/usr/bin/bash
+
+cd <path-to-larus-directory>/sw_tools/flight_player/
+source .venv/bin/activate
+python flight_player.py
 ```
+
+**4. Create a Start Menu Entry**
+
+Create a Start menu entry that activates the generated flight_player script when activated. You can use the icons/larus_breeze.png image file to identify the application.
