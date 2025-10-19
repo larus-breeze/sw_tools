@@ -87,8 +87,8 @@ class Player(QtWidgets.QWidget):
                 self.blink = not self.blink
                 rel_pos = self.data.get_relative()
                 self.baroWidget.set_vline_rel(rel_pos)
-                self.ui.lbIasA.setText(f"{self.data['IAS']*3.6:3.0f}")
-                self.ui.lbAltitudeA.setText(f"{-self.data['pos DWN']:4.0f}")
+                self.ui.lbIasA.setText(f"{self.data['ias']*3.6:3.0f}")
+                self.ui.lbAltitudeA.setText(f"{-self.data['position_down']:4.0f}")
 
     def open_file(self):
         """Opens a file containing Larus flight data"""

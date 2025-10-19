@@ -112,16 +112,16 @@ class FlightData():
 
     def altitude_min(self):
         """Returns the lowest flight height"""
-        return -self._df["pos DWN"].min()
+        return -self._df["position_down"].min()
         
     def altitude_max(self):
         """Returns the highest flight height"""
-        return -self._df["pos DWN"].max()
+        return -self._df["position_down"].max()
 
     def altitude_series(self):
         """Returns the altitude series for plotting the barogram"""
         t = self._df.index / 100.0 / 60.0   # 100Hz ticks to minutes for the time axis
-        altitude = -self._df["pos DWN"]
+        altitude = -self._df["position_down"]
         return t, altitude
 
     def _check_idx_range(self):
