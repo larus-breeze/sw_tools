@@ -48,7 +48,7 @@ processed_data_common = [("ias", "f4"), ("tas", "f4"), ("vario_uncompensated", "
              ("dev_acc_front", "f4"), ("dev_acc_right", "f4"), ("dev_acc_down", "f4"),
              ("dev_gyro_front", "f4"), ("dev_gyro_right", "f4"), ("dev_gyro_down", "f4"),
              ("dev_sat_ahrs_heading", "f4"), ("dev_qff", "f4"), ("dev_sat_fix_type_f", "f4"),
-             ("dev_inst_wind_north", "f4"), ("inst wind E", "f4"), ("dev_average_headwind", "f4"),
+             ("dev_inst_wind_north", "f4"), ("dev_inst_wind_east", "f4"), ("dev_average_headwind", "f4"),
              ("dev_average_crosswind", "f4"), ("dev_instance_wind_corrected_north", "f4"),
              ("dev_instance_wind_corrected_east", "f4"), ("dev_speed_comp_1", "f4"), ("dev_speed_comp_2", "f4"),
              ("dev_speed_comp_3", "f4"),
@@ -80,11 +80,11 @@ data_f120_no_low_cost_imu = data_f37 + processed_data_common +[
 
 # Raw data sensor files with low-cost ins sensor. Only required for the first legacy larus sensor hardware version.
 data_f50 = [("acceleration_x", "f4"), ("acceleration_y", "f4"), ("acceleration_z", "f4"), ("rotation_x", "f4"), ("rotation_y", "f4"), ("rotation_z", "f4"),
-            ("magnetic_x", "f4"), ("magnetic_y", "f4"), ("magnetic_z", "f4"), ("Lowcost acc x", "f4"), ("Lowcost acc y", "f4"),
-            ("Lowcost acc z", "f4"), ("Lowcost gyro x", "f4"), ("Lowcost gyro y", "f4"), ("Lowcost gyro z", "f4"),
-            ("Lowcost mag x", "f4"), ("Lowcost mag y", "f4"), ("Lowcost mag z", "f4"), ("pitot", "f4"),
-            ("static_pressure", "f4"), ("abs p", "f4"), ("temperature_pcb", "f4"), ("abs sens t", "f4"), ("voltage", "f4"),
-            ("", "f4"), ("", "f4"), ("position_north", "f4"), ("position_east", "f4"), ("position_down", "f4"), ("velocity_north", "f4"),
+            ("magnetic_x", "f4"), ("magnetic_y", "f4"), ("magnetic_z", "f4"), ("low_cost_acceleration_x", "f4"), ("low_cost_acceleration_y", "f4"),
+            ("low_cost_acceleration_z", "f4"), ("low_cost_gyro_x", "f4"), ("low_cost_gyro_y", "f4"), ("low_cost_gyro_z", "f4"),
+            ("low_cost_mag_x", "f4"), ("low_cost_mag_y", "f4"), ("low_cost_mag_z", "f4"), ("pitot", "f4"),
+            ("static_pressure", "f4"), ("absolute_pressure", "f4"), ("temperature_pcb", "f4"), ("absolute_pressure_temperature", "f4"), ("voltage", "f4"),
+            ("outside_air_temperature", "f4"), ("humidity", "f4"), ("position_north", "f4"), ("position_east", "f4"), ("position_down", "f4"), ("velocity_north", "f4"),
             ("velocity_east", "f4"), ("velocity_down", "f4"), ("acceleration_gnss_north", "f4"), ("acceleration_gnss_east", "f4"), ("acceleration_gnss_down", "f4"),
             ("track_ground", "f4"), ("speed_ground", "f4"), ("relpos_north", "f4"), ("relpos_east", "f4"), ("relpos_down", "f4"),
             ("rel_heading", "f4"), ("speed_accuracy", "f4"),
@@ -97,29 +97,10 @@ data_f50 = [("acceleration_x", "f4"), ("acceleration_y", "f4"), ("acceleration_z
             ("second", "u1"),
             ("sat_count", "u1"),
             ("sat_fix_type", "u1"),
-            ("xx", "f4"),
-            ("yy", "f4")]
+            ("nanoseconds", "f4"),
+            ("geo_separation", "f4")]
 
-data_f120 = [("acceleration_x", "f4"), ("acceleration_y", "f4"), ("acceleration_z", "f4"), ("rotation_x", "f4"), ("rotation_y", "f4"), ("rotation_z", "f4"),
-             ("magnetic_x", "f4"), ("magnetic_y", "f4"), ("magnetic_z", "f4"), ("Lowcost acc x", "f4"), ("Lowcost acc y", "f4"),
-             ("Lowcost acc z", "f4"), ("Lowcost gyro x", "f4"), ("Lowcost gyro y", "f4"), ("Lowcost gyro z", "f4"),
-             ("Lowcost mag x", "f4"), ("Lowcost mag y", "f4"), ("Lowcost mag z", "f4"), ("pitot", "f4"),
-             ("static_pressure", "f4"), ("abs p", "f4"), ("temperature_pcb", "f4"), ("abs sens t", "f4"), ("voltage", "f4"),
-             ("OAT", "f4"), ("Humidity", "f4"), ("position_north", "f4"), ("position_east", "f4"), ("position_down", "f4"), ("velocity_north", "f4"),
-             ("velocity_east", "f4"), ("velocity_down", "f4"), ("acceleration_gnss_north", "f4"), ("acceleration_gnss_east", "f4"), ("acceleration_gnss_down", "f4"),
-             ("track_ground", "f4"), ("speed_ground", "f4"), ("relpos_north", "f4"), ("relpos_east", "f4"), ("relpos_down", "f4"),
-             ("rel_heading", "f4"), ("speed_accuracy", "f4"),
-             ("latitude", "f8"), ("longitude", "f8"),
-             ("year", "u1"),
-             ("month", "u1"),
-             ("day", "u1"),
-             ("hour", "u1"),
-             ("minute", "u1"),
-             ("second", "u1"),
-             ("sat_count", "u1"),
-             ("sat_fix_type", "u1"),
-             ("nanoseconds", "i4"),
-             ("geo_separation", "i2"),
+data_f120 = data_f50 + [
              ("dummy", "u2"),
              ("ias", "f4"), ("tas", "f4"), ("vario_uncompensated", "f4"), ("vario", "f4"), ("vario_pressure", "f4"),
              ("speed_compensation_tas", "f4"), ("speed_compensation_ins", "f4"), ("vario_average", "f4"), ("wind_north", "f4"),
@@ -135,29 +116,10 @@ data_f120 = [("acceleration_x", "f4"), ("acceleration_y", "f4"), ("acceleration_
              ("dev_yaw_mag", "f4"), ("dev_q1_mag", "f4"), ("dev_q2_mag", "f4"), ("dev_q3_mag", "f4"), ("dev_q4_mag", "f4"), ("dev_acc_front", "f4"),
              ("dev_acc_right", "f4"), ("dev_acc_down", "f4"), ("dev_gyro_front", "f4"), ("dev_gyro_right", "f4"), ("dev_gyro_down", "f4"),
              ("dev_sat_ahrs_heading", "f4"), ("dev_qff", "f4"), ("dev_sat_fix_type_f", "f4"), ("dev_average_headwind", "f4"),
-             ("dev_average_crosswind", "f4"), ("wind_N", "f4"), ("wind_E", "f4"), ("dev_inst_wind_north", "f4"),
-             ("inst wind E", "f4") ]
+             ("dev_average_crosswind", "f4"), ("dev_vario_wind_north", "f4"), ("dev_vario_wind_east", "f4"), ("dev_inst_wind_north", "f4"),
+             ("dev_inst_wind_east", "f4") ]
 
-data_f123 = [("acceleration_x", "f4"), ("acceleration_y", "f4"), ("acceleration_z", "f4"), ("rotation_x", "f4"), ("rotation_y", "f4"), ("rotation_z", "f4"),
-             ("magnetic_x", "f4"), ("magnetic_y", "f4"), ("magnetic_z", "f4"), ("Lowcost acc x", "f4"), ("Lowcost acc y", "f4"),
-             ("Lowcost acc z", "f4"), ("Lowcost gyro x", "f4"), ("Lowcost gyro y", "f4"), ("Lowcost gyro z", "f4"),
-             ("Lowcost mag x", "f4"), ("Lowcost mag y", "f4"), ("Lowcost mag z", "f4"), ("pitot", "f4"),
-             ("static_pressure", "f4"), ("abs p", "f4"), ("temperature_pcb", "f4"), ("abs sens t", "f4"), ("voltage", "f4"),
-             ("OAT", "f4"), ("Humidity", "f4"), ("position_north", "f4"), ("position_east", "f4"), ("position_down", "f4"), ("velocity_north", "f4"),
-             ("velocity_east", "f4"), ("velocity_down", "f4"), ("acceleration_gnss_north", "f4"), ("acceleration_gnss_east", "f4"), ("acceleration_gnss_down", "f4"),
-             ("track_ground", "f4"), ("speed_ground", "f4"), ("relpos_north", "f4"), ("relpos_east", "f4"), ("relpos_down", "f4"),
-             ("rel_heading", "f4"), ("speed_accuracy", "f4"),
-             ("latitude", "f8"), ("longitude", "f8"),
-             ("year", "u1"),
-             ("month", "u1"),
-             ("day", "u1"),
-             ("hour", "u1"),
-             ("minute", "u1"),
-             ("second", "u1"),
-             ("sat_count", "u1"),
-             ("sat_fix_type", "u1"),
-             ("nanoseconds", "i4"),
-             ("geo_separation", "i2"),
+data_f123 = data_f50 + [
              ("dummy", "u2"),
              ("ias", "f4"), ("tas", "f4"), ("vario_uncompensated", "f4"), ("vario", "f4"), ("vario_pressure", "f4"),
              ("speed_compensation_tas", "f4"), ("speed_compensation_ins", "f4"), ("vario_average", "f4"), ("wind_north", "f4"),
@@ -175,9 +137,8 @@ data_f123 = [("acceleration_x", "f4"), ("acceleration_y", "f4"), ("acceleration_
              ("dev_acc_front", "f4"), ("dev_acc_right", "f4"), ("dev_acc_down", "f4"),
              ("dev_gyro_front", "f4"), ("dev_gyro_right", "f4"), ("dev_gyro_down", "f4"), ("dev_sat_ahrs_heading", "f4"),
              ("dev_qff", "f4"), ("dev_sat_fix_type_f", "f4"), ("dev_average_headwind", "f4"), ("dev_average_crosswind", "f4"),
-             ("wind_N", "f4"), ("wind_E", "f4"), ("dev_inst_wind_north", "f4"), ("inst wind E", "f4"), ("dev_speed_comp_1", "f4"),
+             ("dev_vario_wind_north", "f4"), ("dev_vario_wind_east", "f4"), ("dev_inst_wind_north", "f4"), ("dev_inst_wind_east", "f4"), ("dev_speed_comp_1", "f4"),
              ("dev_speed_comp_2", "f4"), ("dev_speed_comp_3", "f4")]
-
 
 raw_data_formats = {'.f37':data_f37, '.f50':data_f50}
 processed_data_formats = {'.f114':data_f114, '.f119':data_f119, '.f120':data_f120_no_low_cost_imu, '.f123':data_f123}
@@ -277,22 +238,7 @@ class Larus2Df:
 
 
 if __name__ == "__main__":
-    i = 0
-
-    while i <= 145:
-        #line = "{}, {}, {}, {}, {}, {}, {}, {}".format(data_f37[i], data_f110[i], data_f114[i], data_f119[i], data_f120_0_2_1[i], data_f123[i], data_f50[i], data_f120[i] )
-        line = "{}, {}, {}".format(data_f114[i], data_f119[i], data_f120_no_low_cost_imu[i])
-
-        if data_f114[i] == data_f119[i] == data_f120_no_low_cost_imu[i]:
-            print(line)
-            i = i + 1
-        else:
-            print("Does not match! Parameter id: {}".format(i))
-            raise Exception("ERROR")
-
-
-
-    exit()
-
     df = Larus2Df('240520_091630.f37')
     print(df.get_df().columns)
+
+
