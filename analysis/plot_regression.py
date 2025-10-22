@@ -20,11 +20,11 @@ class LarusLibComparison:
         t = (self.df1.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
         #df = self.df1
         nav_ind_abs_df1 = np.sqrt(
-            np.square(self.df1['nav ind mag N']) + np.square(self.df1['nav ind mag E']) + np.square(self.df1['nav ind mag D']))
+            np.square(self.df1['dev_nav_ind_mag_north']) + np.square(self.df1['dev_nav_ind_mag_east']) + np.square(self.df1['dev_nav_ind_mag_down']))
 
         nav_ind_abs_df2 = np.sqrt(
-            np.square(self.df2['nav ind mag N']) + np.square(self.df2['nav ind mag E']) + np.square(
-                self.df2['nav ind mag D']))
+            np.square(self.df2['dev_nav_ind_mag_north']) + np.square(self.df2['dev_nav_ind_mag_east']) + np.square(
+                self.df2['dev_nav_ind_mag_down']))
 
         # Plot the data
         figure, axis = plt.subplots()
@@ -39,33 +39,33 @@ class LarusLibComparison:
         axis.legend(["{} nav ind abs".format(self.version1), "{} nav ind abs".format(self.version2)], loc="lower left")
 
         par1 = axis.twinx()
-        par1.plot(t, self.df1['nav ind mag N'].to_numpy(), "r", linewidth=1.5)
-        par1.plot(t, self.df2['nav ind mag N'].to_numpy(), "k--", linewidth=0.5)
+        par1.plot(t, self.df1['dev_nav_ind_mag_north'].to_numpy(), "r", linewidth=1.5)
+        par1.plot(t, self.df2['dev_nav_ind_mag_north'].to_numpy(), "k--", linewidth=0.5)
 
-        par1.plot(t, self.df1['nav ind mag E'].to_numpy(), "g", linewidth=1.5)
-        par1.plot(t, self.df2['nav ind mag E'].to_numpy(), "k--", linewidth=0.5)
+        par1.plot(t, self.df1['dev_nav_ind_mag_east'].to_numpy(), "g", linewidth=1.5)
+        par1.plot(t, self.df2['dev_nav_ind_mag_east'].to_numpy(), "k--", linewidth=0.5)
 
-        par1.plot(t, self.df1['nav ind mag D'].to_numpy(), "b", linewidth=1.5)
-        par1.plot(t, self.df2['nav ind mag D'].to_numpy(), "k--", linewidth=0.5)
+        par1.plot(t, self.df1['dev_nav_ind_mag_down'].to_numpy(), "b", linewidth=1.5)
+        par1.plot(t, self.df2['dev_nav_ind_mag_down'].to_numpy(), "k--", linewidth=0.5)
 
-        par1.legend(['{} nav ind mag N'.format(self.version1),'{} nav ind mag N'.format(self.version2),
-                     '{} nav ind mag E'.format(self.version1), '{} nav ind mag E'.format(self.version2),
-                     '{} nav ind mag D'.format(self.version1),'{} nav ind mag D'.format(self.version2),],
+        par1.legend(['{} dev_nav_ind_mag_north'.format(self.version1),'{} dev_nav_ind_mag_north'.format(self.version2),
+                     '{} dev_nav_ind_mag_east'.format(self.version1), '{} dev_nav_ind_mag_east'.format(self.version2),
+                     '{} dev_nav_ind_mag_down'.format(self.version1),'{} dev_nav_ind_mag_down'.format(self.version2),],
                     loc="lower right")
 
         # TODO: mark lib version in legend
         #axis.legend(["{} nav ind abs".format(self.version1), "{} nav ind abs".format(self.version2)], loc="lower left")
 
-        minimum = self.df1['nav ind mag N'].min()
-        maximum = self.df1['nav ind mag N'].max()
-        if self.df1['nav ind mag E'].min() < minimum:
-            minimum = self.df1['nav ind mag E'].min()
-        if self.df1['nav ind mag E'].max() > maximum:
-            maximum = self.df1['nav ind mag E'].max()
-        if self.df1['nav ind mag D'].min() < minimum:
-            minimum = self.df1['nav ind mag D'].min()
-        if self.df1['nav ind mag D'].max() > maximum:
-            maximum = self.df1['nav ind mag D'].max()
+        minimum = self.df1['dev_nav_ind_mag_north'].min()
+        maximum = self.df1['dev_nav_ind_mag_north'].max()
+        if self.df1['dev_nav_ind_mag_east'].min() < minimum:
+            minimum = self.df1['dev_nav_ind_mag_east'].min()
+        if self.df1['dev_nav_ind_mag_east'].max() > maximum:
+            maximum = self.df1['dev_nav_ind_mag_east'].max()
+        if self.df1['dev_nav_ind_mag_down'].min() < minimum:
+            minimum = self.df1['dev_nav_ind_mag_down'].min()
+        if self.df1['dev_nav_ind_mag_down'].max() > maximum:
+            maximum = self.df1['dev_nav_ind_mag_down'].max()
         par1.set_ylim(minimum - 0.5, maximum + 1.5)
         plt.show()
 
@@ -76,39 +76,39 @@ class LarusLibComparison:
         figure.suptitle(title, size="small")
 
         # Wind instantaneous comparison
-        axis[0,].plot(self.t, self.df1['wind N'].to_numpy(), "r", linewidth=1.5)
-        axis[0,].plot(self.t, self.df2['wind N'].to_numpy(), "k--", linewidth=0.5)
-        axis[0,].legend(["{} wind N".format(self.version1), "{} wind N".format(self.version2)], loc="lower left")
+        axis[0,].plot(self.t, self.df1['wind_north'].to_numpy(), "r", linewidth=1.5)
+        axis[0,].plot(self.t, self.df2['wind_north'].to_numpy(), "k--", linewidth=0.5)
+        axis[0,].legend(["{} wind_north".format(self.version1), "{} wind_north".format(self.version2)], loc="lower left")
         axis[0,].grid()
         par1 = axis[0,].twinx()
-        par1.plot(self.t, self.df1['wind E'].to_numpy(), "c", linewidth=1.5)
-        par1.plot(self.t, self.df2['wind E'].to_numpy(), "k--", linewidth=0.5)
-        par1.legend(['{} wind E'.format(self.version1), '{} wind E'.format(self.version2)], loc="lower right")
+        par1.plot(self.t, self.df1['wind_east'].to_numpy(), "c", linewidth=1.5)
+        par1.plot(self.t, self.df2['wind_east'].to_numpy(), "k--", linewidth=0.5)
+        par1.legend(['{} wind_east'.format(self.version1), '{} wind_east'.format(self.version2)], loc="lower right")
 
         # Wind average comparison including absolute values
 
         wind_abs_avg_df1 = np.sqrt(
-            np.square(self.df1['wind avg N']) + np.square(self.df1['wind avg E'])
+            np.square(self.df1['wind_average_north']) + np.square(self.df1['wind_average_east'])
         )
         wind_abs_avg_df2 = np.sqrt(
-            np.square(self.df2['wind avg N']) + np.square(self.df2['wind avg E'])
+            np.square(self.df2['wind_average_north']) + np.square(self.df2['wind_average_east'])
         )
 
-        axis[1,].plot(self.t, self.df1['wind avg N'].to_numpy(), "m", linewidth=1.5)
-        axis[1,].plot(self.t, self.df2['wind avg N'].to_numpy(), "k--", linewidth=0.5)
-        axis[1,].legend(["{} wind avg N".format(self.version1), "{} wind avg N".format(self.version2)], loc="lower left")
+        axis[1,].plot(self.t, self.df1['wind_average_north'].to_numpy(), "m", linewidth=1.5)
+        axis[1,].plot(self.t, self.df2['wind_average_north'].to_numpy(), "k--", linewidth=0.5)
+        axis[1,].legend(["{} wind average north".format(self.version1), "{} wind average north".format(self.version2)], loc="lower left")
         axis[1,].grid()
         par1 = axis[1,].twinx()
-        par1.plot(self.t, self.df1['wind avg E'].to_numpy(), "y", linewidth=1.5)
-        par1.plot(self.t, self.df2['wind avg E'].to_numpy(), "k--", linewidth=0.5)
+        par1.plot(self.t, self.df1['wind_average_east'].to_numpy(), "y", linewidth=1.5)
+        par1.plot(self.t, self.df2['wind_average_east'].to_numpy(), "k--", linewidth=0.5)
 
         par1.plot(self.t, wind_abs_avg_df1.to_numpy(), "c", linewidth=1.5)
         par1.plot(self.t, wind_abs_avg_df2.to_numpy(), "r", linewidth=1.5)
 
-        par1.legend(['{} wind avg E'.format(self.version1),
-                     '{} wind avg E'.format(self.version2),
-                     '{} wind avg abs'.format(self.version1),
-                     '{} wind avg abs'.format(self.version2)
+        par1.legend(['{} wind average east'.format(self.version1),
+                     '{} wind average east'.format(self.version2),
+                     '{} wind average absolute'.format(self.version1),
+                     '{} wind average absolute'.format(self.version2)
                      ],
                     loc="lower right")
         plt.show()
@@ -117,11 +117,11 @@ class LarusLibComparison:
 
 
     def plot_ahrs_comparison(self):
-        roll_deg_df1 = self.df1['roll'] / 2 / np.pi * 360
-        pitch_deg_df1 = self.df1['pitch'] / 2 / np.pi * 360
+        roll_deg_df1 = self.df1['roll_angle'] / 2 / np.pi * 360
+        pitch_deg_df1 = self.df1['pitch_angle'] / 2 / np.pi * 360
 
-        roll_deg_df2 = self.df2['roll'] / 2 / np.pi * 360
-        pitch_deg_df2 = self.df2['pitch'] / 2 / np.pi * 360
+        roll_deg_df2 = self.df2['roll_angle'] / 2 / np.pi * 360
+        pitch_deg_df2 = self.df2['pitch_angle'] / 2 / np.pi * 360
 
         # Plot the data
         figure, axis = plt.subplots(2, 1, sharex=True)
@@ -163,8 +163,8 @@ class LarusLibComparison:
         axis.grid()
         axis.set_ylabel('GNSS altitude [m]')
 
-        axis.plot(self.df1['Air Density'].to_numpy(),- self.df1['pos DWN'], "r", linewidth=1.5)
-        axis.plot(self.df2['Air Density'].to_numpy(), - self.df2['pos DWN'], "k--", linewidth=0.5)
+        axis.plot(self.df1['air_density'].to_numpy(),- self.df1['position_down'], "r", linewidth=1.5)
+        axis.plot(self.df2['air_density'].to_numpy(), - self.df2['position_down'], "k--", linewidth=0.5)
         axis.legend(["{} Air Density".format(self.version1), "{} Air Density".format(self.version2)], loc="lower left")
         plt.show()
 
