@@ -11,6 +11,17 @@ def can_new_protocol(data: FlightData, datagrams: CanFrames):
                   to_u16(0) +       # Object-ID Generation
                   to_u32(0x4711))   # Device UID
 
+    # Sensorbox hardware and firmware versions
+    datagrams.add(0x521,
+                  to_u8(1) +        # Manufacturer Larus
+                  to_u8(1) +        # Sensorbox
+                  to_u8(1) +        # Sensorbox
+                  to_u8(0) +        # Sensorbox
+                  to_u8(0) +        # v0.5.3.0
+                  to_u8(5) +
+                  to_u8(3) +
+                  to_u8(0))
+
     # Roll Angle and Nick Angle (Front-Right-Down System)
     datagrams.add(0x0120,
                   to_f32(data['roll_angle']) +
