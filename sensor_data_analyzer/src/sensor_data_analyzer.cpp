@@ -51,6 +51,7 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
+#include "persistent_data_file.h"
 
 #if USE_SOFT_IRON_COMPENSATION
 
@@ -89,18 +90,19 @@ uint32_t system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
-void ftoa_test( void);
 bool write_soft_iron_parameters( const char * basename);
 void read_soft_iron_parameters( const char * basename);
 
 int main (int argc, char *argv[])
 {
+#if 1
+  void test_storage( void);
+  test_storage();
+#endif
   unsigned skiptime;
 
 #ifndef _WIN32
-  //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
-  // don't enable UNDERFLOW as this can happen regularly when filter outputs decay
-  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
 #endif
 
   if ((argc != 2) && (argc != 3))

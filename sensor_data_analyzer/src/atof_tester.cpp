@@ -10,13 +10,11 @@
 #include <fenv.h>
 #include "ascii_support.h"
 
-float random_float(float min, float max) {
-    return ((max - min) * ((float)rand() / RAND_MAX)) + min;
-}
+float random_float(float min, float max);
 
 static float extra[] = { 0.0, 1.0, 2.0, 10.0, -10.0, -1.0, -2.0, -0.0000001, 0.0000001};
 
-void   ftoa_test(void)
+void   atof_test(void)
 {
   char buffer[100];
   double maxi = 0;
@@ -26,7 +24,7 @@ void   ftoa_test(void)
     {
       float test = extra[i];
       char * end = my_ftoa( buffer, test);
-      double result = atof( buffer);
+      double result = my_atof( buffer);
 
       double factor = test / result;
 
@@ -40,7 +38,7 @@ void   ftoa_test(void)
 	continue;
       test = expf( test);
       char * end = my_ftoa( buffer, test);
-      double result = atof( buffer);
+      double result = my_atof( buffer);
 
       double factor = test / result;
 
@@ -60,7 +58,7 @@ void   ftoa_test(void)
       float test = random_float( -1, 1);
       test = expf( test);
       char * end = my_ftoa( buffer, test);
-      double result = atof( buffer);
+      double result = my_atof( buffer);
 
       double factor = test / result;
 
@@ -81,7 +79,7 @@ void   ftoa_test(void)
       char * end = my_ftoa( buffer, test);
       assert(( end - buffer) < 15);
 
-      double result = atof( buffer);
+      double result = my_atof( buffer);
 
       double factor = test / result;
       if( 0 == strcmp( buffer, "0.0"))
