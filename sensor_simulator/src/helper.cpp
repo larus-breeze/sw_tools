@@ -1,6 +1,6 @@
 #include "helper.h"
 #include "soft_iron_compensator.h"
-#include <iostream>
+#include <stdio.h>
 
 soft_iron_compensator_t soft_iron_compensator;
 void trigger_soft_iron_compensator_calculation()

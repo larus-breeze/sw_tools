@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",
-            "args": ["240520_091630.f37"],
+            "args": ["240520_091630.f37", "realtime"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

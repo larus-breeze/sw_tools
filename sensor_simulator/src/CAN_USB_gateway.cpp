@@ -25,9 +25,20 @@
 #include "USB_serial.h"
 #include "generic_CAN_driver.h"
 #include <CAN_socket_driver.h>
+#include "UDP_server.h"
 
 bool CAN_send( const CANpacket &p, unsigned)
 {
+
+  uint8_t length = 2 + p.dlc;
+  uint16_t message[5];
+  message[0] = p.id;
+  for (int i = 1; i<5; i++){
+    message[i] = p.data_h[i-1];
+  }
+
+  //Output CAN Date via UDP in order to use the display simulation tool
+  write_UDP_port((char *)message, length);
   CAN_gateway_packet output( p);
 
   write_usb_serial( (uint8_t *) &output, sizeof output);
@@ -37,6 +48,10 @@ bool CAN_send( const CANpacket &p, unsigned)
     CAN_socket_send(p);
 #endif
   return true;
+
+
+
+
 }
 
 

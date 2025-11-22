@@ -10,6 +10,7 @@ add_executable(sensor_simulator
     src/CAN_socket_driver.cpp
     src/CAN_USB_gateway.cpp
     src/helper.cpp
+    src/UDP_server.cpp
 )
 
 target_link_libraries(sensor_simulator PRIVATE larus_lib)
