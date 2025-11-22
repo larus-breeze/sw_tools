@@ -12,10 +12,6 @@ add_executable(sensor_simulator
     src/helper.cpp
 )
 
-target_include_directories(sensor_simulator
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-
 target_link_libraries(sensor_simulator PRIVATE larus_lib)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

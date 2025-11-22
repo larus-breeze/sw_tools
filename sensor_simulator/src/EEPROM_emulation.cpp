@@ -22,9 +22,11 @@
 
  **************************************************************************/
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include "assert.h"
+#include "persistent_data.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -36,8 +38,10 @@ using namespace std;
 
 #include "EEPROM_emulation.h"
 
+#ifdef _WIN32
 #include <istream>
 #include <string>
+#endif
 
 config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
@@ -45,8 +49,16 @@ float configuration( EEPROM_PARAMETER_ID id)
 {
 	if( id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
 		return config_parameters[id].value;
-	else
-		return 0.0f;
+	else{
+    // Return default value if it is not presend in the configuration file
+    for (int i = 0; i < PERSISTENT_DATA_ENTRIES; i++){
+      if (PERSISTENT_DATA[i].id == id){
+        cout << "using default value for EEPROM Parameter(" << id << ")=" << PERSISTENT_DATA[i].default_value << endl;
+        return PERSISTENT_DATA[i].default_value;
+      }
+    }
+  }
+	return NAN;  //This shall not happen!
 }
 
 const persistent_data_t * find_parameter_from_ID( EEPROM_PARAMETER_ID id);
