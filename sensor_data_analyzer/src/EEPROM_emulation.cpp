@@ -68,6 +68,7 @@ bool write_EEPROM_value( EEPROM_PARAMETER_ID id, float value)
   assert( id < EEPROM_PARAMETER_ID_END);
   float old_value = config_parameters[id].value;
   config_parameters[id].value = value;
+  config_parameters[id].identifier = id;
   cout << "EEPROM(" << id << ")=" << old_value << "->" << value << endl;
 #endif
   return false;
@@ -202,8 +203,9 @@ bool write_EEPROM_dump( char * basename)
 	  if( PERSISTENT_DATA[index].is_an_angle)
 	    value *= 180.0 / M_PI; // format it human readable
 
-	  next = append_string( buffer, PERSISTENT_DATA[index].mnemonic);
-	  next = append_string (next," = ");
+	  next = buffer;
+	  append_string( next, PERSISTENT_DATA[index].mnemonic);
+	  append_string (next," = ");
 	  next = my_ftoa (next, value);
 	  *next++='\r';
 	  *next++='\n';
