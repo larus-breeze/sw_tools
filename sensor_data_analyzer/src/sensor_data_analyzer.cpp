@@ -51,7 +51,6 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
-#include "persistent_data_file.h"
 
 #if USE_SOFT_IRON_COMPENSATION
 
@@ -95,10 +94,6 @@ void read_soft_iron_parameters( const char * basename);
 
 int main (int argc, char *argv[])
 {
-#if 1
-  void test_storage( void);
-  test_storage();
-#endif
   unsigned skiptime;
 
 #ifndef _WIN32
