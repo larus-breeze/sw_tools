@@ -6,6 +6,7 @@ from larus_data.larus_to_df import raw_data_formats, processed_data_formats
 from player import Player
 from log_window import LogWindow
 from logger import Logger
+from can_bus.interface import CanFrames
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
@@ -19,10 +20,11 @@ class Window(QtWidgets.QMainWindow):
         dir = os.path.dirname(__file__)
 
         self._logger = Logger()
-        self._log_window = LogWindow(self, self._logger)
-        self._log_window.hide()
 
-        self._player = Player(self, dir, self._logger)
+        self._can_frames = CanFrames()
+        self._log_window = LogWindow(self, self._logger, self._can_frames)
+        self._log_window.hide()
+        self._player = Player(self, dir, self._logger, self._can_frames)
 
         self._splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         self._splitter.addWidget(self._player)

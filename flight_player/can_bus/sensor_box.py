@@ -58,12 +58,14 @@ SETTINGS_LIST = (
     ("ANT_BASELEN", 1.0, 0x00c),
     ("ANT_SLAVE_DOWN", 0.0, 0x00d),
     ("ANT_SLAVE_RIGHT", 0.0, 0x00e),
+
+    ("Vario_Press_TC", 7, 0x00f),
 )
 
 INI_DEFS = (
     ("sensor-orientation", ("SensTilt_Roll", "SensTilt_Pitch", "SensTilt_Yaw")),
     ("pressure-calibration", ("Pitot_Offset", "Pitot_Span", "QNH-delta")),
-    ("preferences", ("Mag_Auto_Calib", "Vario_TC", "Vario_Int_TC", "Wind_TC", "Mean_Wind_TC")),
+    ("preferences", ("Mag_Auto_Calib", "Vario_TC", "Vario_Int_TC", "Wind_TC", "Mean_Wind_TC", "Vario_Press_TC")),
     ("GNSS-type", ("GNSS_CONFIG", )), 
     ("D-GNSS-configuration", ("ANT_BASELEN", "ANT_SLAVE_DOWN", "ANT_SLAVE_RIGHT")),
 )

@@ -8,6 +8,7 @@ sys.path.append(str(Path(__file__).parent.parent))   # Add parent folder to make
 from larus_data.larus_to_df import Larus2Df, check_if_larus_file
 from plot_essentials import *
 
+
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
@@ -196,11 +197,12 @@ class Window(QWidget):
 
     def show_about_widget(self):
         self.aboutWidget = QDialog()  # QSplashScreen() #Splash displayed on wrong monitor
-        self.aboutWidget.setFixedSize(250, 80)
+        self.aboutWidget.setFixedSize(250, 100)
         self.aboutWidget.setWindowTitle("About")
         # Create a label with a message
         label = QLabel(
-            "Larus Analyzer \n Version 0.0.1 \n https://github.com/larus-breeze/"
+            "Larus Analyzer \n Version 0.1.0 \n https://github.com/larus-breeze/ \n "
+            "for sw_sensor release 0.5.0"
         )
 
         dialog_layout = QVBoxLayout()

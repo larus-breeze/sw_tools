@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>details</class>
+ <widget class="QWidget" name="details">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>560</width>
+    <height>723</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QPlainTextEdit" name="plainTextEdit"/>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QComboBox" name="cbCommand">
+       <item>
+        <property name="text">
+         <string comment="0">Volume</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="1">McCready</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="2">Water Ballast</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="3">Bugs</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="4">QNH</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="5">Pilot Weight</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="7">TC Climb Rate</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="8">TC Speed To Fly</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string comment="9">Speed To Fly / Vario</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="dsValue"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbSend">
+       <property name="text">
+        <string>Send via Can</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="hLayout"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

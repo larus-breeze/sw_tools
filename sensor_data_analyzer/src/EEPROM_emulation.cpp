@@ -100,9 +100,9 @@ int read_EEPROM_file (char *basename)
   strcpy (buf, basename);
   strcat (buf, ".EEPROM");
 
-#ifdef _WIN32  // _AUGUST
-  const char *line = NULL;
-  size_t len = 0;
+#ifdef _WIN32  // This flag is set when compiling for Windows
+  char *line = NULL;
+  const persistent_data_t *param;
   ifstream inFile;
   string sline;
 
@@ -111,7 +111,7 @@ int read_EEPROM_file (char *basename)
   for (getline(inFile, sline);
        sline.length();
        getline(inFile, sline)) {
-    line = sline.c_str();
+    line = (char *) sline.c_str();
 #else
   FILE *fp = fopen(buf, "r");
   if (fp == NULL)
@@ -170,7 +170,7 @@ int read_EEPROM_file (char *basename)
     config_parameters[identifier].identifier = identifier;
     config_parameters[identifier].value = value;
 
-#ifdef _WIN32 // _AUGUST
+#ifdef _WIN32 // This flag is set when compiling for Windows
   }
   inFile.close();
 #else 

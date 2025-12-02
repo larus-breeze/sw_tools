@@ -1,6 +1,7 @@
 *.f11*
 *.f37
-*.EEPROM
+*.EEPROM*
+*.f120
 *.pyc
 analysis/build
 sw_update/target

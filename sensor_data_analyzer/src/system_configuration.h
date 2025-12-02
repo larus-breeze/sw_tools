@@ -27,7 +27,7 @@
 
 #define GIT_TAG_DEC 0x12345678 // dummy
 
-#define UNIX 1
+#define UNIX 1   // Indicates to the lib that running on Unix/Windows but not on stm32
 
 #define TCP_PORT 8880	// XCsoar wants this one
 

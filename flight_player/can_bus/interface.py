@@ -13,7 +13,7 @@ class CanInterface():
     """This class represents the interface between the Gui, the CAN bus interfaces and the protocol 
     definitions"""
 
-    def __init__(self, udp_port: int, logger):
+    def __init__(self, udp_port: int, logger, can_frames: CanFrames):
         """Initialize the class with given UDP port"""
         self._ip = '127.0.0.1'
         self._port = udp_port
@@ -27,6 +27,7 @@ class CanInterface():
         self._generic_settings = GenericSettings()
         self._sensor_box = SensorBox()
         self._logger = logger
+        self._can_frames = can_frames
 
     def __del__(self):
         """Close the canbus interface correctly if it was open, when the class is destroyed"""
@@ -60,11 +61,10 @@ class CanInterface():
 
     def can_send_frames(self, data: FlightData):
         """Send the Larus canframes over the given physical interface"""
-        can_data = CanFrames()
         if self._protocol == 'legacy':
-            can_legacy_protocol(data, can_data)
+            can_legacy_protocol(data, self._can_frames)
         else:
-            can_new_protocol(data, can_data)
+            can_new_protocol(data, self._can_frames)
 
         if self._interface == 'CAN':
             while True:
@@ -72,15 +72,19 @@ class CanInterface():
                 if msg == None:
                     break
                 can_frame = CanFrame(msg.arbitration_id, msg.data)
-                self._generic_settings.parse(can_frame, can_data, self._logger)
-                self._sensor_box.parse(can_frame, can_data, self._logger)
+                self._generic_settings.parse(can_frame, self._can_frames, self._logger)
+                self._sensor_box.parse(can_frame, self._can_frames, self._logger)
        
-        for frame in can_data.can_frames:
-            if self._interface == 'UDP':
-                payload = to_i16(frame.id) + frame.data
-                self._socket.sendto(payload, (self._ip, self._port))
-            elif self._interface == 'CAN':
-                msg = can.Message(arbitration_id=frame.id, data=frame.data, is_extended_id=False)
-                self._canbus.send(msg)
+        while True:
+            frame = self._can_frames.can_frame
+            if frame is None:
+                break
             else:
-                raise ValueError("Unknown Interface")
+                if self._interface == 'UDP':
+                    payload = to_i16(frame.id) + frame.data
+                    self._socket.sendto(payload, (self._ip, self._port))
+                elif self._interface == 'CAN':
+                    msg = can.Message(arbitration_id=frame.id, data=frame.data, is_extended_id=False)
+                    self._canbus.send(msg)
+                else:
+                    raise ValueError("Unknown Interface")
