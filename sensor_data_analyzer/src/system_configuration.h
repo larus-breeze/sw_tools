@@ -56,9 +56,11 @@
 #define MAGNETIC_DECISION_OVERRIDE 	0
 #define EEPROM_WRITES_LOGGED		1
 #define DISABLE_SAT_COMPASS		0
-#define USE_LARUS_NMEA_EXTENSIONS	1
 #define ENABLE_LINUX_CAN_INTERFACE	1
-#define LONGTIME_MAG_TEST		0  //This shall not be set to 1 if creating binaries for the python plot tools
+#define LONGTIME_MAG_TEST		1
+#define REPORT_MAGNETIC_CALIBRATION	1
+#define USE_SOFT_IRON_COMPENSATION	1
+#define PRINT_SOFT_IRON_PARAMETERS	1
 
 #define LIMIT_DENSITY_CORRECTION( x)
 
