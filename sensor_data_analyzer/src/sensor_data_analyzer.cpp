@@ -97,7 +97,9 @@ int main (int argc, char *argv[])
   unsigned skiptime;
 
 #ifndef _WIN32
-  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+  // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
+  //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
   if ((argc != 2) && (argc != 3))
