@@ -31,6 +31,7 @@
 #include "math.h"
 #include "system_configuration.h"
 #include "ascii_support.h"
+#include "persistent_data_file.h"
 
 using namespace std;
 
@@ -41,12 +42,29 @@ using namespace std;
 
 config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
-float configuration( EEPROM_PARAMETER_ID id)
+float configuration (EEPROM_PARAMETER_ID id)
 {
-	if( id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
-		return config_parameters[id].value;
-	else
-		return 0.0f;
+  if (using_permanent_data_file)
+    {
+      float value;
+      bool result = permanent_data_file.retrieve_data (id, 1, (uint32_t *)&value);
+      if (result)
+	return value;
+      else
+	{
+	  uint8_t value;
+	  result = permanent_data_file.retrieve_data (id, value);
+	  assert( result);
+	  return value;
+	}
+    }
+  else
+    {
+      if (id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
+	return config_parameters[id].value;
+      else
+	return 0.0f;
+    }
 }
 
 const persistent_data_t * find_parameter_from_ID( EEPROM_PARAMETER_ID id);
@@ -124,10 +142,12 @@ int read_EEPROM_file (char *basename)
   while ((getline(&line, &len, fp)) != -1)
     {
 #endif
+
     bool new_format = false;
     EEPROM_PARAMETER_ID identifier = (EEPROM_PARAMETER_ID)read_identifier(line);
     if (identifier == EEPROM_PARAMETER_ID_END)
       {
+	// if the line starts with the parameter name
 	param = find_parameter_from_name( line);
 	new_format = true;
       }
@@ -148,7 +168,7 @@ int read_EEPROM_file (char *basename)
       )
       continue;
 
-      float value;
+    float value;
 
       if ( new_format)
 	{

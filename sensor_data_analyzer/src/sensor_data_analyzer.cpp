@@ -51,8 +51,15 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
+#include "persistent_data_file.h"
 
-#if USE_SOFT_IRON_COMPENSATION
+#define FILE_SYSTEM_SIZE 1024
+
+node permanent_file[FILE_SYSTEM_SIZE];
+file_system permanent_data_file (permanent_file,
+				 permanent_file + FILE_SYSTEM_SIZE);
+bool using_permanent_data_file = false;
+
 
 #include "soft_iron_compensator.h"
 soft_iron_compensator_t soft_iron_compensator;
@@ -60,18 +67,6 @@ void trigger_soft_iron_compensator_calculation()
 {
   soft_iron_compensator.calculate();
 }
-
-#endif
-
-#if 0
-#include "compass_calibrator_3D.h"
-compass_calibrator_3D_t compass_calibrator_3D;
-
-void trigger_compass_calibrator_3D_calculation(void)
-{
-  compass_calibrator_3D.calculate();
-}
-#endif
 
 #ifdef _WIN32
 # pragma float_control(except, on)
@@ -89,8 +84,8 @@ uint32_t system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
-bool write_soft_iron_parameters( const char * basename);
-void read_soft_iron_parameters( const char * basename);
+bool read_meta_data_file( char * file_path);
+void write_permanent_data_file( char * file_name);
 
 int main (int argc, char *argv[])
 {
@@ -99,7 +94,7 @@ int main (int argc, char *argv[])
 #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
-  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
   if ((argc != 2) && (argc != 3))
@@ -109,10 +104,10 @@ int main (int argc, char *argv[])
     }
 
   bool realtime_with_TCP_server = argc == 3;
-  if( realtime_with_TCP_server)
-    skiptime = 10 * atoi( argv[2]); // at 10Hz output rate
+  if (realtime_with_TCP_server)
+    skiptime = 10 * atoi (argv[2]); // at 10Hz output rate
 
-  output_data_t * output_data;
+  output_data_t *output_data;
 
   ifstream file (argv[1], ios::in | ios::binary | ios::ate);
   if (!file.is_open ())
@@ -121,66 +116,32 @@ int main (int argc, char *argv[])
       return -1;
     }
 
-  if( realtime_with_TCP_server)
+  if (realtime_with_TCP_server)
     {
-      realtime_with_TCP_server = open_TCP_port();
-      realtime_with_TCP_server = accept_TCP_client(true);
+      realtime_with_TCP_server = open_TCP_port ();
+      realtime_with_TCP_server = accept_TCP_client (true);
     }
 
 #ifndef _WIN32
-  if( realtime_with_TCP_server)
+  if (realtime_with_TCP_server)
     {
-      open_USB_serial ( (char*)"/dev/ttyUSB0");
+      open_USB_serial ((char*) "/dev/ttyUSB0");
 #if ENABLE_LINUX_CAN_INTERFACE
-      CAN_socket_initialize();
+      CAN_socket_initialize ();
 #endif
     }
 #endif
 
-  // cut off file extension
-  char basename[100];
-  strcpy( basename, argv[1]);
-  char * dot = strrchr( basename, '.');
-  if( (dot != 0) && (dot[1] == 'f')) // old format: filename.f37.EEPROM new: filename.EEPROM
-    *dot=0; // cut off .f37 extension
-
-#if LONGTIME_MAG_TEST
-// try to read "config.EEPROM" first
-  char config_path[200];
-  strcpy( config_path, basename);
-  char * slash_location = strrchr( config_path, '/');
-  *slash_location = 0;
-  strcat( config_path, "/config");
-
-  if( read_EEPROM_file ( config_path) == EXIT_FAILURE)
+  if (not read_meta_data_file (argv[1]))
     {
-      // try to read the EEPROM file accompanying the data file
-      if( read_EEPROM_file ( basename) == EXIT_FAILURE)
-	{
-	  cout << "Unable to open EEPROM file";
-	  return -1;
-	}
-    }
-#else // read the accompanying *.EEPROM only
-  if( read_EEPROM_file ( basename) == EXIT_FAILURE)
-    {
-      cout << "Unable to open EEPROM file";
+      printf ("Unable to open metadata file\n");
       return -1;
     }
-#endif
-  ensure_EEPROM_parameter_integrity();
-
-#if USE_SOFT_IRON_COMPENSATION
-
-  slash_location = strrchr( config_path, '/');
-  *slash_location = 0;
-  read_soft_iron_parameters( config_path);
-#endif
 
   organizer_t organizer;
 
   streampos size = file.tellg ();
-  observations_type  * in_data;
+  observations_type *in_data;
   in_data = (observations_type*) new char[size];
   unsigned records = size / sizeof(observations_type);
 
@@ -193,7 +154,7 @@ int main (int argc, char *argv[])
 
 // ************************************************************
 
-  organizer.initialize_before_measurement();
+  organizer.initialize_before_measurement ();
 
   int32_t nano = 0;
   int delta_time;
@@ -201,27 +162,31 @@ int main (int argc, char *argv[])
   output_data[0].m = in_data[0].m;
   output_data[0].c = in_data[0].c;
 
-  organizer.update_GNSS_data(output_data[0].c);
-  organizer.update_magnetic_induction_data( output_data[0].c.latitude, output_data[0].c.longitude);
+  organizer.update_GNSS_data (output_data[0].c);
+  organizer.update_magnetic_induction_data (output_data[0].c.latitude,
+					    output_data[0].c.longitude);
 
   unsigned counter_10Hz = 10;
-  auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
+  auto until = awake_time (std::chrono::steady_clock::now ()); // start with now + 100ms
 
   bool have_GNSS_fix = false;
 
   unsigned count;
-  for ( count = 1; count < records; ++count)
+  for (count = 1; count < records; ++count)
     {
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
-      organizer.on_new_pressure_data( output_data[count]);
+      organizer.on_new_pressure_data (output_data[count].m.static_pressure,
+				      output_data[count].m.pitot_pressure);
 
-      if( have_GNSS_fix == false)
+      if (have_GNSS_fix == false)
 	{
-	  if( output_data[count].c.sat_fix_type > 0)
+	  if (output_data[count].c.sat_fix_type > 0)
 	    {
-	      organizer.update_magnetic_induction_data( output_data[count].c.latitude, output_data[count].c.longitude);
-	      organizer.initialize_after_first_measurement( output_data[count]);
+	      organizer.update_magnetic_induction_data (
+		  output_data[count].c.latitude,
+		  output_data[count].c.longitude);
+	      organizer.initialize_after_first_measurement (output_data[count]);
 	      have_GNSS_fix = true;
 	    }
 	}
@@ -229,71 +194,76 @@ int main (int argc, char *argv[])
       if (output_data[count].c.nano != nano) // 10 Hz by GNSS
 	{
 	  delta_time = output_data[count].c.nano - nano;
-	  if( delta_time < 0 )
+	  if (delta_time < 0)
 	    delta_time += 1000000000;
 	  nano = output_data[count].c.nano;
 
-	  organizer.update_GNSS_data(output_data[count].c);
+	  organizer.update_GNSS_data (output_data[count].c);
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
-      organizer.update_every_10ms( output_data[count]);
+      organizer.update_every_10ms (output_data[count]);
 
       --counter_10Hz;
-      if(counter_10Hz == 0)
+      if (counter_10Hz == 0)
 	{
-	  bool landing_detected = organizer.update_every_100ms( output_data[count]);
-	  if( landing_detected)
-	    printf( "landed at log time %d minutes.\n", count / 6000);
+	  bool landing_detected = organizer.update_every_100ms (
+	      output_data[count]);
+	  if (landing_detected)
+	    printf ("landed at log time %d minutes.\n", count / 6000);
 	  counter_10Hz = 10;
 	}
 
-      organizer.report_data(output_data[count]);
+      organizer.report_data (output_data[count]);
 
-      if( count % 10 == 0)
+      if (count % 10 == 0)
 	{
-	  if( realtime_with_TCP_server)
+	  if (realtime_with_TCP_server)
 	    {
-	      if( skiptime > 0)
+	      if (skiptime > 0)
 		{
 		  --skiptime;
 		  continue;
 		}
 
 	      string_buffer_t buffer;
-	      buffer.length=0;
+	      buffer.length = 0;
 
-	      if( count % 40 == 0)
-		format_NMEA_string_fast( (const output_data_t&) *(output_data+count), buffer, true);
+	      if (count % 40 == 0)
+		format_NMEA_string_fast (
+		    (const output_data_t&) *(output_data + count), buffer,
+		    true);
 
-	      if( count % 160 == 0)
-		format_NMEA_string_slow( (const output_data_t&) *(output_data+count), buffer);
+	      if (count % 160 == 0)
+		format_NMEA_string_slow (
+		    (const output_data_t&) *(output_data + count), buffer);
 
-	      if( buffer.length != 0)
-		write_TCP_port( buffer.string, buffer.length);
+	      if (buffer.length != 0)
+		write_TCP_port (buffer.string, buffer.length);
 
 #if ENABLE_LINUX_CAN_INTERFACE
-	      CAN_output( (const output_data_t&) *(output_data+count), true);
+	      CAN_output ((const output_data_t&) *(output_data + count), true);
 #endif
 
-	      if (until <= std::chrono::steady_clock::now())
-			    until = awake_time(std::chrono::steady_clock::now());
-	      std::this_thread::sleep_until(until);
-	      until = awake_time(until);
+	      if (until <= std::chrono::steady_clock::now ())
+		until = awake_time (std::chrono::steady_clock::now ());
+	      std::this_thread::sleep_until (until);
+	      until = awake_time (until);
 	    }
 	}
-
     }
+
   printf ("%d records\n", count);
 
+  // create file name for the data output file
   char buf[200];
   char ascii_len[10];
-  sprintf (ascii_len, "%d", (int)(sizeof(output_data_t) / sizeof(float)));
+  sprintf (ascii_len, "%d", (int) (sizeof(output_data_t) / sizeof(float)));
   strcpy (buf, argv[1]);
   strcat (buf, ".f");
   strcat (buf, ascii_len);
 
-  if( ! realtime_with_TCP_server)
+  if (!realtime_with_TCP_server)
     {
       ofstream outfile (buf, ios::out | ios::binary | ios::ate);
       if (outfile.is_open ())
@@ -302,69 +272,26 @@ int main (int argc, char *argv[])
 			 records * sizeof(output_data_t));
 	  outfile.close ();
 	}
-
-#if LONGTIME_MAG_TEST
-      char * path_end = strrchr( buf, '/');
-      *path_end=0;
-      write_EEPROM_dump(buf); // make new magnetic data permanent
-#endif
-
-#if USE_SOFT_IRON_COMPENSATION
-      write_soft_iron_parameters( buf);
-#endif
     }
+
+  if (soft_iron_compensator.available ())
+    {
+      const void *data = soft_iron_compensator.get_current_parameters ();
+      bool result = permanent_data_file.store_data (
+	  SOFT_IRON_PARAMETERS,
+	  soft_iron_compensator.get_parameters_size () / sizeof(float32_t),
+	  data);
+      assert(result == true);
+    }
+
+  write_permanent_data_file( argv[1]);
 
   delete[] in_data;
   delete[] output_data;
 
-  if( realtime_with_TCP_server)
-    close_TCP_port();
+  if (realtime_with_TCP_server)
+    close_TCP_port ();
 }
-
-#if USE_SOFT_IRON_COMPENSATION
-
-bool write_soft_iron_parameters( const char * basename)
-{
-  const computation_float_type * data = soft_iron_compensator.get_current_parameters();
-  if( data == 0)
-    return true;
-
-  char buffer[200];
-  strcpy(buffer, basename);
-  strcat( buffer, "/soft_iron_parameters.f30");
-  ofstream outfile ( buffer, ios::out | ios::binary | ios::ate);
-  if ( ! outfile.is_open ())
-    return true;
-
-  outfile.write ( (const char *)data, soft_iron_compensator.get_parameters_size());
-
-  outfile.close ();
-  return false;
-}
-
-void read_soft_iron_parameters( const char * basename)
-{
-  char buf[200];
-  strcpy (buf, basename);
-  strcat (buf, "/soft_iron_parameters.f30");
-
-  FILE *fp = fopen(buf, "r");
-  if (fp == NULL)
-    return;
-
-  char * pdata = new char[soft_iron_compensator.get_parameters_size()];
-  if( pdata == 0)
-    return;
-
-  unsigned size = fread ( pdata, soft_iron_compensator.get_parameters_size(), 1, fp);
-  if( size == 1)
-    soft_iron_compensator.set_current_parameters( (const float *)pdata);
-
-  delete [] pdata;
-  fclose(fp);
-}
-
-#endif
 
 void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report, char )
 {
@@ -391,4 +318,201 @@ void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_ma
 bool CAN_gateway_poll(CANpacket&, unsigned int)
 {
   return false; // presently just an empty stub
+}
+
+bool read_meta_data_file (char *file_path)
+{
+  char path[100];
+  strcpy (path, file_path);
+  char *slash = strrchr (path, '/');
+  if (slash != 0)
+    slash[1] = 0;
+  else
+    {
+      printf ("Unable to open *.f37 data file - exiting");
+      exit (-1);
+    }
+
+  strcat (path, "configuration_data_file.dat");
+
+  // FIRST preference: read the configuration data file
+  ifstream config_file (path, ios::in | ios::binary | ios::ate);
+  if (config_file.is_open ())
+    {
+      streampos size = config_file.tellg ();
+      if (size != (FILE_SYSTEM_SIZE * sizeof(uint32_t)))
+	{
+	  printf ("configuration_data_file.dat : wrong file size\n");
+	  return -1;
+	}
+
+      config_file.seekg (0, ios::beg);
+      config_file.read ((char*) permanent_file, size);
+      config_file.close ();
+
+      bool result = permanent_data_file.setup (permanent_file, FILE_SYSTEM_SIZE);
+      assert(result == true);
+
+      assert( permanent_data_file.is_consistent ());
+      printf ("config file read\n");
+      using_permanent_data_file = true;
+
+      unsigned size_bytes = soft_iron_compensator.get_parameters_size();
+      float *soft_iron_parameters = new float[ size_bytes];
+      permanent_data_file.retrieve_data( SOFT_IRON_PARAMETERS, size_bytes / sizeof( float32_t), soft_iron_parameters);
+      soft_iron_compensator.set_parameters(soft_iron_parameters);
+    }
+  else
+    {
+      // SECOND preference: Read the meta-data in "config.EEPROM"
+      slash = strrchr (path, '/');
+      if (slash != 0)
+	slash[1] = 0;
+      else
+	{
+	  printf ("Unable to open configuration - exiting");
+	  exit (-1);
+	}
+      strcat (path, "config");
+      if (read_EEPROM_file (path) != EXIT_SUCCESS)
+	{
+	  // THIRD preference: Read the meta-data accompanying the *.f32 i.e. "*.EEPROM"
+	  strcpy (path, file_path);
+	  char *dot = strrchr (path, '.');
+	  if (dot)
+	    *dot = 0;
+	  if (read_EEPROM_file (path) != EXIT_SUCCESS)
+	    {
+	      printf ("None of the configuration files found, exiting\n");
+	      return -1;
+	    }
+	}
+
+      ensure_EEPROM_parameter_integrity ();
+
+      // migration of the EEPROM values into the configuration data file format
+      memset( permanent_file, 0xff, FILE_SYSTEM_SIZE * sizeof( uint32_t));
+      bool result = permanent_data_file.setup (permanent_file, FILE_SYSTEM_SIZE);
+      assert(result == true);
+
+      float value;
+
+      value = configuration (SENS_TILT_ROLL);
+      result = permanent_data_file.store_data (SENS_TILT_ROLL, 1, &value);
+
+      value = configuration (SENS_TILT_PITCH);
+      result = permanent_data_file.store_data (SENS_TILT_PITCH, 1, &value);
+
+      value = configuration (SENS_TILT_YAW);
+      result = permanent_data_file.store_data (SENS_TILT_YAW, 1, &value);
+
+      value = configuration (PITOT_OFFSET);
+      result = permanent_data_file.store_data (PITOT_OFFSET, 1, &value);
+
+      value = configuration (PITOT_SPAN);
+      result = permanent_data_file.store_data (PITOT_SPAN, 1, &value);
+      assert(result == true);
+
+      value = configuration (QNH_OFFSET);
+      result = permanent_data_file.store_data (QNH_OFFSET, 1, &value);
+      assert(result == true);
+
+      value = configuration (VARIO_TC);
+      result = permanent_data_file.store_data (VARIO_TC, 1, &value);
+      assert(result == true);
+
+      value = configuration (VARIO_INT_TC);
+      result = permanent_data_file.store_data (VARIO_INT_TC, 1, &value);
+      assert(result == true);
+
+      value = configuration (VARIO_P_TC);
+      result = permanent_data_file.store_data (VARIO_P_TC, 1, &value);
+      assert(result == true);
+
+      value = configuration (WIND_TC);
+      result = permanent_data_file.store_data (WIND_TC, 1, &value);
+      assert(result == true);
+
+      value = configuration (MEAN_WIND_TC);
+      result = permanent_data_file.store_data (MEAN_WIND_TC, 1, &value);
+      assert(result == true);
+
+      value = configuration (HORIZON);
+      result = permanent_data_file.store_data (HORIZON, round (value));
+      assert(result == true);
+
+      value = configuration (MAG_AUTO_CALIB);
+      result = permanent_data_file.store_data (MAG_AUTO_CALIB, round (value));
+      assert(result == true);
+
+      value = configuration (GNSS_CONFIGURATION);
+      result = permanent_data_file.store_data (GNSS_CONFIGURATION,
+					       round (value));
+      assert(result == true);
+
+      value = configuration (ANT_BASELENGTH);
+      result = permanent_data_file.store_data (ANT_BASELENGTH, 1, &value);
+      assert(result == true);
+
+      value = configuration (ANT_SLAVE_DOWN);
+      result = permanent_data_file.store_data (ANT_SLAVE_DOWN, 1, &value);
+      assert(result == true);
+
+      value = configuration (ANT_SLAVE_RIGHT);
+      result = permanent_data_file.store_data (ANT_SLAVE_RIGHT, 1, &value);
+      assert(result == true);
+
+      {
+      float32_t magnetic_calibration_data[] =
+	{ configuration (MAG_X_OFF), configuration (MAG_X_SCALE),
+	    configuration (MAG_Y_OFF), configuration (MAG_Y_SCALE),
+	    configuration (MAG_Z_OFF), configuration (MAG_Z_SCALE),
+	    configuration (MAG_STD_DEVIATION) };
+
+      result = permanent_data_file.store_data (
+	  MAG_SENSOR_CALIBRATION,
+	  sizeof(magnetic_calibration_data) / sizeof(float32_t),
+	  magnetic_calibration_data);
+      assert(result == true);
+      }
+
+      permanent_data_file.dump_all_entries ();
+      assert( permanent_data_file.is_consistent());
+
+      char * slash = strrchr( path, '/');
+      if( slash != 0)
+	slash[1] = 0;
+      strcat( path, "configuration_data_file.dat");
+      ofstream perm_data_file (path, ios::out | ios::binary | ios::ate);
+      if (!perm_data_file.is_open ())
+	return false;
+
+      perm_data_file.write ((const char*) permanent_file,
+      FILE_SYSTEM_SIZE * sizeof(uint32_t));
+      perm_data_file.close ();
+      printf ("configuration_data_file.dat written - closing");
+      exit (0);
+    }
+  return true;
+}
+
+void write_permanent_data_file( char * file_name)
+{
+  assert( permanent_data_file.is_consistent() );
+  char path[100];
+  strcpy( path, file_name);
+  char * slash = strrchr( path, '/');
+  assert( slash != 0);
+  slash[1]=0;
+  strcat( path, "configuration_data_file.dat");
+  ofstream perm_data_file (path, ios::out | ios::binary | ios::ate);
+  if (!perm_data_file.is_open ())
+    {
+      printf ("cannot open file : configuration_data_file.dat - closing");
+      exit (0);
+    }
+
+  perm_data_file.write ((const char*) permanent_file,
+  FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  perm_data_file.close ();
 }
