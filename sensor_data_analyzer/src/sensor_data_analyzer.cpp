@@ -60,7 +60,6 @@ file_system permanent_data_file (permanent_file,
 				 permanent_file + FILE_SYSTEM_SIZE);
 bool using_permanent_data_file = false;
 
-
 #include "soft_iron_compensator.h"
 soft_iron_compensator_t soft_iron_compensator;
 void trigger_soft_iron_compensator_calculation()
@@ -329,7 +328,7 @@ bool read_meta_data_file (char *file_path)
     slash[1] = 0;
   else
     {
-      printf ("Unable to open *.f37 data file - exiting");
+      printf ("Wrong file path - exiting\n");
       exit (-1);
     }
 
@@ -355,12 +354,18 @@ bool read_meta_data_file (char *file_path)
 
       assert( permanent_data_file.is_consistent ());
       printf ("config file read\n");
-      using_permanent_data_file = true;
 
       unsigned size_bytes = soft_iron_compensator.get_parameters_size();
       float *soft_iron_parameters = new float[ size_bytes];
-      permanent_data_file.retrieve_data( SOFT_IRON_PARAMETERS, size_bytes / sizeof( float32_t), soft_iron_parameters);
-      soft_iron_compensator.set_parameters(soft_iron_parameters);
+      assert( soft_iron_parameters);
+      bool parameters_available = permanent_data_file.retrieve_data( SOFT_IRON_PARAMETERS, size_bytes / sizeof( float32_t), soft_iron_parameters);
+      if( parameters_available)
+	soft_iron_compensator.set_parameters(soft_iron_parameters);
+      delete[] soft_iron_parameters;
+
+      permanent_data_file.dump_all_entries ();
+
+      using_permanent_data_file = true;
     }
   else
     {
@@ -465,9 +470,9 @@ bool read_meta_data_file (char *file_path)
       {
       float32_t magnetic_calibration_data[] =
 	{ configuration (MAG_X_OFF), configuration (MAG_X_SCALE),
-	    configuration (MAG_Y_OFF), configuration (MAG_Y_SCALE),
-	    configuration (MAG_Z_OFF), configuration (MAG_Z_SCALE),
-	    configuration (MAG_STD_DEVIATION) };
+	  configuration (MAG_Y_OFF), configuration (MAG_Y_SCALE),
+	  configuration (MAG_Z_OFF), configuration (MAG_Z_SCALE),
+	  configuration (MAG_STD_DEVIATION) };
 
       result = permanent_data_file.store_data (
 	  MAG_SENSOR_CALIBRATION,
