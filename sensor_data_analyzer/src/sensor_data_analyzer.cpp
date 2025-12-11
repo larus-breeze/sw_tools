@@ -254,21 +254,20 @@ int main (int argc, char *argv[])
 
   printf ("%d records\n", count);
 
-  // create file name for the data output file
-  char buf[200];
-  char ascii_len[10];
-  sprintf (ascii_len, "%d", (int) (sizeof(output_data_t) / sizeof(float)));
-  strcpy (buf, argv[1]);
-  strcat (buf, ".f");
-  strcat (buf, ascii_len);
-
   if (!realtime_with_TCP_server)
     {
+      // create file name for the data output file
+      char buf[200];
+      char ascii_len[10];
+      sprintf (ascii_len, "%d", (int) (sizeof(output_data_t) / sizeof(float)));
+      strcpy (buf, argv[1]);
+      strcat (buf, ".f");
+      strcat (buf, ascii_len);
+
       ofstream outfile (buf, ios::out | ios::binary | ios::ate);
       if (outfile.is_open ())
 	{
-	  outfile.write ((const char*) output_data,
-			 records * sizeof(output_data_t));
+	  outfile.write ((const char*) output_data, records * sizeof(output_data_t));
 	  outfile.close ();
 	}
     }
