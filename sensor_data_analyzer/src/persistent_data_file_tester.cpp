@@ -25,22 +25,17 @@
 
 #ifdef DEBUG
 
-void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words)
-{
-  memcpy( dest, source, n_words * sizeof( uint32_t));
-}
-
 #define STORAGE_SIZE 1024
-node storage[STORAGE_SIZE];
+EEPROM_file_system_node storage[STORAGE_SIZE];
 
 void test_storage( void)
 {
   bool success;
   memset( storage, 0xff, STORAGE_SIZE * sizeof(uint32_t));
-  file_system file( storage, storage+STORAGE_SIZE);
+  EEPROM_file_system file( storage, storage+STORAGE_SIZE);
 
   uint8_t datum1 = 0x34;
-  file.store_data(1, node::DIRECT_8_BIT, &datum1);
+  file.store_data(1, EEPROM_file_system_node::DIRECT_8_BIT, &datum1);
 
   success = file.is_consistent();
 

@@ -32,10 +32,18 @@
 #include "system_configuration.h"
 #include "ascii_support.h"
 #include "persistent_data_file.h"
+#include "EEPROM_emulation.h"
 
 using namespace std;
 
-#include "EEPROM_emulation.h"
+EEPROM_file_system_node permanent_file[EEPROM_FILE_SYSTEM_SIZE];
+EEPROM_file_system permanent_data_file (permanent_file,  permanent_file + EEPROM_FILE_SYSTEM_SIZE);
+bool using_permanent_data_file = false;
+
+void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words)
+{
+  memcpy( dest, source, n_words * sizeof( uint32_t));
+}
 
 #include <istream>
 #include <string>

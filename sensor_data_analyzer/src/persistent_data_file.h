@@ -40,56 +40,56 @@ void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words);
 
 enum EEPROM_PARAMETER_FILE_ID
 {
-  MAG_SENSOR_CALIBRATION=50,	// xoff xscale yoff yscale zoff zscale std-deviation : 7 floats
+  MAG_SENSOR_CALIBRATION=50,	// xoff xscale yoff yscale zoff zscale variance : 7 floats
   SOFT_IRON_PARAMETERS,		// 10 float values for x,y,z each : 30 floats
   EXT_MAG_SENSOR_XFER_MATRIX	// 4 input 3 output channels : 12 floats
 } ;
 
-class node
+class EEPROM_file_system_node
 {
 public:
   enum{ DIRECT_8_BIT=0};
 
   typedef uint8_t ID_t;
 
-  node * next( void)
+  EEPROM_file_system_node * next( void)
   {
     return this + size;
   }
 
   ID_t id;
-  uint8_t size; // size in 32-bit units of entry including sizeof( node)
+  uint8_t size; // size in 32-bit units of entry including node itself
   uint16_t data; // direct 8bit + checksum OR crc of 32bit data file
 };
 
-class file_system
+class EEPROM_file_system
 {
 public:
-  file_system( node * begin, node * behind_end)
-  : head( (node *)begin),
+  EEPROM_file_system( EEPROM_file_system_node * begin, EEPROM_file_system_node * behind_end)
+  : head( (EEPROM_file_system_node *)begin),
     free_space( begin),
     tail( behind_end)
   {
     free_space = find_end();
   }
 
-  node * find_datum( node::ID_t id)
+  EEPROM_file_system_node * find_datum( EEPROM_file_system_node::ID_t id)
   {
     return find_last_datum( head, id);
   }
 
-  bool store_data( node::ID_t id, unsigned data_size_words, const void * data)
+  bool store_data( EEPROM_file_system_node::ID_t id, unsigned data_size_words, const void * data)
   {
-    node * next_entry = (node *)free_space;
+    EEPROM_file_system_node * next_entry = (EEPROM_file_system_node *)free_space;
 
     if( next_entry + data_size_words + 1 >= tail)
       return false; // no more room !
 
-    node temp_node;
+    EEPROM_file_system_node temp_node;
     temp_node.id = id;
     temp_node.size = data_size_words + 1; // size including node itself
 
-    if( data_size_words == node::DIRECT_8_BIT) // if direct 16bit data
+    if( data_size_words == EEPROM_file_system_node::DIRECT_8_BIT)
       {
 
 	uint16_t checked_datum = *(uint8_t *)data; 	// take only 8 bits
@@ -110,16 +110,16 @@ public:
     return true;
   }
 
-  bool store_data( node::ID_t id, const uint8_t data)
+  bool store_data( EEPROM_file_system_node::ID_t id, const uint8_t data)
   {
-    return store_data( id, node::DIRECT_8_BIT, &data);
+    return store_data( id, EEPROM_file_system_node::DIRECT_8_BIT, &data);
   }
 
-  bool retrieve_data( node::ID_t id, unsigned data_size, void * target)
+  bool retrieve_data( EEPROM_file_system_node::ID_t id, unsigned data_size, void * target)
   {
     uint32_t *dest = (uint32_t *)target;
     unsigned size_including_node = data_size + 1; // size including node itself
-    node * candidate = find_last_datum( head, id);
+    EEPROM_file_system_node * candidate = find_last_datum( head, id);
     if( candidate == 0 || size_including_node != candidate->size)
       return false;
 
@@ -141,9 +141,9 @@ public:
     return true;
   }
 
-  bool retrieve_data( node::ID_t id, uint8_t & target)
+  bool retrieve_data( EEPROM_file_system_node::ID_t id, uint8_t & target)
   {
-    node * my_node = find_last_datum( head, id);
+    EEPROM_file_system_node * my_node = find_last_datum( head, id);
     if( my_node == 0)
       return false;
 
@@ -161,8 +161,8 @@ public:
 
   void dump_all_entries( void)
   {
-    node * the_node;
-    for( node::ID_t id=1; id < 255; ++id)
+    EEPROM_file_system_node * the_node;
+    for( EEPROM_file_system_node::ID_t id=1; id < 255; ++id)
       {
         the_node = find_last_datum( head, id);
         if( the_node != 0)
@@ -188,7 +188,7 @@ public:
   bool is_consistent(void)
   {
     //check all nodes for consistency
-    for( node * work = head; *(uint32_t *)work != 0xffffffff && work < free_space; work = work->next())
+    for( EEPROM_file_system_node * work = head; *(uint32_t *)work != 0xffffffff && work < free_space; work = work->next())
       {
 	if( work->size == 1) // we have found a direct-data-entry
 	  {
@@ -204,11 +204,11 @@ public:
     return true;
   }
 
-  bool setup( node * begin, unsigned size_words)
+  bool setup( EEPROM_file_system_node * begin, unsigned size_words)
   {
     head = begin;
     tail = head + size_words;
-    node * work;
+    EEPROM_file_system_node * work;
     for( work = head; (work->id != 0x00) && (work->id != 0xff); work=work->next())
 	if( work >= tail)
 	  return false;
@@ -218,7 +218,7 @@ public:
 
 private:
 
-  uint16_t check_and_pack_id_len_and_data( node the_node, uint8_t datum)
+  uint16_t check_and_pack_id_len_and_data( EEPROM_file_system_node the_node, uint8_t datum)
   {
 	uint16_t info = datum;		 // need 16bit data
 	uint16_t crc = CRC16( info, 0); // data crc
@@ -228,7 +228,7 @@ private:
 	return datum + (crc << 8);
   }
 
-  bool short_node_is_consistent( node the_node)
+  bool short_node_is_consistent( EEPROM_file_system_node the_node)
   {
     uint16_t crc = CRC16( the_node.data & 0xff, 0); // data crc
     uint16_t info = the_node.id + (the_node.size << 8);
@@ -237,7 +237,7 @@ private:
     return (the_node.data >> 8) == crc;
   }
 
-  bool long_node_is_consistent( node * work)
+  bool long_node_is_consistent( EEPROM_file_system_node * work)
   {
     uint16_t crc = CRC16_blockcheck( (uint16_t *)work + 2, (work->size - 1) * 2);
     uint16_t protected_id_and_size = work->id + ((work->size) << 8);
@@ -246,10 +246,10 @@ private:
     return work->data == crc;
   }
 
-  node * find_last_datum( node * start, node::ID_t id=0xff)
+  EEPROM_file_system_node * find_last_datum( EEPROM_file_system_node * start, EEPROM_file_system_node::ID_t id=0xff)
   {
-    node * thisone = find_first_datum( start, id);
-    node * candidate=0;
+    EEPROM_file_system_node * thisone = find_first_datum( start, id);
+    EEPROM_file_system_node * candidate=0;
     while( thisone != 0)
      {
        candidate = thisone;
@@ -258,9 +258,9 @@ private:
     return candidate;
   }
 
-  node * find_end( void)
+  EEPROM_file_system_node * find_end( void)
   {
-    node * work = head;
+    EEPROM_file_system_node * work = head;
 
     while( (work < free_space) && (work->size != 0xff) && (work->size != 0x00))
       {
@@ -278,9 +278,9 @@ private:
     return work;
   }
 
-  node * find_first_datum( node * start, node::ID_t id)
+  EEPROM_file_system_node * find_first_datum( EEPROM_file_system_node * start, EEPROM_file_system_node::ID_t id)
   {
-    for( node * work = start; (work < free_space) && (work->size != 0) && (work->size != 0xff); work = work->next())
+    for( EEPROM_file_system_node * work = start; (work < free_space) && (work->size != 0) && (work->size != 0xff); work = work->next())
       {
         if( work->id == id)
   	return work;
@@ -288,12 +288,12 @@ private:
     return 0;
   }
 
-  node * head;
-  node * free_space;
-  node * tail;
+  EEPROM_file_system_node * head;
+  EEPROM_file_system_node * free_space;
+  EEPROM_file_system_node * tail;
 };
 
-extern file_system permanent_data_file;
+extern EEPROM_file_system permanent_data_file;
 extern bool using_permanent_data_file;
 
 #endif /* NAV_ALGORITHMS_PERSISTENT_DATA_FILE_H_ */

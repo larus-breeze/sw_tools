@@ -25,8 +25,11 @@
 #ifndef EEPROM_EMULATION_H_
 #define EEPROM_EMULATION_H_
 
+#define EEPROM_FILE_SYSTEM_SIZE 1024
+
 #include "persistent_data.h"
 float configuration( EEPROM_PARAMETER_ID id);
+extern EEPROM_file_system_node permanent_file[];
 
 //! this structure describes one persistent parameter
 struct config_param_type

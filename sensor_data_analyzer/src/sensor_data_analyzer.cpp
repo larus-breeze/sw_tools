@@ -51,14 +51,7 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
-#include "persistent_data_file.h"
-
-#define FILE_SYSTEM_SIZE 1024
-
-node permanent_file[FILE_SYSTEM_SIZE];
-file_system permanent_data_file (permanent_file,
-				 permanent_file + FILE_SYSTEM_SIZE);
-bool using_permanent_data_file = false;
+#include "abstract_EEPROM_storage.h"
 
 #include "soft_iron_compensator.h"
 soft_iron_compensator_t soft_iron_compensator;
@@ -320,7 +313,7 @@ bool CAN_gateway_poll(CANpacket&, unsigned int)
 
 bool read_meta_data_file (char *file_path)
 {
-  char path[100];
+  char path[200];
   strcpy (path, file_path);
   char *slash = strrchr (path, '/');
   if (slash != 0)
@@ -338,7 +331,7 @@ bool read_meta_data_file (char *file_path)
   if (config_file.is_open ())
     {
       streampos size = config_file.tellg ();
-      if (size != (FILE_SYSTEM_SIZE * sizeof(uint32_t)))
+      if (size != (EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t)))
 	{
 	  printf ("configuration_data_file.dat : wrong file size\n");
 	  return -1;
@@ -348,7 +341,7 @@ bool read_meta_data_file (char *file_path)
       config_file.read ((char*) permanent_file, size);
       config_file.close ();
 
-      bool result = permanent_data_file.setup (permanent_file, FILE_SYSTEM_SIZE);
+      bool result = permanent_data_file.setup (permanent_file, EEPROM_FILE_SYSTEM_SIZE);
       assert(result == true);
 
       assert( permanent_data_file.is_consistent ());
@@ -395,8 +388,8 @@ bool read_meta_data_file (char *file_path)
       ensure_EEPROM_parameter_integrity ();
 
       // migration of the EEPROM values into the configuration data file format
-      memset( permanent_file, 0xff, FILE_SYSTEM_SIZE * sizeof( uint32_t));
-      bool result = permanent_data_file.setup (permanent_file, FILE_SYSTEM_SIZE);
+      memset( permanent_file, 0xff, EEPROM_FILE_SYSTEM_SIZE * sizeof( uint32_t));
+      bool result = permanent_data_file.setup (permanent_file, EEPROM_FILE_SYSTEM_SIZE);
       assert(result == true);
 
       float value;
@@ -492,7 +485,7 @@ bool read_meta_data_file (char *file_path)
 	return false;
 
       perm_data_file.write ((const char*) permanent_file,
-      FILE_SYSTEM_SIZE * sizeof(uint32_t));
+      EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
       perm_data_file.close ();
       printf ("configuration_data_file.dat written - closing");
       exit (0);
@@ -517,6 +510,6 @@ void write_permanent_data_file( char * file_name)
     }
 
   perm_data_file.write ((const char*) permanent_file,
-  FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
   perm_data_file.close ();
 }
