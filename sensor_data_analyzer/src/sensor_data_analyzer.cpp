@@ -199,11 +199,15 @@ int main (int argc, char *argv[])
       --counter_10Hz;
       if (counter_10Hz == 0)
 	{
-	  bool landing_detected = organizer.update_every_100ms (
-	      output_data[count]);
-	  if (landing_detected)
-	    printf ("landed at log time %d minutes.\n", count / 6000);
 	  counter_10Hz = 10;
+
+	  bool landing_detected = organizer.update_every_100ms ( output_data[count]);
+
+	  if (landing_detected)
+	    {
+	      organizer.cleanup_after_landing();
+	      printf ("landed at log time %d minutes.\n", count / 6000);
+	    }
 	}
 
       organizer.report_data (output_data[count]);
@@ -245,9 +249,13 @@ int main (int argc, char *argv[])
 	}
     }
 
+  organizer.cleanup_after_landing(); // at least: now !
+
   printf ("%d records\n", count);
 
-  if (!realtime_with_TCP_server)
+  if ( realtime_with_TCP_server)
+    close_TCP_port ();
+  else
     {
       // create file name for the data output file
       char buf[200];
@@ -265,23 +273,11 @@ int main (int argc, char *argv[])
 	}
     }
 
-  if (soft_iron_compensator.available ())
-    {
-      const void *data = soft_iron_compensator.get_current_parameters ();
-      bool result = permanent_data_file.store_data (
-	  SOFT_IRON_PARAMETERS,
-	  soft_iron_compensator.get_parameters_size () / sizeof(float32_t),
-	  data);
-      assert(result == true);
-    }
-
   write_permanent_data_file( argv[1]);
 
   delete[] in_data;
   delete[] output_data;
-
-  if (realtime_with_TCP_server)
-    close_TCP_port ();
+  exit( 0);
 }
 
 void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report, char )
