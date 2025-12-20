@@ -59,7 +59,7 @@ public:
 
   ID_t id;
   uint8_t size; // size in 32-bit units of entry including node itself
-  uint16_t data; // direct 8bit + checksum OR crc of 32bit data file
+  uint16_t data; // direct 8bit | (checksum << 8) OR crc16 of 32bit data file
 };
 
 class EEPROM_file_system
@@ -216,6 +216,35 @@ public:
     return true;
   }
 
+  void import_all_data (const EEPROM_file_system &source)
+  {
+    EEPROM_file_system_node *current_node;
+    for (EEPROM_file_system_node::ID_t id = 1; id < 255; ++id)
+      {
+	current_node = find_last_datum ( source.head, id);
+	if (current_node != 0)
+	  {
+	    switch (current_node->size)
+	      {
+	      case 0:
+	      case 0xff:
+		continue; // invalid size
+	      case 1: // direct data node
+		if (not short_node_is_consistent (*current_node))
+		  continue;
+		store_data (current_node->id, current_node->data & 0xff);
+		break;
+	      default: // data file
+		if (not long_node_is_consistent (current_node))
+		  continue;
+		store_data (current_node->id, current_node->size-1,
+			    (void*) (current_node + 1));
+		break;
+	      }
+	  }
+      }
+  }
+
 private:
 
   uint16_t check_and_pack_id_len_and_data( EEPROM_file_system_node the_node, uint8_t datum)
@@ -225,7 +254,7 @@ private:
 	info = the_node.id + (the_node.size << 8);
 	crc = CRC16( info, crc); 	 // plus node crc
 	crc = (crc ^ (crc >> 8)) & 0xff;	 // fold crc into 8 bits
-	return datum + (crc << 8);
+	return datum | (crc << 8);
   }
 
   bool short_node_is_consistent( EEPROM_file_system_node the_node)

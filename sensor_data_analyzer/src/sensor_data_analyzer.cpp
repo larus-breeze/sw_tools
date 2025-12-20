@@ -353,6 +353,17 @@ bool read_meta_data_file (char *file_path)
 
       permanent_data_file.dump_all_entries ();
 
+#if 0 // test data import
+      {
+	EEPROM_file_system_node copy_data_storage[EEPROM_FILE_SYSTEM_SIZE];
+	EEPROM_file_system permanent_data_copy( copy_data_storage, copy_data_storage+EEPROM_FILE_SYSTEM_SIZE);
+	bool result = permanent_data_copy.setup ( copy_data_storage, EEPROM_FILE_SYSTEM_SIZE);
+	assert(result == true);
+	permanent_data_copy.import_all_data( permanent_data_file);
+	permanent_data_copy.dump_all_entries ();
+      }
+#endif
+
       using_permanent_data_file = true;
     }
   else
@@ -505,7 +516,6 @@ void write_permanent_data_file( char * file_name)
       exit (0);
     }
 
-  perm_data_file.write ((const char*) permanent_file,
-  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  perm_data_file.write ((const char*) permanent_file, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
   perm_data_file.close ();
 }
