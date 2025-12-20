@@ -1,15 +1,8 @@
-/*
- * CRC.h
- *
- *  Created on: Jun 27, 2013
- *      Author: schaefer
- */
+#ifndef CRC16_H_
+#define CRC16_H_
 
-#ifndef CRC_H_
-#define CRC_H_
-
+#include <CRC16.h>
 #include <stdint.h>
-#include "CRC.h"
 #include "embedded_memory.h"
 
 extern ROM uint16_t CRCtable[];
@@ -41,4 +34,4 @@ static inline uint16_t CRC16_blockcheck( const uint16_t *input, uint16_t length)
   return crc;
 }
 
-#endif /* CRC_H_ */
+#endif /* CRC16_H_ */

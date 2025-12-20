@@ -1,5 +1,5 @@
+#include <CRC16.h>
 #include <stdint.h>
-#include "CRC.h"
 #include "embedded_memory.h"
 
 ROM uint16_t CRCtable[]=

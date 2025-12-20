@@ -42,5 +42,6 @@ extern config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
 int read_EEPROM_file (char *basename);
 bool write_EEPROM_dump( char * basename);
+void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words);
 
 #endif /* EEPROM_EMULATION_H_ */

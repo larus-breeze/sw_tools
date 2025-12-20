@@ -28,7 +28,7 @@
 #define DEBUG
 
 #include "embedded_math.h"
-#include "CRC.h"
+#include <CRC16.h>
 
 #ifdef DEBUG
 #include "stdio.h"
@@ -36,14 +36,8 @@
 #include "string.h"
 #endif
 
+//!< generic call to write permanent data
 void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words);
-
-enum EEPROM_PARAMETER_FILE_ID
-{
-  MAG_SENSOR_CALIBRATION=50,	// xoff xscale yoff yscale zoff zscale variance : 7 floats
-  SOFT_IRON_PARAMETERS,		// 10 float values for x,y,z each : 30 floats
-  EXT_MAG_SENSOR_XFER_MATRIX	// 4 input 3 output channels : 12 floats
-} ;
 
 class EEPROM_file_system_node
 {
