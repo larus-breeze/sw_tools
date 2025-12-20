@@ -172,17 +172,17 @@ if __name__ == "__main__":
     import os
     file = os.getcwd() + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
     #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
-    file = os.getcwd() + '/240830_short_nomag.f37'   # DGNSS Stefly WM Flug   nomag means that simulation without prior calibration
+    #file = os.getcwd() + '/240830_short_nomag.f37'   # DGNSS Stefly WM Flug   nomag means that simulation without prior calibration
 
     #file = os.getcwd() + '/250522_142340.f37'  #HG no mag calibration
     #file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
-    #file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
+    file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
 
     #file = os.getcwd() + '/250608_123835.f37'   #Flight with 0.5.1
 
     #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2', 'v0.2.1', 'v0.2.2',
     # versions  < v0.2.2 do not support EEPROM files without a leading numeric parameter id.
-    cmp = LarusLibComparison(file,'v0.1.2', 'v0.2.2' )
+    cmp = LarusLibComparison(file,'v0.2.2', 'v0.3.0' )
 
     cmp.plot_mag_comparison()
     cmp.plot_ahrs_comparison()

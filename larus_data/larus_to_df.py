@@ -378,6 +378,7 @@ lib_versions = {'v0.1.0':'.f114',
                 'v0.1.2':'.f119',
                 'v0.2.1':'.f120',
                 'v0.2.2':'.f120',
+                'v0.3.0':'.f120',
                 'xyz':'.f120'
                 }
 
@@ -398,7 +399,7 @@ class Larus2Df:
     file = None
     datatype = None
     dataformat = None
-    def __init__(self, file, recalc=True, version='v0.2.2'):
+    def __init__(self, file, recalc=True, version='v0.3.0'):
 
         if version in lib_versions:
             lib_output_format = lib_versions[version]
