@@ -337,16 +337,16 @@ def  plot_attitude_histogram(df, path = None):
 
 if __name__ == "__main__":
     basepath = '/home/mbetz/Documents/vmware/shared_folder/'
-
-    # Good Flight data:
+    # D-GNSS Flight data:
     #file = basepath + '/230430.f37'                # DGNSS OM flight.
     #file = basepath + '/240830_short.f37'          # DGNSS Stefly WM Texas
-    file = basepath + '/250824_091030.f37'          # DGNSS OM new sensor good magnetic data but not prior calibration
+    #file = basepath + '/250824_091030.f37'         # DGNSS OM new sensor good magnetic data but not prior calibration
 
-    # Not so good flight data, test Edge cases:
+    # S-GNSS flight data:
     #file = basepath + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
-    file = basepath + '/250522_142340.f37'          # Single GNSS short flight
-
+    #file = basepath + '/250522_142340.f37'         # Single GNSS short flight
+    #file = basepath + '/251003_090210.f37'         # ASK21 Winch launch
+    file = basepath + '/250510_112200.f37'          # Duo Discus Thermal Flight (no prior magnetic calibration)
 
     data = Larus2Df(file).get_df()
     plot_attitude_histogram(data, file)
