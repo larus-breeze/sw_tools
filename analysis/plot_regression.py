@@ -169,16 +169,17 @@ class LarusLibComparison:
         plt.show()
 
 if __name__ == "__main__":
-    import os
-    file = os.getcwd() + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
-    #file = os.getcwd() + '/230430.f37'   # DGNSS  OM
-    #file = os.getcwd() + '/240830_short_nomag.f37'   # DGNSS Stefly WM Flug   nomag means that simulation without prior calibration
+    basepath = '/home/mbetz/Documents/vmware/shared_folder/'
 
-    #file = os.getcwd() + '/250522_142340.f37'  #HG no mag calibration
-    #file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
-    file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
+    # Good Flight data:
+    #file = basepath + '/230430.f37'                # DGNSS OM flight.
+    #file = basepath + '/240830_short.f37'          # DGNSS Stefly WM Texas
+    file = basepath + '/250824_091030.f37'          # DGNSS OM new sensor good magnetic data but not prior calibration
 
-    #file = os.getcwd() + '/250608_123835.f37'   #Flight with 0.5.1
+    # Not so good flight data, test Edge cases:
+    file = basepath + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
+    #file = basepath + '/250522_142340.f37'         # Single GNSS short flight (only one side turn calibration test)
+
 
     #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2', 'v0.2.1', 'v0.2.2',
     # versions  < v0.2.2 do not support EEPROM files without a leading numeric parameter id.

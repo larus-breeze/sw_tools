@@ -62,7 +62,8 @@ def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
 
     nav_ind_abs = np.sqrt(
-        np.square(df['dev_nav_ind_mag_north']) + np.square(df['dev_nav_ind_mag_east']) + np.square(df['dev_nav_ind_mag_north']))
+        np.square(df['dev_nav_ind_mag_north']) + np.square(df['dev_nav_ind_mag_east']) + np.square(
+            df['dev_nav_ind_mag_down']))
 
     # Plot the data
     figure, axis = plt.subplots()
@@ -77,7 +78,7 @@ def plot_mag(df, path = None):
     par1 = axis.twinx()
     par1.plot(t, df['dev_nav_ind_mag_north'].to_numpy(), "r-", linewidth=0.5)
     par1.plot(t, df['dev_nav_ind_mag_east'].to_numpy(), "g-", linewidth=0.5)
-    par1.plot(t, df['dev_nav_ind_mag_north'].to_numpy(), "b-", linewidth=0.5)
+    par1.plot(t, df['dev_nav_ind_mag_down'].to_numpy(), "b-", linewidth=0.5)
 
     minimum = df['dev_nav_ind_mag_north'].min()
     maximum = df['dev_nav_ind_mag_north'].max()
@@ -85,12 +86,12 @@ def plot_mag(df, path = None):
         minimum = df['dev_nav_ind_mag_east'].min()
     if df['dev_nav_ind_mag_east'].max() > maximum:
         maximum = df['dev_nav_ind_mag_east'].max()
-    if df['dev_nav_ind_mag_north'].min() < minimum:
-        minimum = df['dev_nav_ind_mag_north'].min()
-    if df['dev_nav_ind_mag_north'].max() > maximum:
-        maximum = df['dev_nav_ind_mag_north'].max()
+    if df['dev_nav_ind_mag_down'].min() < minimum:
+        minimum = df['dev_nav_ind_mag_down'].min()
+    if df['dev_nav_ind_mag_down'].max() > maximum:
+        maximum = df['dev_nav_ind_mag_down'].max()
     par1.set_ylim(minimum - 0.5, maximum + 1.5)
-    par1.legend(['dev_nav_ind_mag_north', 'dev_nav_ind_mag_east', 'dev_nav_ind_mag_north'], loc="lower right")
+    par1.legend(['dev_nav_ind_mag_north', 'dev_nav_ind_mag_east', 'dev_nav_ind_mag_down'], loc="lower right")
     plt.show()
 
 def plot_track(df, path = None):
@@ -335,16 +336,17 @@ def  plot_attitude_histogram(df, path = None):
 
 
 if __name__ == "__main__":
-    import os
-    # file = os.getcwd() + '/240520_091630.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
-    # file = os.getcwd() + '/230430.f37'   # DGNSS  OM
-    file = os.getcwd() + '/240830_short.f37'   # DGNSS Stefly WM Flug
+    basepath = '/home/mbetz/Documents/vmware/shared_folder/'
 
-    #file = os.getcwd() + '/250522_142340.f37'  # HG no mag calibration
-    #file = os.getcwd() + '/250608_123835.f37'   #Flight with 0.5.1
+    # Good Flight data:
+    #file = basepath + '/230430.f37'                # DGNSS OM flight.
+    #file = basepath + '/240830_short.f37'          # DGNSS Stefly WM Texas
+    file = basepath + '/250824_091030.f37'          # DGNSS OM new sensor good magnetic data but not prior calibration
 
-    # file = os.getcwd() + '/250524_134048.f37'  #DU stop airborne
-    # file = os.getcwd() + '/250524_150054.f37'  #DU start airborne
+    # Not so good flight data, test Edge cases:
+    #file = basepath + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
+    file = basepath + '/250522_142340.f37'          # Single GNSS short flight
+
 
     data = Larus2Df(file).get_df()
     plot_attitude_histogram(data, file)
