@@ -503,19 +503,27 @@ bool read_meta_data_file (char *file_path)
 void write_permanent_data_file( char * file_name)
 {
   assert( permanent_data_file.is_consistent() );
+
+  EEPROM_file_system_node copy_data_storage[EEPROM_FILE_SYSTEM_SIZE];
+  memset( copy_data_storage, 0xff, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  EEPROM_file_system permanent_data_copy( copy_data_storage, copy_data_storage+EEPROM_FILE_SYSTEM_SIZE);
+  bool result = permanent_data_copy.setup ( copy_data_storage, EEPROM_FILE_SYSTEM_SIZE);
+  assert(result == true);
+  permanent_data_copy.import_all_data( permanent_data_file);
+
   char path[100];
   strcpy( path, file_name);
   char * slash = strrchr( path, '/');
   assert( slash != 0);
   slash[1]=0;
   strcat( path, "configuration_data_file.dat");
-  ofstream perm_data_file (path, ios::out | ios::binary | ios::ate);
-  if (!perm_data_file.is_open ())
+  ofstream perm_data_file_stream (path, ios::out | ios::binary | ios::ate);
+  if (!perm_data_file_stream.is_open ())
     {
       printf ("cannot open file : configuration_data_file.dat - closing");
       exit (0);
     }
 
-  perm_data_file.write ((const char*) permanent_file, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-  perm_data_file.close ();
+  perm_data_file_stream.write ((const char*) copy_data_storage, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  perm_data_file_stream.close ();
 }
