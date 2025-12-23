@@ -100,6 +100,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1292367667" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/Generic_Algorithms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Interfaces}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/Persistent_Data}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/ARM_math}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/NAV_Algorithms}&quot;"/>
@@ -131,20 +132,45 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.84738672.268622728.2101835759.735803255" name="/" resourcePath="Interfaces">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.base.208536765" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.base" unusedChildren="">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.target.gnu.platform.base" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.505591558" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1535897186"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1797120018" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1572612648" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1216424510" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777">
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.672829157" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1580807621" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.706286308"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.715616970" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.177196441"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.base.20767915" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.616871668">
+								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.1232172852" name="Debug Level" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.767392456" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.84738672.268622728.2101835759.1265257400" name="/" resourcePath="lib/Persistent_Data">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.base.680429498" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.base" unusedChildren="">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.target.gnu.platform.base" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1874939294" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1535897186"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.297927044" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491"/>
-							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.560938333" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.297927044" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1285322837" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.560938333" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777">
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.546670529" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1654803361" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.706286308"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1076838248" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.177196441"/>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.base.47353930" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.616871668">
-								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.2067696193" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.2067696193" name="Debug Level" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1887806177" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Communication"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Interfaces"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="lib"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
