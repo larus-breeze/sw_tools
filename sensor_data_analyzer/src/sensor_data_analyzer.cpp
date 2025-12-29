@@ -176,8 +176,11 @@ int main (int argc, char *argv[])
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
 #if WITH_EXTERNAL_MAGNETOMETER
+#if SIMULATE_EXTERNAL_MAGNETOMETER
       output_data[count].external_magnetometer_reading = in_data[count].m.mag;
-//      output_data[count].m.mag = in_data[count].external_magnetometer_reading;
+#else
+      output_data[count].m.mag = in_data[count].external_magnetometer_reading;
+#endif
 #endif
 
       organizer.on_new_pressure_data (output_data[count].m.static_pressure,
