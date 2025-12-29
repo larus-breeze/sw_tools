@@ -61,13 +61,22 @@ void trigger_soft_iron_compensator_calculation()
   soft_iron_compensator.calculate();
 }
 
+#include "compass_calibrator_3D.h"
+compass_calibrator_3D_t compass_calibrator_3D;
+
+void trigger_compass_calibrator_3D_calculation()
+{
+  compass_calibrator_3D.calculate();
+}
+
 #ifdef _WIN32
 # pragma float_control(except, on)
 #endif
 
 using namespace std;
 
-auto awake_time(std::chrono::steady_clock::time_point stime) {
+auto awake_time(std::chrono::steady_clock::time_point stime)
+{
   using std::chrono::operator""ms;
   return stime + 100ms;
 }
@@ -131,9 +140,9 @@ int main (int argc, char *argv[])
   organizer_t organizer;
 
   streampos size = file.tellg ();
-  observations_type *in_data;
-  in_data = (observations_type*) new char[size];
-  unsigned records = size / sizeof(observations_type);
+  old_observations_type *in_data;
+  in_data = (old_observations_type*) new char[size];
+  unsigned records = size / sizeof(old_observations_type);
 
   size_t outfile_size = records * sizeof(output_data_t);
   output_data = (output_data_t*) new char[outfile_size];
@@ -166,6 +175,11 @@ int main (int argc, char *argv[])
     {
       output_data[count].m = in_data[count].m;
       output_data[count].c = in_data[count].c;
+#if WITH_EXTERNAL_MAGNETOMETER
+      output_data[count].external_magnetometer_reading = in_data[count].m.mag;
+//      output_data[count].m.mag = in_data[count].external_magnetometer_reading;
+#endif
+
       organizer.on_new_pressure_data (output_data[count].m.static_pressure,
 				      output_data[count].m.pitot_pressure);
 

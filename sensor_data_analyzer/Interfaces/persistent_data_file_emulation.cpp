@@ -11,6 +11,7 @@
 #include "EEPROM_emulation.h"
 #include "data_structures.h"
 #include "persistent_data.h"
+#include "compass_calibrator_3D.h"
 
 using namespace std;
 
@@ -48,17 +49,25 @@ bool read_meta_data_file (char *file_path)
       assert(result == true);
 
       assert( permanent_data_file.is_consistent ());
-      printf ("config file read\n");
+      printf ("\nConfig file read:\n");
+      permanent_data_file.dump_all_entries ();
+
 
       unsigned size_bytes = soft_iron_compensator.get_parameters_size();
       float *soft_iron_parameters = new float[ size_bytes];
       assert( soft_iron_parameters);
       bool parameters_available = permanent_data_file.retrieve_data( SOFT_IRON_PARAMETERS, size_bytes / sizeof( float32_t), soft_iron_parameters);
       if( parameters_available)
-	soft_iron_compensator.set_parameters(soft_iron_parameters);
+	soft_iron_compensator.set_current_parameters(soft_iron_parameters);
       delete[] soft_iron_parameters;
 
-      permanent_data_file.dump_all_entries ();
+      size_bytes = 12 * sizeof( float32_t);
+      float *compass_calibrator_3d_data = new float[ size_bytes];
+      assert( compass_calibrator_3d_data);
+      parameters_available = permanent_data_file.retrieve_data( EXT_MAG_SENSOR_XFER_MATRIX, size_bytes / sizeof( float32_t), compass_calibrator_3d_data);
+      if( parameters_available)
+	compass_calibrator_3D.set_current_parameters( compass_calibrator_3d_data);
+      delete[] compass_calibrator_3d_data;
 
 #if 0 // test data import
       {
