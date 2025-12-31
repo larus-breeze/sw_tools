@@ -29,6 +29,8 @@
 
 #include "persistent_data.h"
 float configuration( EEPROM_PARAMETER_ID id);
+
+#include "persistent_data_file.h"
 extern EEPROM_file_system_node permanent_file[];
 
 //! this structure describes one persistent parameter

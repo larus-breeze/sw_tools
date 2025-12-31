@@ -52,21 +52,18 @@ bool read_meta_data_file (char *file_path)
       printf ("\nConfig file read:\n");
       permanent_data_file.dump_all_entries ();
 
-
-      unsigned size_bytes = soft_iron_compensator.get_parameters_size();
-      float *soft_iron_parameters = new float[ size_bytes];
-      assert( soft_iron_parameters);
-      bool parameters_available = permanent_data_file.retrieve_data( SOFT_IRON_PARAMETERS, size_bytes / sizeof( float32_t), soft_iron_parameters);
-      if( parameters_available)
-	soft_iron_compensator.set_current_parameters(soft_iron_parameters);
-      delete[] soft_iron_parameters;
-
-      size_bytes = 12 * sizeof( float32_t);
+      unsigned size_bytes = 12 * sizeof( float32_t);
       float *compass_calibrator_3d_data = new float[ size_bytes];
       assert( compass_calibrator_3d_data);
-      parameters_available = permanent_data_file.retrieve_data( EXT_MAG_SENSOR_XFER_MATRIX, size_bytes / sizeof( float32_t), compass_calibrator_3d_data);
+
+      bool parameters_available = permanent_data_file.retrieve_data( MAG_SENSOR_XFER_MATRIX, size_bytes / sizeof( float32_t), compass_calibrator_3d_data);
       if( parameters_available)
 	compass_calibrator_3D.set_current_parameters( compass_calibrator_3d_data);
+
+      parameters_available = permanent_data_file.retrieve_data( EXT_MAG_SENSOR_XFER_MATRIX, size_bytes / sizeof( float32_t), compass_calibrator_3d_data);
+      if( parameters_available)
+	external_compass_calibrator_3D.set_current_parameters( compass_calibrator_3d_data);
+
       delete[] compass_calibrator_3d_data;
 
 #if 0 // test data import
@@ -161,10 +158,6 @@ bool read_meta_data_file (char *file_path)
       result = permanent_data_file.store_data (HORIZON, round (value));
       assert(result == true);
 
-      value = configuration (MAG_AUTO_CALIB);
-      result = permanent_data_file.store_data (MAG_AUTO_CALIB, round (value));
-      assert(result == true);
-
       value = configuration (GNSS_CONFIGURATION);
       result = permanent_data_file.store_data (GNSS_CONFIGURATION,
 					       round (value));
@@ -181,20 +174,6 @@ bool read_meta_data_file (char *file_path)
       value = configuration (ANT_SLAVE_RIGHT);
       result = permanent_data_file.store_data (ANT_SLAVE_RIGHT, 1, &value);
       assert(result == true);
-
-      {
-      float32_t magnetic_calibration_data[] =
-	{ configuration (MAG_X_OFF), configuration (MAG_X_SCALE),
-	  configuration (MAG_Y_OFF), configuration (MAG_Y_SCALE),
-	  configuration (MAG_Z_OFF), configuration (MAG_Z_SCALE),
-	  configuration (MAG_STD_DEVIATION) };
-
-      result = permanent_data_file.store_data (
-	  MAG_SENSOR_CALIBRATION,
-	  sizeof(magnetic_calibration_data) / sizeof(float32_t),
-	  magnetic_calibration_data);
-      assert(result == true);
-      }
 
       permanent_data_file.dump_all_entries ();
       assert( permanent_data_file.is_consistent());

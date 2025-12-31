@@ -54,19 +54,20 @@
 #include "CAN_gateway.h"
 #include "abstract_EEPROM_storage.h"
 
-#include "soft_iron_compensator.h"
-soft_iron_compensator_t soft_iron_compensator;
-void trigger_soft_iron_compensator_calculation()
-{
-  soft_iron_compensator.calculate();
-}
-
 #include "compass_calibrator_3D.h"
-compass_calibrator_3D_t compass_calibrator_3D;
+#include "compass_calibrator_3D.h"
 
-void trigger_compass_calibrator_3D_calculation()
+magnetic_calculation_data_t temporary_mag_calculation_data;
+
+compass_calibrator_3D_t compass_calibrator_3D( temporary_mag_calculation_data);
+compass_calibrator_3D_t external_compass_calibrator_3D( temporary_mag_calculation_data);
+
+void trigger_compass_calibrator_3D_calculation( bool calculate_external_magnetometer)
 {
-  compass_calibrator_3D.calculate();
+  if( calculate_external_magnetometer)
+    external_compass_calibrator_3D.calculate();
+  else
+    compass_calibrator_3D.calculate();
 }
 
 #ifdef _WIN32
@@ -209,7 +210,7 @@ int main (int argc, char *argv[])
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
-      organizer.update_every_10ms (output_data[count]);
+      organizer.update_at_100_Hz (output_data[count]);
 
       --counter_10Hz;
       if (counter_10Hz == 0)
@@ -297,7 +298,7 @@ int main (int argc, char *argv[])
 
 void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report, char )
 {
-  magnetic_induction_report_t magnetic_induction_report = *p_magnetic_induction_report;
+#if 0 // todo patch
   char buffer[50];
 
   for (unsigned i = 0; i < 3; ++i)
@@ -313,8 +314,8 @@ void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_ma
       *next++ = 0;
       printf ("%s\t", buffer);
     }
-
-  printf ("\n");
+#endif
+  printf ("FIXME .. \n");
 }
 
 bool CAN_gateway_poll(CANpacket&, unsigned int)
