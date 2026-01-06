@@ -141,9 +141,9 @@ int main (int argc, char *argv[])
   organizer_t organizer;
 
   streampos size = file.tellg ();
-  old_observations_type *in_data;
-  in_data = (old_observations_type*) new char[size];
-  unsigned records = size / sizeof(old_observations_type);
+  observations_type *in_data;
+  in_data = (observations_type*) new char[size];
+  unsigned records = size / sizeof( observations_type);
 
   size_t outfile_size = records * sizeof(output_data_t);
   output_data = (output_data_t*) new char[outfile_size];
