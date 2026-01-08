@@ -57,7 +57,7 @@
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
-mutex my_mutex;
+Mutex_Wrapper_Type my_mutex;
 
 magnetic_calculation_data_t temporary_mag_calculation_data;
 
