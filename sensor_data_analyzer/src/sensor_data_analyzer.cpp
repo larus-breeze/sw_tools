@@ -296,28 +296,6 @@ int main (int argc, char *argv[])
   exit( 0);
 }
 
-void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report, char )
-{
-#if 0 // todo patch
-  char buffer[50];
-
-  for (unsigned i = 0; i < 3; ++i)
-    {
-      char *next = buffer;
-      next = my_ftoa (next, magnetic_induction_report.calibration[i].offset);
-      *next++ = ' ';
-      next = my_ftoa (next, magnetic_induction_report.calibration[i].scale);
-      *next++ = ' ';
-      next = my_ftoa (next,
-		      SQRT(magnetic_induction_report.calibration[i].variance));
-      *next++ = ' ';
-      *next++ = 0;
-      printf ("%s\t", buffer);
-    }
-#endif
-  printf ("FIXME .. \n");
-}
-
 bool CAN_gateway_poll(CANpacket&, unsigned int)
 {
   return false; // presently just an empty stub

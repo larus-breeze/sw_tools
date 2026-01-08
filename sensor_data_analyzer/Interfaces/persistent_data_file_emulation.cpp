@@ -45,7 +45,7 @@ bool read_meta_data_file (char *file_path)
       config_file.read ((char*) permanent_file, size);
       config_file.close ();
 
-      bool result = permanent_data_file.setup (permanent_file, EEPROM_FILE_SYSTEM_SIZE);
+      bool result = permanent_data_file.set_memory_area( (uint32_t *)permanent_file, (uint32_t *)(permanent_file+EEPROM_FILE_SYSTEM_SIZE));
       assert(result == true);
 
       assert( permanent_data_file.is_consistent ());
@@ -65,7 +65,6 @@ bool read_meta_data_file (char *file_path)
       }
 #endif
 
-      using_permanent_data_file = true;
     }
   else
     {
@@ -97,7 +96,10 @@ bool read_meta_data_file (char *file_path)
 
       // migration of the EEPROM values into the configuration data file format
       memset( permanent_file, 0xff, EEPROM_FILE_SYSTEM_SIZE * sizeof( uint32_t));
-      bool result = permanent_data_file.setup (permanent_file, EEPROM_FILE_SYSTEM_SIZE);
+      bool result =
+	  permanent_data_file.set_memory_area(
+	      (uint32_t *)permanent_file,
+	      (uint32_t *)(permanent_file+EEPROM_FILE_SYSTEM_SIZE));
       assert(result == true);
 
       float value;
@@ -190,7 +192,7 @@ void write_permanent_data_file( char * file_name)
   EEPROM_file_system_node copy_data_storage[EEPROM_FILE_SYSTEM_SIZE];
   memset( copy_data_storage, 0xff, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
   EEPROM_file_system permanent_data_copy( copy_data_storage, copy_data_storage+EEPROM_FILE_SYSTEM_SIZE);
-  bool result = permanent_data_copy.setup ( copy_data_storage, EEPROM_FILE_SYSTEM_SIZE);
+  bool result = permanent_data_copy.set_memory_area ( (uint32_t *)copy_data_storage, (uint32_t *)(copy_data_storage+EEPROM_FILE_SYSTEM_SIZE));
   assert(result == true);
   permanent_data_copy.import_all_data( permanent_data_file);
 

@@ -38,7 +38,6 @@ using namespace std;
 
 EEPROM_file_system_node permanent_file[EEPROM_FILE_SYSTEM_SIZE];
 EEPROM_file_system permanent_data_file (permanent_file,  permanent_file + EEPROM_FILE_SYSTEM_SIZE);
-bool using_permanent_data_file = false;
 
 void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words)
 {
@@ -52,7 +51,7 @@ config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
 float configuration (EEPROM_PARAMETER_ID id)
 {
-  if (using_permanent_data_file)
+  if( permanent_data_file.in_use())
     {
       float value;
       bool result = permanent_data_file.retrieve_data (id, 1, (uint32_t *)&value);
