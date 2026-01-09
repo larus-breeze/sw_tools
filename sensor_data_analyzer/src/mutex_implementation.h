@@ -8,12 +8,18 @@ class Mutex_Wrapper_Type
 public:
   void lock( void)
   {
-    printf("lock ... ");
+    if( lock_count == 0)
+      printf("lock ... ");
+    ++lock_count;
   }
   void unlock( void)
   {
-    printf("release\n");
+    --lock_count;
+    if( lock_count == 0)
+      printf("release\n");
   }
+private:
+  unsigned lock_count;
 };
 
 #include "scoped_lock.h"
