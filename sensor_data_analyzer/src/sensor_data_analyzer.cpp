@@ -161,12 +161,13 @@ int main (int argc, char *argv[])
   int32_t nano = 0;
   int delta_time;
 
-  output_data[0].m = in_data[0].m;
-  output_data[0].c = in_data[0].c;
+  output_data[0].obs.m = in_data[0].m;
+  output_data[0].obs.c = in_data[0].c;
 
-  organizer.update_GNSS_data (output_data[0].c);
-  organizer.update_magnetic_induction_data (output_data[0].c.latitude,
-					    output_data[0].c.longitude);
+  organizer.update_GNSS_data (output_data[0].obs.c);
+  organizer.update_magnetic_induction_data (
+      output_data[0].obs.c.latitude,
+      output_data[0].obs.c.longitude);
 
   unsigned counter_10Hz = 10;
   auto until = awake_time (std::chrono::steady_clock::now ()); // start with now + 100ms
@@ -176,39 +177,39 @@ int main (int argc, char *argv[])
   unsigned count;
   for (count = 1; count < records; ++count)
     {
-      output_data[count].m = in_data[count].m;
-      output_data[count].c = in_data[count].c;
+      output_data[count].obs.m = in_data[count].m;
+      output_data[count].obs.c = in_data[count].c;
 #if WITH_EXTERNAL_MAGNETOMETER
 #if SIMULATE_EXTERNAL_MAGNETOMETER
       output_data[count].external_magnetometer_reading = in_data[count].m.mag;
 #else
-      output_data[count].m.mag = in_data[count].external_magnetometer_reading;
+      output_data[count].obs.m.mag = in_data[count].external_magnetometer_reading;
 #endif
 #endif
 
-      organizer.on_new_pressure_data (output_data[count].m.static_pressure,
-				      output_data[count].m.pitot_pressure);
+      organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
+				      output_data[count].obs.m.pitot_pressure);
 
       if (have_GNSS_fix == false)
 	{
-	  if (output_data[count].c.sat_fix_type > 0)
+	  if (output_data[count].obs.c.sat_fix_type > 0)
 	    {
 	      organizer.update_magnetic_induction_data (
-		  output_data[count].c.latitude,
-		  output_data[count].c.longitude);
+		  output_data[count].obs.c.latitude,
+		  output_data[count].obs.c.longitude);
 	      organizer.initialize_after_first_measurement (output_data[count]);
 	      have_GNSS_fix = true;
 	    }
 	}
 
-      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
+      if (output_data[count].obs.c.nano != nano) // 10 Hz by GNSS
 	{
-	  delta_time = output_data[count].c.nano - nano;
+	  delta_time = output_data[count].obs.c.nano - nano;
 	  if (delta_time < 0)
 	    delta_time += 1000000000;
-	  nano = output_data[count].c.nano;
+	  nano = output_data[count].obs.c.nano;
 
-	  organizer.update_GNSS_data (output_data[count].c);
+	  organizer.update_GNSS_data (output_data[count].obs.c);
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
@@ -219,7 +220,7 @@ int main (int argc, char *argv[])
 	{
 	  counter_10Hz = 10;
 
-	  bool landing_detected = organizer.update_every_100ms ( output_data[count]);
+	  bool landing_detected = organizer.update_at_10Hz ( output_data[count]);
 
 	  if (landing_detected)
 	    {
