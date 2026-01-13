@@ -101,22 +101,13 @@ int main (int argc, char *argv[])
 
   if ((argc != 2) && (argc != 3))
     {
-      printf ("usage: %s infile.f50 [skiptime for TCP version]\n", argv[0]);
+      printf ("usage: %s infile.f37 (or *.f38 / *.f41) [skiptime for TCP version]\n", argv[0]);
       return -1;
     }
 
   bool realtime_with_TCP_server = argc == 3;
   if (realtime_with_TCP_server)
     skiptime = 10 * atoi (argv[2]); // at 10Hz output rate
-
-  output_data_t *output_data;
-
-  ifstream file (argv[1], ios::in | ios::binary | ios::ate);
-  if (!file.is_open ())
-    {
-      cout << "Unable to open file";
-      return -1;
-    }
 
   if (realtime_with_TCP_server)
     {
@@ -134,35 +125,119 @@ int main (int argc, char *argv[])
     }
 #endif
 
+// ************************************************************
+
+  log_file_format_t log_file_format;
+  char * extension = strrchr( argv[1], '.');
+  if( extension == 0)
+    {
+      cout << "Invalid file extension\n";
+      return -1;
+    }
+  extension += 1;
+
+  if( strcmp( extension, "f37") == 0)
+    log_file_format = LEGACY_LOG_FORMAT;
+  else if( strcmp( extension, "f38") == 0)
+    log_file_format = STD_LOG_FORMAT;
+  else if( strcmp( extension, "f41") == 0)
+    log_file_format = EXTENDED_LOG_FORMAT;
+  else
+    {
+      cout << "Invalid file extension\n";
+      return -1;
+    }
+
+  ifstream file (argv[1], ios::in | ios::binary | ios::ate);
+  if (!file.is_open ())
+    {
+      cout << "Unable to open file";
+      return -1;
+    }
+
   if (not read_meta_data_file (argv[1]))
     {
       printf ("Unable to open metadata file\n");
       return -1;
     }
 
-  organizer_t organizer;
-
   streampos size = file.tellg ();
-  observations_type *in_data;
-  in_data = (observations_type*) new char[size];
-  unsigned records = size / sizeof( observations_type);
 
-  size_t outfile_size = records * sizeof(output_data_t);
-  output_data = (output_data_t*) new char[outfile_size];
+  unsigned records;
+  size_t outfile_size;
+  output_data_t *output_data;
 
-  file.seekg (0, ios::beg);
-  file.read ((char*) in_data, size);
-  file.close ();
+  switch( log_file_format)
+  {
+    case LEGACY_LOG_FORMAT:
+      {
+        legacy_observations_type *in_data;
+        in_data = ( legacy_observations_type*) new char[size];
+        records = size / sizeof( legacy_observations_type);
+        outfile_size = records * sizeof(output_data_t);
+        output_data = (output_data_t*) new char[outfile_size];
+        file.seekg (0, ios::beg);
+        file.read ((char*) in_data, size);
+        file.close ();
+        for( unsigned i = 0; i < records; ++i)
+  	{
+  	    output_data[i].obs.m = in_data[i].m;
+  	    output_data[i].obs.c = in_data[i].c;
+  	    output_data[i].obs.sensor_status = system_state; // use our dummy
+  	    output_data[i].obs.external_magnetometer_reading = {0};
+  	}
+        delete[] in_data;
+        break;
+      }
+  case EXTENDED_LOG_FORMAT:
+    {
+      extended_observations_type *in_data;
+      in_data = ( extended_observations_type*) new char[size];
+      records = size / sizeof( extended_observations_type);
+      outfile_size = records * sizeof(output_data_t);
+      output_data = (output_data_t*) new char[outfile_size];
+      file.seekg (0, ios::beg);
+      file.read ((char*) in_data, size);
+      file.close ();
+      for( unsigned i = 0; i < records; ++i)
+	{
+	    output_data[i].obs.m = in_data[i].m;
+	    output_data[i].obs.c = in_data[i].c;
+	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
+	    output_data[i].obs.external_magnetometer_reading = in_data[i].external_magnetometer_reading;
+	}
+      delete[] in_data;
+      break;
+    }
+  case STD_LOG_FORMAT:
+    {
+      observations_type *in_data;
+      in_data = ( observations_type*) new char[size];
+      records = size / sizeof( observations_type);
+      outfile_size = records * sizeof(output_data_t);
+      output_data = (output_data_t*) new char[outfile_size];
+      file.seekg (0, ios::beg);
+      file.read ((char*) in_data, size);
+      file.close ();
+      for( unsigned i = 0; i < records; ++i)
+	{
+	    output_data[i].obs.m = in_data[i].m;
+	    output_data[i].obs.c = in_data[i].c;
+	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
+	    output_data[i].obs.external_magnetometer_reading = {0};
+	}
+      delete[] in_data;
+      break;
+    }
+  }
 
-// ************************************************************
+  // ************************************************************
 
+  organizer_t organizer;
   organizer.initialize_before_measurement ();
 
   int32_t nano = 0;
   int delta_time;
-
-  output_data[0].obs.m = in_data[0].m;
-  output_data[0].obs.c = in_data[0].c;
 
   organizer.update_GNSS_data (output_data[0].obs.c);
   organizer.update_magnetic_induction_data (
@@ -177,16 +252,6 @@ int main (int argc, char *argv[])
   unsigned count;
   for (count = 1; count < records; ++count)
     {
-      output_data[count].obs.m = in_data[count].m;
-      output_data[count].obs.c = in_data[count].c;
-#if WITH_EXTERNAL_MAGNETOMETER
-#if SIMULATE_EXTERNAL_MAGNETOMETER
-      output_data[count].external_magnetometer_reading = in_data[count].m.mag;
-#else
-      output_data[count].obs.m.mag = in_data[count].external_magnetometer_reading;
-#endif
-#endif
-
       organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
 				      output_data[count].obs.m.pitot_pressure);
 
@@ -294,7 +359,6 @@ int main (int argc, char *argv[])
 
   write_permanent_data_file( argv[1]);
 
-  delete[] in_data;
   delete[] output_data;
   exit( 0);
 }
