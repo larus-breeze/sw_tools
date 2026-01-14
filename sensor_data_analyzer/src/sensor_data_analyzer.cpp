@@ -240,17 +240,14 @@ int main (int argc, char *argv[])
   int delta_time;
 
   organizer.update_GNSS_data (output_data[0].obs.c);
-  organizer.update_magnetic_induction_data (
-      output_data[0].obs.c.latitude,
-      output_data[0].obs.c.longitude);
+  organizer.initialize_after_first_measurement (output_data[1]);
 
   unsigned counter_10Hz = 10;
   auto until = awake_time (std::chrono::steady_clock::now ()); // start with now + 100ms
 
   bool have_GNSS_fix = false;
 
-  unsigned count;
-  for (count = 1; count < records; ++count)
+  for ( unsigned count = 1; count < records; ++count)
     {
       organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
 				      output_data[count].obs.m.pitot_pressure);
@@ -335,7 +332,7 @@ int main (int argc, char *argv[])
 
   organizer.cleanup_after_landing(); // at least: now !
 
-  printf ("%d records\n", count);
+  printf ("%d records\n", records);
 
   if ( realtime_with_TCP_server)
     close_TCP_port ();
