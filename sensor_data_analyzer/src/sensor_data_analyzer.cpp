@@ -84,8 +84,7 @@ auto awake_time(std::chrono::steady_clock::time_point stime)
   return stime + 100ms;
 }
 
-uint32_t system_state // fake system state here in lack of hardware
-  = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
+uint32_t system_state;
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
@@ -239,6 +238,7 @@ int main (int argc, char *argv[])
   int32_t nano = 0;
   int delta_time;
 
+  system_state = output_data[0].obs.sensor_status;
   organizer.update_GNSS_data (output_data[0].obs.c);
   organizer.initialize_after_first_measurement (output_data[1]);
 
@@ -249,6 +249,8 @@ int main (int argc, char *argv[])
 
   for ( unsigned count = 1; count < records; ++count)
     {
+      system_state = output_data[count].obs.sensor_status;
+
       organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
 				      output_data[count].obs.m.pitot_pressure);
 
