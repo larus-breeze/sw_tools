@@ -253,7 +253,7 @@ int main (int argc, char *argv[])
   for ( unsigned count = 1; count < records; ++count)
     {
       system_state = output_data[count].obs.sensor_status;
-      if( true /* system_state == 0 */) // assume no data given
+      if( system_state == 0) // assume no data given
 	system_state = fake_system_state;
 
       organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
