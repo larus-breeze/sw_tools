@@ -185,7 +185,7 @@ int main (int argc, char *argv[])
   	{
   	    output_data[i].obs.m = in_data[i].m;
   	    output_data[i].obs.c = in_data[i].c;
-  	    output_data[i].obs.sensor_status = system_state; // use our dummy
+  	    output_data[i].obs.sensor_status = fake_system_state; // use our dummy
   	    output_data[i].obs.external_magnetometer_reading = {0};
   	}
         delete[] in_data;
@@ -253,7 +253,7 @@ int main (int argc, char *argv[])
   for ( unsigned count = 1; count < records; ++count)
     {
       system_state = output_data[count].obs.sensor_status;
-      if( system_state == 0) // assume no data given
+      if( true /* system_state == 0 */) // assume no data given
 	system_state = fake_system_state;
 
       organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
