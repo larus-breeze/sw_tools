@@ -93,6 +93,8 @@ uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
 int main (int argc, char *argv[])
 {
+  unsigned sz = sizeof( legacy_observations_type);
+  unsigned sz1 = sizeof( observations_type);
   unsigned skiptime;
 
 #ifndef _WIN32
@@ -183,10 +185,33 @@ int main (int argc, char *argv[])
         file.close ();
         for( unsigned i = 0; i < records; ++i)
   	{
-  	    output_data[i].obs.m = in_data[i].m;
-  	    output_data[i].obs.c = in_data[i].c;
-  	    output_data[i].obs.sensor_status = fake_system_state; // use our dummy
+            output_data[i].obs.m = in_data[i].m;
+
+            output_data[i].obs.c.velocity = in_data[i].c.velocity;
+            output_data[i].obs.c.heading_motion = in_data[i].c.heading_motion;
+            output_data[i].obs.c.relPosNED = in_data[i].c.relPosNED;
+            output_data[i].obs.c.relPosHeading = in_data[i].c.relPosHeading;
+            output_data[i].obs.c.speed_acc = in_data[i].c.speed_acc;
+            output_data[i].obs.c.latitude = in_data[i].c.latitude;
+            output_data[i].obs.c.longitude = in_data[i].c.longitude;
+            output_data[i].obs.c.GNSS_MSL_altitude = - in_data[i].c.position[DOWN];
+
+            output_data[i].obs.c.year = in_data[i].c.year;
+            output_data[i].obs.c.month = in_data[i].c.month;
+            output_data[i].obs.c.day = in_data[i].c.day;
+            output_data[i].obs.c.hour = in_data[i].c.hour;
+            output_data[i].obs.c.minute = in_data[i].c.minute;
+            output_data[i].obs.c.second = in_data[i].c.second;
+
+            output_data[i].obs.c.SATS_number = in_data[i].c.SATS_number;
+            output_data[i].obs.c.sat_fix_type = in_data[i].c.sat_fix_type;
+            output_data[i].obs.c.second = in_data[i].c.second;
+            output_data[i].obs.c.nano = in_data[i].c.nano;
+            output_data[i].obs.c.geo_sep_dm = in_data[i].c.geo_sep_dm;
+
+            output_data[i].obs.sensor_status = fake_system_state;
   	    output_data[i].obs.external_magnetometer_reading = {0};
+  	    output_data[i].obs.external_magnetometer_reading[1] = 1.0f;
   	}
         delete[] in_data;
         break;
