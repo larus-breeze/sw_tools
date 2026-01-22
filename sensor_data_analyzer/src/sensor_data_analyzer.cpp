@@ -144,7 +144,7 @@ int main (int argc, char *argv[])
     log_file_format = LEGACY_LOG_FORMAT;
   else if( strcmp( extension, "f38") == 0)
     log_file_format = STD_LOG_FORMAT;
-  else if( strcmp( extension, "f41") == 0)
+  else if( strcmp( extension, "f35") == 0)
     log_file_format = EXTENDED_LOG_FORMAT;
   else
     {
