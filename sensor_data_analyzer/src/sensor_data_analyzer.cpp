@@ -142,7 +142,7 @@ int main (int argc, char *argv[])
 
   if( strcmp( extension, "f37") == 0)
     log_file_format = LEGACY_LOG_FORMAT;
-  else if( strcmp( extension, "f38") == 0)
+  else if( strcmp( extension, "f32") == 0)
     log_file_format = STD_LOG_FORMAT;
   else if( strcmp( extension, "f35") == 0)
     log_file_format = EXTENDED_LOG_FORMAT;
@@ -188,7 +188,6 @@ int main (int argc, char *argv[])
             output_data[i].obs.m = in_data[i].m;
 
             output_data[i].obs.c.velocity = in_data[i].c.velocity;
-            output_data[i].obs.c.heading_motion = in_data[i].c.heading_motion;
             output_data[i].obs.c.relPosNED = in_data[i].c.relPosNED;
             output_data[i].obs.c.relPosHeading = in_data[i].c.relPosHeading;
             output_data[i].obs.c.speed_acc = in_data[i].c.speed_acc;
@@ -230,8 +229,8 @@ int main (int argc, char *argv[])
 	{
 	    output_data[i].obs.m = in_data[i].m;
 	    output_data[i].obs.c = in_data[i].c;
-	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
 	    output_data[i].obs.external_magnetometer_reading = in_data[i].external_magnetometer_reading;
+	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
 	}
       delete[] in_data;
       break;
