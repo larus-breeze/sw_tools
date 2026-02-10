@@ -48,7 +48,12 @@ bool read_meta_data_file (char *file_path)
       bool result = permanent_data_file.set_memory_to_existing_data( (uint32_t *)permanent_data_file_storage, (uint32_t *)(permanent_data_file_storage+EEPROM_FILE_SYSTEM_SIZE));
       assert(result == true);
 
-      assert( permanent_data_file.is_consistent ());
+      if ( not permanent_data_file.is_consistent ())
+	{
+	  printf ("configuration_data_file.dat : data not consistent, please delete it !\n");
+	  return -1;
+	}
+
       printf ("\nConfig file read:\n");
       permanent_data_file.dump_all_entries ();
 

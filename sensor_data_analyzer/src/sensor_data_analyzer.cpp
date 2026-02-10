@@ -53,9 +53,12 @@
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
 #include "abstract_EEPROM_storage.h"
+#include "flexible_log_file.h"
 
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
+
+#define FLEX_BUF_SIZE 2048
 
 Mutex_Wrapper_Type my_mutex;
 
@@ -90,6 +93,7 @@ uint32_t fake_system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
+
 
 int main (int argc, char *argv[])
 {
@@ -161,9 +165,24 @@ int main (int argc, char *argv[])
 
   if (not read_meta_data_file (argv[1]))
     {
-      printf ("Unable to open metadata file\n");
+      printf ("Unable to open meta data file\n");
       return -1;
     }
+
+  uint32_t flex_buffer[FLEX_BUF_SIZE];
+  flexible_log_file_t flex_file( flex_buffer, FLEX_BUF_SIZE);
+  char flex_file_path[256];
+  strcpy( flex_file_path, argv[1]);
+  extension = strrchr( argv[1], '.');
+  *extension = 0;
+  strcat( flex_file_path, ".larus_log");
+  if( not flex_file.open( flex_file_path))
+    {
+      printf ("Unable to open flex out file\n");
+      return -1;
+    }
+
+  flex_file.append_record( EEPROM_FILE, (uint32_t *)(permanent_data_file.get_head()), permanent_data_file.get_size() / sizeof(uint32_t));
 
   streampos size = file.tellg ();
 
@@ -249,7 +268,8 @@ int main (int argc, char *argv[])
 	{
 	    output_data[i].obs.m = in_data[i].m;
 	    output_data[i].obs.c = in_data[i].c;
-	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
+	    // we did not record external magnetometer data, so this bit needs to be reset
+	    output_data[i].obs.sensor_status = in_data[i].sensor_status & ~EXTERNAL_MAGNETOMETER_AVAILABLE;
 	    output_data[i].obs.external_magnetometer_reading = {0};
 	}
       delete[] in_data;
@@ -265,7 +285,12 @@ int main (int argc, char *argv[])
   int32_t nano = 0;
   int delta_time;
 
+  flex_file.append_record( EEPROM_FILE, (uint32_t *)(permanent_data_file.get_head()), permanent_data_file.get_size());
+
   system_state = output_data[0].obs.sensor_status;
+  uint32_t old_system_state = system_state;
+  flex_file.append_record( SENSOR_STATUS, &system_state, 1);
+
   organizer.update_GNSS_data (output_data[0].obs.c);
   organizer.initialize_after_first_measurement (output_data[1]);
 
@@ -280,8 +305,16 @@ int main (int argc, char *argv[])
       if( system_state == 0) // assume no data given
 	system_state = fake_system_state;
 
+      if( old_system_state != system_state)
+	{
+	  old_system_state = system_state;
+	  flex_file.append_record( SENSOR_STATUS, &system_state, 1);
+	}
+
       organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
 				      output_data[count].obs.m.pitot_pressure);
+
+      flex_file.append_record( BASIC_SENSOR_DATA, (uint32_t*)&(output_data[count].obs.m), sizeof( measurement_data_t) / sizeof(uint32_t));
 
       if (have_GNSS_fix == false)
 	{
@@ -303,6 +336,9 @@ int main (int argc, char *argv[])
 	  nano = output_data[count].obs.c.nano;
 
 	  organizer.update_GNSS_data (output_data[count].obs.c);
+
+	  flex_file.append_record( GNSS_DATA, (uint32_t*)&(output_data[count].obs.c), sizeof( coordinates_t) / sizeof(uint32_t));
+
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
@@ -362,6 +398,8 @@ int main (int argc, char *argv[])
     }
 
   organizer.cleanup_after_landing(); // at least: now !
+
+  flex_file.close();
 
   printf ("%d records\n", records);
 

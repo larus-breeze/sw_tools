@@ -8,19 +8,19 @@ class Mutex_Wrapper_Type
 public:
   void lock( void)
   {
-    if( lock_count == 0)
-      printf("lock ");
+//    if( lock_count == 0)
+//      printf("lock ");
     ++lock_count;
-    printf("%d ", lock_count);
+//    printf("%d ", lock_count);
   }
   void unlock( void)
   {
     --lock_count;
-    if( lock_count == 0)
+/*    if( lock_count == 0)
       printf("release\n");
     else
       printf("%d ", lock_count);
-
+*/
   }
 private:
   unsigned lock_count;
