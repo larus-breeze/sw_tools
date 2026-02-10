@@ -81,12 +81,6 @@ void trigger_compass_calibrator_3D_calculation( bool calculate_external_magnetom
 
 using namespace std;
 
-auto awake_time(std::chrono::steady_clock::time_point stime)
-{
-  using std::chrono::operator""ms;
-  return stime + 100ms;
-}
-
 uint32_t system_state;
 output_data_t output_data;
 
@@ -254,6 +248,8 @@ int main (int argc, char *argv[])
 	  organizer->update_GNSS_data ( output_data.obs.c );
 	  break;
 	case SENSOR_STATUS:
+	  assert( size == 1);
+	  system_state = *in_data;
 	  break;
 	}
     }
