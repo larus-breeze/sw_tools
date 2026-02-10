@@ -285,8 +285,6 @@ int main (int argc, char *argv[])
   int32_t nano = 0;
   int delta_time;
 
-  flex_file.append_record( EEPROM_FILE, (uint32_t *)(permanent_data_file.get_head()), permanent_data_file.get_size());
-
   system_state = output_data[0].obs.sensor_status;
   uint32_t old_system_state = system_state;
   flex_file.append_record( SENSOR_STATUS, &system_state, 1);
