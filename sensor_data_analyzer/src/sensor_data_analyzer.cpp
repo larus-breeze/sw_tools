@@ -174,7 +174,6 @@ int main (int argc, char *argv[])
 
 	  cout << "EEPROM data read:\n";
 	  permanent_data_file.dump_all_entries();
-	  setup_compass_calibrator_3d();
 
 	  break;
 // ***********************************************************************************************************
