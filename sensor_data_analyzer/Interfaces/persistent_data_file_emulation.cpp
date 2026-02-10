@@ -57,8 +57,6 @@ bool read_meta_data_file (char *file_path)
       printf ("\nConfig file read:\n");
       permanent_data_file.dump_all_entries ();
 
-      setup_compass_calibrator_3d();
-
 #if 0 // test data import
       {
 	EEPROM_file_system_node copy_data_storage[EEPROM_FILE_SYSTEM_SIZE];
