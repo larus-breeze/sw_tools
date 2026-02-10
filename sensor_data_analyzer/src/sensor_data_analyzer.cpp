@@ -125,15 +125,17 @@ int main (int argc, char *argv[])
     {
       int size = flexible_log_file_t::verify_record_get_size( next_block_identifier);
 
-      if( size == 0 || size > 255)
+      if( size == 0)
 	break;
+
+      --size;
 
       printf ("%x : %d\n", next_block_identifier & 0xff, size);
 
       ++records;
       in_file.read ( (char*)in_data, size * sizeof( uint32_t));
       streamsize bytes_read = in_file.gcount();
-      if( bytes_read != size * sizeof( uint32_t))
+      if( bytes_read != (size * sizeof( uint32_t)))
 	break;
     }
 
