@@ -97,188 +97,50 @@ uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
 int main (int argc, char *argv[])
 {
-  unsigned sz = sizeof( legacy_observations_type);
-  unsigned sz1 = sizeof( observations_type);
-  unsigned skiptime;
-
 #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
   feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-  if ((argc != 2) && (argc != 3))
+  if ((argc != 2))
     {
-      printf ("usage: %s infile.f37 (or *.f38 / *.f41) [skiptime for TCP version]\n", argv[0]);
+      printf ("usage: %s infile.larus_log\n", argv[0]);
       return -1;
     }
 
-  bool realtime_with_TCP_server = argc == 3;
-  if (realtime_with_TCP_server)
-    skiptime = 10 * atoi (argv[2]); // at 10Hz output rate
-
-  if (realtime_with_TCP_server)
-    {
-      realtime_with_TCP_server = open_TCP_port ();
-      realtime_with_TCP_server = accept_TCP_client (true);
-    }
-
-#ifndef _WIN32
-  if (realtime_with_TCP_server)
-    {
-      open_USB_serial ((char*) "/dev/ttyUSB0");
-#if ENABLE_LINUX_CAN_INTERFACE
-      CAN_socket_initialize ();
-#endif
-    }
-#endif
-
-// ************************************************************
-
-  log_file_format_t log_file_format;
-  char * extension = strrchr( argv[1], '.');
-  if( extension == 0)
-    {
-      cout << "Invalid file extension\n";
-      return -1;
-    }
-  extension += 1;
-
-  if( strcmp( extension, "f37") == 0)
-    log_file_format = LEGACY_LOG_FORMAT;
-  else if( strcmp( extension, "f32") == 0)
-    log_file_format = STD_LOG_FORMAT;
-  else if( strcmp( extension, "f35") == 0)
-    log_file_format = EXTENDED_LOG_FORMAT;
-  else
-    {
-      cout << "Invalid file extension\n";
-      return -1;
-    }
-
-  ifstream file (argv[1], ios::in | ios::binary | ios::ate);
-  if (!file.is_open ())
+  ifstream in_file (argv[1], ios::in | ios::binary | ios::ate);
+  if (not in_file.is_open ())
     {
       cout << "Unable to open file";
       return -1;
     }
 
-  if (not read_meta_data_file (argv[1]))
+  in_file.seekg (0, ios::beg);
+
+  uint32_t * in_data = new uint32_t[256];
+  unsigned records = 0;
+  uint32_t next_block_identifier;
+  while( in_file.read( (char*)&next_block_identifier, sizeof( next_block_identifier)))
     {
-      printf ("Unable to open meta data file\n");
-      return -1;
+      int size = flexible_log_file_t::verify_record_get_size( next_block_identifier);
+
+      if( size == 0 || size > 255)
+	break;
+
+      printf ("%x : %d\n", next_block_identifier & 0xff, size);
+
+      ++records;
+      in_file.read ( (char*)in_data, size * sizeof( uint32_t));
+      streamsize bytes_read = in_file.gcount();
+      if( bytes_read != size * sizeof( uint32_t))
+	break;
     }
 
-  uint32_t flex_buffer[FLEX_BUF_SIZE];
-  flexible_log_file_t flex_file( flex_buffer, FLEX_BUF_SIZE);
-  char flex_file_path[256];
-  strcpy( flex_file_path, argv[1]);
-  extension = strrchr( argv[1], '.');
-  *extension = 0;
-  strcat( flex_file_path, ".larus_log");
-  if( not flex_file.open( flex_file_path))
-    {
-      printf ("Unable to open flex out file\n");
-      return -1;
-    }
-
-  flex_file.append_record( EEPROM_FILE, (uint32_t *)(permanent_data_file.get_head()), permanent_data_file.get_size() / sizeof(uint32_t));
-
-  streampos size = file.tellg ();
-
-  unsigned records;
-  size_t outfile_size;
-  output_data_t *output_data;
-
-  switch( log_file_format)
-  {
-    case LEGACY_LOG_FORMAT:
-      {
-        legacy_observations_type *in_data;
-        in_data = ( legacy_observations_type*) new char[size];
-        records = size / sizeof( legacy_observations_type);
-        outfile_size = records * sizeof(output_data_t);
-        output_data = (output_data_t*) new char[outfile_size];
-        file.seekg (0, ios::beg);
-        file.read ((char*) in_data, size);
-        file.close ();
-        for( unsigned i = 0; i < records; ++i)
-  	{
-            output_data[i].obs.m = in_data[i].m;
-
-            output_data[i].obs.c.velocity = in_data[i].c.velocity;
-            output_data[i].obs.c.relPosNED = in_data[i].c.relPosNED;
-            output_data[i].obs.c.relPosHeading = in_data[i].c.relPosHeading;
-            output_data[i].obs.c.speed_acc = in_data[i].c.speed_acc;
-            output_data[i].obs.c.latitude = in_data[i].c.latitude;
-            output_data[i].obs.c.longitude = in_data[i].c.longitude;
-            output_data[i].obs.c.GNSS_MSL_altitude = - in_data[i].c.position[DOWN];
-
-            output_data[i].obs.c.year = in_data[i].c.year;
-            output_data[i].obs.c.month = in_data[i].c.month;
-            output_data[i].obs.c.day = in_data[i].c.day;
-            output_data[i].obs.c.hour = in_data[i].c.hour;
-            output_data[i].obs.c.minute = in_data[i].c.minute;
-            output_data[i].obs.c.second = in_data[i].c.second;
-
-            output_data[i].obs.c.SATS_number = in_data[i].c.SATS_number;
-            output_data[i].obs.c.sat_fix_type = in_data[i].c.sat_fix_type;
-            output_data[i].obs.c.second = in_data[i].c.second;
-            output_data[i].obs.c.nano = in_data[i].c.nano;
-            output_data[i].obs.c.geo_sep_dm = in_data[i].c.geo_sep_dm;
-
-            output_data[i].obs.sensor_status = fake_system_state;
-  	    output_data[i].obs.external_magnetometer_reading = {0};
-  	    output_data[i].obs.external_magnetometer_reading[1] = 1.0f;
-  	}
-        delete[] in_data;
-        break;
-      }
-  case EXTENDED_LOG_FORMAT:
-    {
-      extended_observations_type *in_data;
-      in_data = ( extended_observations_type*) new char[size];
-      records = size / sizeof( extended_observations_type);
-      outfile_size = records * sizeof(output_data_t);
-      output_data = (output_data_t*) new char[outfile_size];
-      file.seekg (0, ios::beg);
-      file.read ((char*) in_data, size);
-      file.close ();
-      for( unsigned i = 0; i < records; ++i)
-	{
-	    output_data[i].obs.m = in_data[i].m;
-	    output_data[i].obs.c = in_data[i].c;
-	    output_data[i].obs.external_magnetometer_reading = in_data[i].external_magnetometer_reading;
-	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
-	}
-      delete[] in_data;
-      break;
-    }
-  case STD_LOG_FORMAT:
-    {
-      observations_type *in_data;
-      in_data = ( observations_type*) new char[size];
-      records = size / sizeof( observations_type);
-      outfile_size = records * sizeof(output_data_t);
-      output_data = (output_data_t*) new char[outfile_size];
-      file.seekg (0, ios::beg);
-      file.read ((char*) in_data, size);
-      file.close ();
-      for( unsigned i = 0; i < records; ++i)
-	{
-	    output_data[i].obs.m = in_data[i].m;
-	    output_data[i].obs.c = in_data[i].c;
-	    // we did not record external magnetometer data, so this bit needs to be reset
-	    output_data[i].obs.sensor_status = in_data[i].sensor_status & ~EXTERNAL_MAGNETOMETER_AVAILABLE;
-	    output_data[i].obs.external_magnetometer_reading = {0};
-	}
-      delete[] in_data;
-      break;
-    }
-  }
+  printf ("%d records read\n", records);
 
   // ************************************************************
-
+#if 0
   organizer_t organizer;
   organizer.initialize_before_measurement ();
 
@@ -426,10 +288,6 @@ int main (int argc, char *argv[])
   write_permanent_data_file( argv[1]);
 
   delete[] output_data;
+#endif
   exit( 0);
-}
-
-bool CAN_gateway_poll(CANpacket&, unsigned int)
-{
-  return false; // presently just an empty stub
 }
