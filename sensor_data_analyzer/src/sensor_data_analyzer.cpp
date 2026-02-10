@@ -94,7 +94,6 @@ uint32_t fake_system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
-
 int main (int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -121,24 +120,95 @@ int main (int argc, char *argv[])
   uint32_t * in_data = new uint32_t[256];
   unsigned records = 0;
   uint32_t next_block_identifier;
-  while( in_file.read( (char*)&next_block_identifier, sizeof( next_block_identifier)))
+
+  organizer_t *organizer = 0;
+  output_data_t output_data;
+
+  while (in_file.read ((char*) &next_block_identifier,
+		       sizeof(next_block_identifier)))
     {
-      int size = flexible_log_file_t::verify_record_get_size( next_block_identifier);
+      int size = flexible_log_file_t::verify_record_get_size (
+	  next_block_identifier);
 
-      if( size == 0)
+      if (size == 0)
 	break;
 
-      --size;
+      --size; // it included the block identifier
 
-      printf ("%x : %d\n", next_block_identifier & 0xff, size);
-
-      ++records;
-      in_file.read ( (char*)in_data, size * sizeof( uint32_t));
-      streamsize bytes_read = in_file.gcount();
-      if( bytes_read != (size * sizeof( uint32_t)))
+      in_file.read ((char*) in_data, size * sizeof(uint32_t));
+      unsigned bytes_read = in_file.gcount ();
+      if (bytes_read != (size * sizeof(uint32_t)))
 	break;
+
+      bool success;
+      bool measurement_initialized = false;
+
+      unsigned counter_10Hz=0;
+
+      switch (next_block_identifier & 0xff)
+	{
+	case EEPROM_FILE:
+	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
+		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+	  memcpy (permanent_data_file_storage, in_data, bytes_read);
+	  success =
+	      permanent_data_file.set_memory_to_existing_data (
+		  (uint32_t*) permanent_data_file_storage,
+		  (uint32_t*) permanent_data_file_storage
+		      + EEPROM_FILE_SYSTEM_SIZE);
+	  if (not success)
+	    {
+	      cout << "EEPROM data file not consistent\n";
+	      return -1;
+	    }
+	  break;
+	case EEPROM_FILE_RECORD:
+	  // todo patch implement me !
+	  break;
+	case BASIC_SENSOR_DATA:
+	  ++records;
+
+	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.m));
+	  memcpy( (uint8_t *)&(output_data.obs.m), in_data, size * sizeof(uint32_t));
+
+	  if( measurement_initialized)
+	    {
+	      organizer->on_new_pressure_data( output_data.obs.m.static_pressure, output_data.obs.m.pitot_pressure);
+	      organizer->update_at_100_Hz(output_data);
+	    }
+	  if( ++counter_10Hz == 10)
+	    {
+	      counter_10Hz = 0;
+	      bool landing_detected = organizer->update_at_10Hz ( output_data);
+
+	      if (landing_detected)
+		{
+		  organizer->cleanup_after_landing();
+		  printf ("landed at log time %d minutes.\n", records / 6000);
+		}
+	    }
+	  break;
+	case EXTENDED_SENSOR_DATA:
+	  // todo patch implement me !
+	  ++records;
+	  break;
+	case GNSS_DATA:
+	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
+	  memcpy( (uint8_t *)&(output_data.obs.c), in_data, size * sizeof(uint32_t));
+	  if( not measurement_initialized)
+	    {
+	      measurement_initialized = true;
+	      organizer = new organizer_t;
+	      organizer->initialize_before_measurement ();
+
+	      organizer->initialize_after_first_measurement (output_data);
+	    }
+	  organizer->update_GNSS_data ( output_data.obs.c );
+	  break;
+	case SENSOR_STATUS:
+	  break;
+	}
     }
-
   printf ("%d records read\n", records);
 
   // ************************************************************
@@ -155,8 +225,6 @@ int main (int argc, char *argv[])
   uint32_t old_system_state = system_state;
   flex_file.append_record( SENSOR_STATUS, &system_state, 1);
 
-  organizer.update_GNSS_data (output_data[0].obs.c);
-  organizer.initialize_after_first_measurement (output_data[1]);
 
   unsigned counter_10Hz = 10;
   auto until = awake_time (std::chrono::steady_clock::now ()); // start with now + 100ms
