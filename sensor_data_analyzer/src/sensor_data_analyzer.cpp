@@ -88,6 +88,7 @@ auto awake_time(std::chrono::steady_clock::time_point stime)
 }
 
 uint32_t system_state;
+output_data_t output_data;
 
 uint32_t fake_system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
@@ -117,12 +118,31 @@ int main (int argc, char *argv[])
 
   in_file.seekg (0, ios::beg);
 
+  char buf[512];
+  strcpy( buf, argv[1]);
+  strcat( buf, ".f");
+  {
+  char size_string[10];
+  itoa( sizeof( output_data_t)/sizeof(uint32_t), size_string, 10);
+  strcat( buf, size_string);
+  }
+
+  ofstream out_file ( buf, ios::out | ios::binary | ios::ate);
+  if( not out_file.is_open ())
+    {
+      cout << "Unable to open output file\n";
+      return -1;
+    }
+
   uint32_t * in_data = new uint32_t[256];
   unsigned records = 0;
   uint32_t next_block_identifier;
 
   organizer_t *organizer = 0;
-  output_data_t output_data;
+  bool success;
+  bool measurement_initialized = false;
+
+  unsigned counter_10Hz=0;
 
   while (in_file.read ((char*) &next_block_identifier,
 		       sizeof(next_block_identifier)))
@@ -139,11 +159,6 @@ int main (int argc, char *argv[])
       unsigned bytes_read = in_file.gcount ();
       if (bytes_read != (size * sizeof(uint32_t)))
 	break;
-
-      bool success;
-      bool measurement_initialized = false;
-
-      unsigned counter_10Hz=0;
 
       switch (next_block_identifier & 0xff)
 	{
@@ -187,10 +202,43 @@ int main (int argc, char *argv[])
 		  printf ("landed at log time %d minutes.\n", records / 6000);
 		}
 	    }
+
+	  if( organizer != 0) // after initialization
+	    {
+	      organizer->report_data ( output_data);
+	      out_file.write ( (const char*)&output_data, sizeof(output_data_t));
+	    }
+
 	  break;
 	case EXTENDED_SENSOR_DATA:
-	  // todo patch implement me !
 	  ++records;
+
+	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.m));
+	  memcpy( (uint8_t *)&(output_data.obs.m), in_data, size * sizeof(uint32_t));
+
+	  if( measurement_initialized)
+	    {
+	      organizer->on_new_pressure_data( output_data.obs.m.static_pressure, output_data.obs.m.pitot_pressure);
+	      organizer->update_at_100_Hz(output_data);
+	    }
+	  if( ++counter_10Hz == 10)
+	    {
+	      counter_10Hz = 0;
+	      bool landing_detected = organizer->update_at_10Hz ( output_data);
+
+	      if (landing_detected)
+		{
+		  organizer->cleanup_after_landing();
+		  printf ("landed at log time %d minutes.\n", records / 6000);
+		}
+	    }
+
+	  if( organizer != 0) // after initialization
+	    {
+	      organizer->report_data ( output_data);
+	      out_file.write ( (const char*)&output_data, sizeof(output_data_t));
+	    }
+
 	  break;
 	case GNSS_DATA:
 	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
@@ -210,6 +258,7 @@ int main (int argc, char *argv[])
 	}
     }
   printf ("%d records read\n", records);
+  out_file.close ();
 
   // ************************************************************
 #if 0
@@ -290,7 +339,6 @@ int main (int argc, char *argv[])
 	    }
 	}
 
-      organizer.report_data (output_data[count]);
 
       if (count % 10 == 0)
 	{
