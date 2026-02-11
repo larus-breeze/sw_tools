@@ -58,6 +58,7 @@
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
+#define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define FLEX_BUF_SIZE 2048
 
 Mutex_Wrapper_Type my_mutex;
@@ -128,7 +129,7 @@ int main (int argc, char *argv[])
       return -1;
     }
 
-  uint32_t * in_data = new uint32_t[256];
+  uint32_t * in_data = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
   uint32_t next_block_identifier;
 
@@ -138,23 +139,38 @@ int main (int argc, char *argv[])
 
   unsigned counter_10Hz=0;
 
-  while (in_file.read ((char*) &next_block_identifier,
-		       sizeof(next_block_identifier)))
+  while ( in_file.read (
+      (char*) &next_block_identifier,
+      sizeof(next_block_identifier)))
     {
       int size = flexible_log_file_t::verify_record_get_size (
 	  next_block_identifier);
 
-      if (size == 0)
+      if (size == 0) // error, format not recognized
 	break;
 
-      --size; // it included the block identifier
+      if( size == 255)
+	{
+	  if( next_block_identifier & 0xff != 255) // wrong format
+	    break;
+
+	  uint32_t extended_header[2]; // 32bit identifier and 32bit length
+	  in_file.read ((char*) extended_header, sizeof( extended_header));
+	  size = extended_header[1] - 3; // subtract node, id, length
+	  next_block_identifier = extended_header[0];
+	}
+      else
+	--size; // it included the block identifier
+
+      if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
+	break;
 
       in_file.read ((char*) in_data, size * sizeof(uint32_t));
       unsigned bytes_read = in_file.gcount ();
       if (bytes_read != (size * sizeof(uint32_t)))
 	break;
 
-      switch (next_block_identifier & 0xff)
+      switch ( next_block_identifier & 0xff)
 	{
 // ***********************************************************************************************************
 	case EEPROM_FILE:
@@ -248,16 +264,17 @@ int main (int argc, char *argv[])
 	    assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
 	    memcpy( (uint8_t *)&(output_data.obs.c), in_data, size * sizeof(uint32_t));
 
+#if PRINT_GNSS_RATE
 	      static int old;
-
 	      float delta = output_data.obs.c.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
 	      printf("%3.6f\n", delta / 1000000);
 	      old = output_data.obs.c.nano;
+#endif
 
-	    if( not measurement_initialized)
+	      if( not measurement_initialized)
 	      {
 		measurement_initialized = true;
 		organizer = new organizer_t;
@@ -289,6 +306,7 @@ int main (int argc, char *argv[])
 	      output_data.obs.c.second = input.second;
 	      output_data.obs.c.nano = input.nano;
 
+#if PRINT_GNSS_RATE
 	      static int old;
 
 	      float delta = input.nano - old;
@@ -297,6 +315,7 @@ int main (int argc, char *argv[])
 
 	      printf("%3.6f\n", delta / 1000000);
 	      old = input.nano;
+#endif
 
 	      output_data.obs.c.GNSS_MSL_altitude = input.GNSS_MSL_altitude;
 	      output_data.obs.c.latitude = input.latitude;
