@@ -160,6 +160,8 @@ int main (int argc, char *argv[])
   size_t outfile_size;
   output_data_t *output_data;
 
+  bool using_D_GNSS = (configuration(GNSS_CONFIGURATION) == 2) || (configuration(GNSS_CONFIGURATION) == 3);
+
   switch( log_file_format)
   {
     case LEGACY_LOG_FORMAT:
@@ -199,7 +201,6 @@ int main (int argc, char *argv[])
 
             output_data[i].obs.sensor_status = fake_system_state;
   	    output_data[i].obs.external_magnetometer_reading = {0};
-  	    output_data[i].obs.external_magnetometer_reading[1] = 1.0f;
   	}
         delete[] in_data;
         break;
@@ -305,7 +306,31 @@ int main (int argc, char *argv[])
 
 	  organizer.update_GNSS_data (output_data[count].obs.c);
 
-	  flex_file.append_record( D_GNSS_DATA, (uint32_t*)&(output_data[count].obs.c), sizeof( D_GNSS_coordinates_t) / sizeof(uint32_t));
+	  if( using_D_GNSS)
+	    flex_file.append_record( D_GNSS_DATA, (uint32_t*)&(output_data[count].obs.c), sizeof( D_GNSS_coordinates_t) / sizeof(uint32_t));
+	  else
+	    {
+	      GNSS_coordinates_t out;
+	      out.GNSS_MSL_altitude = output_data[count].obs.c.GNSS_MSL_altitude;
+	      out.latitude = output_data[count].obs.c.latitude;
+	      out.longitude = output_data[count].obs.c.longitude;
+	      out.velocity = output_data[count].obs.c.velocity;
+
+	      out.SATS_number = output_data[count].obs.c.SATS_number;
+	      out.geo_sep_dm = output_data[count].obs.c.geo_sep_dm;
+	      out.sat_fix_type = output_data[count].obs.c.sat_fix_type;
+	      out.pDOP = output_data[count].obs.c.pDOP;
+
+	      out.year = output_data[count].obs.c.year;
+	      out.month = output_data[count].obs.c.month;
+	      out.day = output_data[count].obs.c.day;
+	      out.hour = output_data[count].obs.c.hour;
+	      out.minute = output_data[count].obs.c.minute;
+	      out.second = output_data[count].obs.c.second;
+	      out.nano = output_data[count].obs.c.nano;
+
+	      flex_file.append_record( GNSS_DATA, (uint32_t*)&(out), sizeof( GNSS_coordinates_t) / sizeof(uint32_t));
+	    }
 
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
