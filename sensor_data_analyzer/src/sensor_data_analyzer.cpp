@@ -80,12 +80,6 @@ void trigger_compass_calibrator_3D_calculation( bool calculate_external_magnetom
 
 using namespace std;
 
-auto awake_time(std::chrono::steady_clock::time_point stime)
-{
-  using std::chrono::operator""ms;
-  return stime + 100ms;
-}
-
 uint32_t system_state;
 
 uint32_t fake_system_state // fake system state here in lack of hardware
@@ -93,44 +87,19 @@ uint32_t fake_system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
-
 int main (int argc, char *argv[])
 {
-  unsigned sz = sizeof( legacy_observations_type);
-  unsigned sz1 = sizeof( observations_type);
-  unsigned skiptime;
-
 #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
   feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-  if ((argc != 2) && (argc != 3))
+  if ((argc != 2))
     {
-      printf ("usage: %s infile.f37 (or *.f38 / *.f41) [skiptime for TCP version]\n", argv[0]);
+      printf ("usage: %s infile.f37 (or *.f32 / *.f35)\n", argv[0]);
       return -1;
     }
-
-  bool realtime_with_TCP_server = argc == 3;
-  if (realtime_with_TCP_server)
-    skiptime = 10 * atoi (argv[2]); // at 10Hz output rate
-
-  if (realtime_with_TCP_server)
-    {
-      realtime_with_TCP_server = open_TCP_port ();
-      realtime_with_TCP_server = accept_TCP_client (true);
-    }
-
-#ifndef _WIN32
-  if (realtime_with_TCP_server)
-    {
-      open_USB_serial ((char*) "/dev/ttyUSB0");
-#if ENABLE_LINUX_CAN_INTERFACE
-      CAN_socket_initialize ();
-#endif
-    }
-#endif
 
 // ************************************************************
 
@@ -295,7 +264,6 @@ int main (int argc, char *argv[])
   organizer.initialize_after_first_measurement (output_data[1]);
 
   unsigned counter_10Hz = 10;
-  auto until = awake_time (std::chrono::steady_clock::now ()); // start with now + 100ms
 
   bool have_GNSS_fix = false;
 
@@ -359,42 +327,6 @@ int main (int argc, char *argv[])
 	}
 
       organizer.report_data (output_data[count]);
-
-      if (count % 10 == 0)
-	{
-	  if (realtime_with_TCP_server)
-	    {
-	      if (skiptime > 0)
-		{
-		  --skiptime;
-		  continue;
-		}
-
-	      string_buffer_t buffer;
-	      buffer.length = 0;
-
-	      if (count % 40 == 0)
-		format_NMEA_string_fast (
-		    (const output_data_t&) *(output_data + count), buffer,
-		    true);
-
-	      if (count % 160 == 0)
-		format_NMEA_string_slow (
-		    (const output_data_t&) *(output_data + count), buffer);
-
-	      if (buffer.length != 0)
-		write_TCP_port (buffer.string, buffer.length);
-
-#if ENABLE_LINUX_CAN_INTERFACE
-	      CAN_output ((const output_data_t&) *(output_data + count), true);
-#endif
-
-	      if (until <= std::chrono::steady_clock::now ())
-		until = awake_time (std::chrono::steady_clock::now ());
-	      std::this_thread::sleep_until (until);
-	      until = awake_time (until);
-	    }
-	}
     }
 
   organizer.cleanup_after_landing(); // at least: now !
@@ -403,33 +335,6 @@ int main (int argc, char *argv[])
 
   printf ("%d records\n", records);
 
-  if ( realtime_with_TCP_server)
-    close_TCP_port ();
-  else
-    {
-      // create file name for the data output file
-      char buf[200];
-      char ascii_len[10];
-      sprintf (ascii_len, "%d", (int) (sizeof(output_data_t) / sizeof(float)));
-      strcpy (buf, argv[1]);
-      strcat (buf, ".f");
-      strcat (buf, ascii_len);
-
-      ofstream outfile (buf, ios::out | ios::binary | ios::ate);
-      if (outfile.is_open ())
-	{
-	  outfile.write ((const char*) output_data, records * sizeof(output_data_t));
-	  outfile.close ();
-	}
-    }
-
-  write_permanent_data_file( argv[1]);
-
   delete[] output_data;
   exit( 0);
-}
-
-bool CAN_gateway_poll(CANpacket&, unsigned int)
-{
-  return false; // presently just an empty stub
 }
