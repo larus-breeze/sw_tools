@@ -54,7 +54,6 @@
 #include "CAN_gateway.h"
 #include "abstract_EEPROM_storage.h"
 #include "flexible_log_file.h"
-
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
@@ -175,13 +174,15 @@ int main (int argc, char *argv[])
   strcpy( flex_file_path, argv[1]);
   extension = strrchr( argv[1], '.');
   *extension = 0;
-  strcat( flex_file_path, ".larus_log");
+  strcat( flex_file_path, ".fff");
   if( not flex_file.open( flex_file_path))
     {
-      printf ("Unable to open flex out file\n");
+      printf ("Unable to open output file\n");
       return -1;
     }
 
+  unsigned file_format_version = 0x00000001;
+  flex_file.append_record( FILE_FORMAT_VERSION, &file_format_version, 1);
   flex_file.append_record( EEPROM_FILE, (uint32_t *)(permanent_data_file.get_head()), permanent_data_file.get_size() / sizeof(uint32_t));
 
   streampos size = file.tellg ();
@@ -287,6 +288,7 @@ int main (int argc, char *argv[])
 
   system_state = output_data[0].obs.sensor_status;
   uint32_t old_system_state = system_state;
+
   flex_file.append_record( SENSOR_STATUS, &system_state, 1);
 
   organizer.update_GNSS_data (output_data[0].obs.c);
