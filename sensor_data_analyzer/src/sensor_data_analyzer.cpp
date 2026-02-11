@@ -244,8 +244,19 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	  case D_GNSS_DATA:
+	    {
 	    assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
 	    memcpy( (uint8_t *)&(output_data.obs.c), in_data, size * sizeof(uint32_t));
+
+	      static int old;
+
+	      float delta = output_data.obs.c.nano - old;
+	      if( delta < 0)
+		delta += 1000000000;
+
+	      printf("%3.6f\n", delta / 1000000);
+	      old = output_data.obs.c.nano;
+
 	    if( not measurement_initialized)
 	      {
 		measurement_initialized = true;
@@ -255,6 +266,7 @@ int main (int argc, char *argv[])
 		organizer->initialize_after_first_measurement (output_data);
 	      }
 	    organizer->update_GNSS_data ( output_data.obs.c );
+	    }
 	    break;
 // ***********************************************************************************************************
 	    case GNSS_DATA:
