@@ -277,6 +277,15 @@ int main (int argc, char *argv[])
 	      output_data.obs.c.second = input.second;
 	      output_data.obs.c.nano = input.nano;
 
+	      static int old;
+
+	      float delta = input.nano - old;
+	      if( delta < 0)
+		delta += 1000000000;
+
+	      printf("%3.6f\n", delta / 1000000);
+	      old = input.nano;
+
 	      output_data.obs.c.GNSS_MSL_altitude = input.GNSS_MSL_altitude;
 	      output_data.obs.c.latitude = input.latitude;
 	      output_data.obs.c.longitude = input.longitude;
