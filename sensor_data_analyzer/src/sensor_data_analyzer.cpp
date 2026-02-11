@@ -243,19 +243,59 @@ int main (int argc, char *argv[])
 
 	  break;
 // ***********************************************************************************************************
-	case GNSS_DATA:
-	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
-	  memcpy( (uint8_t *)&(output_data.obs.c), in_data, size * sizeof(uint32_t));
-	  if( not measurement_initialized)
-	    {
-	      measurement_initialized = true;
-	      organizer = new organizer_t;
-	      organizer->initialize_before_measurement ();
+	  case D_GNSS_DATA:
+	    assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
+	    memcpy( (uint8_t *)&(output_data.obs.c), in_data, size * sizeof(uint32_t));
+	    if( not measurement_initialized)
+	      {
+		measurement_initialized = true;
+		organizer = new organizer_t;
+		organizer->initialize_before_measurement ();
 
-	      organizer->initialize_after_first_measurement (output_data);
-	    }
-	  organizer->update_GNSS_data ( output_data.obs.c );
-	  break;
+		organizer->initialize_after_first_measurement (output_data);
+	      }
+	    organizer->update_GNSS_data ( output_data.obs.c );
+	    break;
+// ***********************************************************************************************************
+	    case GNSS_DATA:
+	      {
+	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
+
+	      GNSS_coordinates_t &input = *(GNSS_coordinates_t *)in_data;
+
+	      output_data.obs.c.sat_fix_type = input.sat_fix_type;
+	      output_data.obs.c.SATS_number = input.SATS_number;
+	      output_data.obs.c.geo_sep_dm = input.geo_sep_dm;
+	      output_data.obs.c.speed_acc = input.speed_acc;
+	      output_data.obs.c.pDOP = input.pDOP;
+
+	      output_data.obs.c.year = input.year;
+	      output_data.obs.c.month = input.month;
+	      output_data.obs.c.day = input.day;
+	      output_data.obs.c.hour = input.hour;
+	      output_data.obs.c.minute = input.minute;
+	      output_data.obs.c.second = input.second;
+	      output_data.obs.c.nano = input.nano;
+
+	      output_data.obs.c.GNSS_MSL_altitude = input.GNSS_MSL_altitude;
+	      output_data.obs.c.latitude = input.latitude;
+	      output_data.obs.c.longitude = input.longitude;
+	      output_data.obs.c.velocity = input.velocity;
+
+	      output_data.obs.c.relPosHeading = 0;
+	      output_data.obs.c.relPosNED = float3vector();
+
+	      if( not measurement_initialized)
+		{
+		  measurement_initialized = true;
+		  organizer = new organizer_t;
+		  organizer->initialize_before_measurement ();
+
+		  organizer->initialize_after_first_measurement (output_data);
+		}
+	      organizer->update_GNSS_data ( output_data.obs.c );
+	      break;
+	      }
 // ***********************************************************************************************************
 	case SENSOR_STATUS:
 	  assert( size == 1);
