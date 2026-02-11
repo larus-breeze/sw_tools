@@ -305,7 +305,7 @@ int main (int argc, char *argv[])
 
 	  organizer.update_GNSS_data (output_data[count].obs.c);
 
-	  flex_file.append_record( GNSS_DATA, (uint32_t*)&(output_data[count].obs.c), sizeof( coordinates_t) / sizeof(uint32_t));
+	  flex_file.append_record( D_GNSS_DATA, (uint32_t*)&(output_data[count].obs.c), sizeof( D_GNSS_coordinates_t) / sizeof(uint32_t));
 
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
