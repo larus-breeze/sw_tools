@@ -83,7 +83,10 @@ void trigger_compass_calibrator_3D_calculation( bool calculate_external_magnetom
 using namespace std;
 
 uint32_t system_state;
-output_data_t output_data;
+state_vector_t state_vector;
+D_GNSS_coordinates_t coordinates;
+measurement_data_t obs;
+float3vector external_induction;
 
 uint32_t fake_system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
@@ -118,7 +121,7 @@ int main (int argc, char *argv[])
   strcat( buf, ".f");
   {
   char size_string[10];
-  itoa( sizeof( output_data_t)/sizeof(uint32_t), size_string, 10);
+  itoa( sizeof( state_vector_t)/sizeof(uint32_t), size_string, 10);
   strcat( buf, size_string);
   }
 
@@ -199,18 +202,18 @@ int main (int argc, char *argv[])
 	case BASIC_SENSOR_DATA:
 	  ++records;
 
-	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.m));
-	  memcpy( (uint8_t *)&(output_data.obs.m), in_data, size * sizeof(uint32_t));
+	  assert( size * sizeof(uint32_t) == sizeof( measurement_data_t));
+	  memcpy( (uint8_t *)&obs, in_data, size * sizeof(uint32_t));
 
 	  if( measurement_initialized)
 	    {
-	      organizer->on_new_pressure_data( output_data.obs.m.static_pressure, output_data.obs.m.pitot_pressure);
-	      organizer->update_at_100_Hz(output_data);
+	      organizer->on_new_pressure_data( obs.static_pressure, obs.pitot_pressure);
+	      organizer->update_at_100_Hz( obs, system_state, external_induction);
 	    }
 	  if( ++counter_10Hz == 10)
 	    {
 	      counter_10Hz = 0;
-	      bool landing_detected = organizer->update_at_10Hz ( output_data);
+	      bool landing_detected = organizer->update_at_10Hz ( coordinates, obs);
 
 	      if (landing_detected)
 		{
@@ -221,56 +224,30 @@ int main (int argc, char *argv[])
 
 	  if( organizer != 0) // after initialization
 	    {
-	      organizer->report_data ( output_data);
-	      out_file.write ( (const char*)&output_data, sizeof(output_data_t));
+	      organizer->report_data ( state_vector);
+	      out_file.write ( (const char*)&state_vector, sizeof(state_vector_t));
 	    }
 
 	  break;
 // ***********************************************************************************************************
-	case EXTENDED_SENSOR_DATA:
-	  ++records;
-
-	  assert( size * sizeof(uint32_t) == sizeof( output_data.obs.m));
-	  memcpy( (uint8_t *)&(output_data.obs.m), in_data, size * sizeof(uint32_t));
-
-	  if( measurement_initialized)
-	    {
-	      organizer->on_new_pressure_data( output_data.obs.m.static_pressure, output_data.obs.m.pitot_pressure);
-	      organizer->update_at_100_Hz(output_data);
-	    }
-	  if( ++counter_10Hz == 10)
-	    {
-	      counter_10Hz = 0;
-	      bool landing_detected = organizer->update_at_10Hz ( output_data);
-
-	      if (landing_detected)
-		{
-		  organizer->cleanup_after_landing();
-		  printf ("landed at log time %d minutes.\n", records / 6000);
-		}
-	    }
-
-	  if( organizer != 0) // after initialization
-	    {
-	      organizer->report_data ( output_data);
-	      out_file.write ( (const char*)&output_data, sizeof(output_data_t));
-	    }
-
+	case MAGNETOMETER_DATA:
+	  assert( size * sizeof(uint32_t) == sizeof( float3vector));
+	  memcpy( (uint8_t *)&(external_induction), in_data, size * sizeof(uint32_t));
 	  break;
 // ***********************************************************************************************************
 	  case D_GNSS_DATA:
 	    {
-	    assert( size * sizeof(uint32_t) == sizeof( output_data.obs.c));
-	    memcpy( (uint8_t *)&(output_data.obs.c), in_data, size * sizeof(uint32_t));
+	    assert( size * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
+	    memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
 	      static int old;
-	      float delta = output_data.obs.c.nano - old;
+	      float delta = state_vector.obs.c.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
 	      printf("%3.6f\n", delta / 1000000);
-	      old = output_data.obs.c.nano;
+	      old = state_vector.obs.c.nano;
 #endif
 
 	      if( not measurement_initialized)
@@ -279,9 +256,9 @@ int main (int argc, char *argv[])
 		organizer = new organizer_t;
 		organizer->initialize_before_measurement ();
 
-		organizer->initialize_after_first_measurement (output_data);
+		organizer->initialize_after_first_measurement ( coordinates, obs);
 	      }
-	    organizer->update_GNSS_data ( output_data.obs.c );
+	    organizer->update_GNSS_data ( coordinates);
 	    }
 	    break;
 // ***********************************************************************************************************
@@ -289,21 +266,7 @@ int main (int argc, char *argv[])
 	      {
 	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
 
-	      GNSS_coordinates_t &input = *(GNSS_coordinates_t *)in_data;
-
-	      output_data.obs.c.sat_fix_type = input.sat_fix_type;
-	      output_data.obs.c.SATS_number = input.SATS_number;
-	      output_data.obs.c.geo_sep_dm = input.geo_sep_dm;
-	      output_data.obs.c.speed_acc = input.speed_acc;
-	      output_data.obs.c.pDOP = input.pDOP;
-
-	      output_data.obs.c.year = input.year;
-	      output_data.obs.c.month = input.month;
-	      output_data.obs.c.day = input.day;
-	      output_data.obs.c.hour = input.hour;
-	      output_data.obs.c.minute = input.minute;
-	      output_data.obs.c.second = input.second;
-	      output_data.obs.c.nano = input.nano;
+	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
 	      static int old;
@@ -316,13 +279,8 @@ int main (int argc, char *argv[])
 	      old = input.nano;
 #endif
 
-	      output_data.obs.c.GNSS_MSL_altitude = input.GNSS_MSL_altitude;
-	      output_data.obs.c.latitude = input.latitude;
-	      output_data.obs.c.longitude = input.longitude;
-	      output_data.obs.c.velocity = input.velocity;
-
-	      output_data.obs.c.relPosHeading = 0;
-	      output_data.obs.c.relPosNED = float3vector();
+	      coordinates.relPosHeading = 0;
+	      coordinates.relPosNED = float3vector();
 
 	      if( not measurement_initialized)
 		{
@@ -330,9 +288,9 @@ int main (int argc, char *argv[])
 		  organizer = new organizer_t;
 		  organizer->initialize_before_measurement ();
 
-		  organizer->initialize_after_first_measurement (output_data);
+		  organizer->initialize_after_first_measurement ( coordinates, obs);
 		}
-	      organizer->update_GNSS_data ( output_data.obs.c );
+	      organizer->update_GNSS_data ( coordinates);
 	      break;
 	      }
 // ***********************************************************************************************************
