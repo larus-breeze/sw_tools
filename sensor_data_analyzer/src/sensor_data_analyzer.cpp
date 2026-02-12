@@ -151,13 +151,12 @@ int main (int argc, char *argv[])
 
       if( size == 255)
 	{
-	  if( next_block_identifier & 0xff != 255) // wrong format
-	    break;
-
 	  uint32_t extended_header[2]; // 32bit identifier and 32bit length
 	  in_file.read ((char*) extended_header, sizeof( extended_header));
-	  size = extended_header[1] - 3; // subtract node, id, length
-	  next_block_identifier = extended_header[0];
+	  size = flexible_log_file_t::verify_extended_record_get_size ( next_block_identifier, extended_header[0], extended_header[1]);
+	  if( size == 0)
+	    break; // error
+	  in_file.seekg( size, ios_base::cur); // for the moment: skip record
 	}
 
       if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
