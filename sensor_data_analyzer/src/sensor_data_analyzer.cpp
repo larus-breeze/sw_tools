@@ -113,13 +113,7 @@ main (int argc, char *argv[])
     }
   extension += 1;
 
-  if (strcmp (extension, "f37") == 0)
-    log_file_format = LEGACY_LOG_FORMAT;
-  else if (strcmp (extension, "f32") == 0)
-    log_file_format = STD_LOG_FORMAT;
-  else if (strcmp (extension, "f35") == 0)
-    log_file_format = EXTENDED_LOG_FORMAT;
-  else
+  if (strcmp (extension, "f37") != 0)
     {
       cout << "Invalid file extension\n";
       return -1;
