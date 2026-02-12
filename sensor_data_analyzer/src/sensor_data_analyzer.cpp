@@ -149,15 +149,17 @@ int main (int argc, char *argv[])
       if (size == 0) // error, format not recognized
 	break;
 
-      if( size == 255)
+      if( (next_block_identifier & 0xffff) == 0xffff)
 	{
 	  uint32_t extended_header[2]; // 32bit identifier and 32bit length
 	  in_file.read ((char*) extended_header, sizeof( extended_header));
 	  size = flexible_log_file_t::verify_extended_record_get_size ( next_block_identifier, extended_header[0], extended_header[1]);
 	  if( size == 0)
 	    break; // error
-	  in_file.seekg( size, ios_base::cur); // for the moment: skip record
+	  next_block_identifier = extended_header[0]; // replace short ID by extended ID
 	}
+      else
+	next_block_identifier &= 0xff; // keep only the ID
 
       if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
 	break;
@@ -167,7 +169,7 @@ int main (int argc, char *argv[])
       if (bytes_read != (size * sizeof(uint32_t)))
 	break;
 
-      switch ( next_block_identifier & 0xff)
+      switch ( next_block_identifier)
 	{
 // ***********************************************************************************************************
 	case EEPROM_FILE:
