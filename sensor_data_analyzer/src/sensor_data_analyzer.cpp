@@ -159,8 +159,6 @@ int main (int argc, char *argv[])
 	  size = extended_header[1] - 3; // subtract node, id, length
 	  next_block_identifier = extended_header[0];
 	}
-      else
-	--size; // it included the block identifier
 
       if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
 	break;
