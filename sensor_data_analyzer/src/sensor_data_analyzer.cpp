@@ -53,7 +53,7 @@
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
 #include "abstract_EEPROM_storage.h"
-#include "flexible_log_file.h"
+#include "flexible_log_file_implementation.h"
 
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
