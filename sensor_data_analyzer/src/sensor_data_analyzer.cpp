@@ -53,7 +53,7 @@
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
 #include "abstract_EEPROM_storage.h"
-#include "flexible_log_file.h"
+#include "flexible_log_file_implementation.h"
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
@@ -138,7 +138,7 @@ int main (int argc, char *argv[])
     }
 
   uint32_t flex_buffer[FLEX_BUF_SIZE];
-  flexible_log_file_t flex_file( flex_buffer, FLEX_BUF_SIZE);
+  flexible_log_file_stream_t flex_file( flex_buffer, FLEX_BUF_SIZE);
   char flex_file_path[256];
   strcpy( flex_file_path, argv[1]);
   extension = strrchr( argv[1], '.');
