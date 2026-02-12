@@ -2,7 +2,7 @@
 #include <flexible_log_file_implementation.h>
 #include "CRC16.h"
 
-bool flexible_log_file_stream_t::open (char *file_name)
+bool flexible_log_file_implementation_t::open (char *file_name)
 {
   outfile.open( file_name, ios::out | ios::binary | ios::ate);
   if ( not outfile.is_open ())
@@ -10,14 +10,14 @@ bool flexible_log_file_stream_t::open (char *file_name)
   return true;
 }
 
-bool flexible_log_file_stream_t::close( void)
+bool flexible_log_file_implementation_t::close( void)
 {
   outfile.write( (const char *)flexible_log_file_t::buffer, (flexible_log_file_t::write_pointer - flexible_log_file_t::buffer) * sizeof( uint32_t));
   outfile.close ();
   return true;
 }
 
-bool flexible_log_file_stream_t::write_block (uint32_t *p_data, uint32_t size_words)
+bool flexible_log_file_implementation_t::write_block (uint32_t *p_data, uint32_t size_words)
 {
   if ( not outfile.is_open ())
     return false;

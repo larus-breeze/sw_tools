@@ -87,7 +87,8 @@ uint32_t fake_system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
 #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
@@ -104,19 +105,19 @@ int main (int argc, char *argv[])
 // ************************************************************
 
   log_file_format_t log_file_format;
-  char * extension = strrchr( argv[1], '.');
-  if( extension == 0)
+  char *extension = strrchr (argv[1], '.');
+  if (extension == 0)
     {
       cout << "Invalid file extension\n";
       return -1;
     }
   extension += 1;
 
-  if( strcmp( extension, "f37") == 0)
+  if (strcmp (extension, "f37") == 0)
     log_file_format = LEGACY_LOG_FORMAT;
-  else if( strcmp( extension, "f32") == 0)
+  else if (strcmp (extension, "f32") == 0)
     log_file_format = STD_LOG_FORMAT;
-  else if( strcmp( extension, "f35") == 0)
+  else if (strcmp (extension, "f35") == 0)
     log_file_format = EXTENDED_LOG_FORMAT;
   else
     {
@@ -138,228 +139,134 @@ int main (int argc, char *argv[])
     }
 
   uint32_t flex_buffer[FLEX_BUF_SIZE];
-  flexible_log_file_stream_t flex_file( flex_buffer, FLEX_BUF_SIZE);
+  flexible_log_file_implementation_t flex_file (flex_buffer, FLEX_BUF_SIZE);
   char flex_file_path[256];
-  strcpy( flex_file_path, argv[1]);
-  extension = strrchr( argv[1], '.');
+  strcpy (flex_file_path, argv[1]);
+  extension = strrchr (argv[1], '.');
   *extension = 0;
-  strcat( flex_file_path, ".fff");
-  if( not flex_file.open( flex_file_path))
+  strcat (flex_file_path, ".fff");
+  if (not flex_file.open (flex_file_path))
     {
       printf ("Unable to open output file\n");
       return -1;
     }
 
   unsigned file_format_version = 0x00000001;
-  flex_file.append_record( FILE_FORMAT_VERSION, &file_format_version, 1);
-  flex_file.append_record( EEPROM_FILE, (uint32_t *)(permanent_data_file.get_head()), permanent_data_file.get_size() / sizeof(uint32_t));
+  flex_file.append_record (FILE_FORMAT_VERSION, &file_format_version, 1);
+  flex_file.append_record (EEPROM_FILE,
+			   (uint32_t*) (permanent_data_file.get_head ()),
+			   permanent_data_file.get_size () / sizeof(uint32_t));
 
   streampos size = file.tellg ();
 
   unsigned records;
-  size_t outfile_size;
-  output_data_t *output_data;
 
-  bool using_D_GNSS = (configuration(GNSS_CONFIGURATION) == 2) || (configuration(GNSS_CONFIGURATION) == 3);
-
-  switch( log_file_format)
-  {
-    case LEGACY_LOG_FORMAT:
-      {
-        legacy_observations_type *in_data;
-        in_data = ( legacy_observations_type*) new char[size];
-        records = size / sizeof( legacy_observations_type);
-        outfile_size = records * sizeof(output_data_t);
-        output_data = (output_data_t*) new char[outfile_size];
-        file.seekg (0, ios::beg);
-        file.read ((char*) in_data, size);
-        file.close ();
-        for( unsigned i = 0; i < records; ++i)
-  	{
-            output_data[i].obs.m = in_data[i].m;
-
-            output_data[i].obs.c.velocity = in_data[i].c.velocity;
-            output_data[i].obs.c.relPosNED = in_data[i].c.relPosNED;
-            output_data[i].obs.c.relPosHeading = in_data[i].c.relPosHeading;
-            output_data[i].obs.c.speed_acc = in_data[i].c.speed_acc;
-            output_data[i].obs.c.latitude = in_data[i].c.latitude;
-            output_data[i].obs.c.longitude = in_data[i].c.longitude;
-            output_data[i].obs.c.GNSS_MSL_altitude = - in_data[i].c.position[DOWN];
-
-            output_data[i].obs.c.year = in_data[i].c.year;
-            output_data[i].obs.c.month = in_data[i].c.month;
-            output_data[i].obs.c.day = in_data[i].c.day;
-            output_data[i].obs.c.hour = in_data[i].c.hour;
-            output_data[i].obs.c.minute = in_data[i].c.minute;
-            output_data[i].obs.c.second = in_data[i].c.second;
-
-            output_data[i].obs.c.SATS_number = in_data[i].c.SATS_number;
-            output_data[i].obs.c.sat_fix_type = in_data[i].c.sat_fix_type;
-            output_data[i].obs.c.second = in_data[i].c.second;
-            output_data[i].obs.c.nano = in_data[i].c.nano;
-            output_data[i].obs.c.geo_sep_dm = in_data[i].c.geo_sep_dm;
-
-            output_data[i].obs.sensor_status = fake_system_state;
-  	    output_data[i].obs.external_magnetometer_reading = {0};
-  	}
-        delete[] in_data;
-        break;
-      }
-  case EXTENDED_LOG_FORMAT:
-    {
-      extended_observations_type *in_data;
-      in_data = ( extended_observations_type*) new char[size];
-      records = size / sizeof( extended_observations_type);
-      outfile_size = records * sizeof(output_data_t);
-      output_data = (output_data_t*) new char[outfile_size];
-      file.seekg (0, ios::beg);
-      file.read ((char*) in_data, size);
-      file.close ();
-      for( unsigned i = 0; i < records; ++i)
-	{
-	    output_data[i].obs.m = in_data[i].m;
-	    output_data[i].obs.c = in_data[i].c;
-	    output_data[i].obs.external_magnetometer_reading = in_data[i].external_magnetometer_reading;
-	    output_data[i].obs.sensor_status = in_data[i].sensor_status;
-	}
-      delete[] in_data;
-      break;
-    }
-  case STD_LOG_FORMAT:
-    {
-      observations_type *in_data;
-      in_data = ( observations_type*) new char[size];
-      records = size / sizeof( observations_type);
-      outfile_size = records * sizeof(output_data_t);
-      output_data = (output_data_t*) new char[outfile_size];
-      file.seekg (0, ios::beg);
-      file.read ((char*) in_data, size);
-      file.close ();
-      for( unsigned i = 0; i < records; ++i)
-	{
-	    output_data[i].obs.m = in_data[i].m;
-	    output_data[i].obs.c = in_data[i].c;
-	    // we did not record external magnetometer data, so this bit needs to be reset
-	    output_data[i].obs.sensor_status = in_data[i].sensor_status & ~EXTERNAL_MAGNETOMETER_AVAILABLE;
-	    output_data[i].obs.external_magnetometer_reading = {0};
-	}
-      delete[] in_data;
-      break;
-    }
-  }
-
-  // ************************************************************
-
+  D_GNSS_coordinates_t c;
+  measurement_data_t m;
+  state_vector_t s;
+  uint32_t system_state = fake_system_state;
   organizer_t organizer;
   organizer.initialize_before_measurement ();
-
   int32_t nano = 0;
   int delta_time;
-
-  system_state = output_data[0].obs.sensor_status;
+  bool have_GNSS_fix = false;
+  unsigned counter_10Hz = 10;
   uint32_t old_system_state = system_state;
 
-  flex_file.append_record( SENSOR_STATUS, &system_state, 1);
+  bool using_D_GNSS = (configuration (GNSS_CONFIGURATION) == 2)
+      || (configuration (GNSS_CONFIGURATION) == 3);
 
-  organizer.update_GNSS_data (output_data[0].obs.c);
-  organizer.initialize_after_first_measurement (output_data[1]);
-
-  unsigned counter_10Hz = 10;
-
-  bool have_GNSS_fix = false;
-
-  for ( unsigned count = 1; count < records; ++count)
+  legacy_observations_type *in_data;
+  in_data = (legacy_observations_type*) new char[size];
+  records = size / sizeof(legacy_observations_type);
+  file.seekg (0, ios::beg);
+  file.read ((char*) in_data, size);
+  file.close ();
+  for (unsigned i = 0; i < records; ++i)
     {
-      system_state = output_data[count].obs.sensor_status;
-      if( system_state == 0) // assume no data given
-	system_state = fake_system_state;
+      m = in_data[i].m;
 
-      if( old_system_state != system_state)
+      c.velocity = in_data[i].c.speed;
+      c.relPosNED = in_data[i].c.relPosNED;
+      c.relPosHeading = in_data[i].c.relPosHeading;
+      c.speed_acc = in_data[i].c.speed_acc;
+      c.latitude = in_data[i].c.latitude;
+      c.longitude = in_data[i].c.longitude;
+      c.GNSS_MSL_altitude = -in_data[i].c.position[DOWN];
+
+      c.year = in_data[i].c.year;
+      c.month = in_data[i].c.month;
+      c.day = in_data[i].c.day;
+      c.hour = in_data[i].c.hour;
+      c.minute = in_data[i].c.minute;
+      c.second = in_data[i].c.second;
+
+      c.SATS_number = in_data[i].c.SATS_number;
+      c.sat_fix_type = in_data[i].c.sat_fix_type;
+      c.second = in_data[i].c.second;
+      c.nano = in_data[i].c.nano;
+      c.geo_sep_dm = in_data[i].c.geo_sep_dm;
+
+      if (c.sat_fix_type > 1)
+	system_state |= D_GNSS_AVAILABLE;
+      else
+	system_state &= ~D_GNSS_AVAILABLE;
+
+      if (old_system_state != system_state)
 	{
 	  old_system_state = system_state;
-	  flex_file.append_record( SENSOR_STATUS, &system_state, 1);
+	  flex_file.append_record (SENSOR_STATUS, &system_state, 1);
 	}
 
-      organizer.on_new_pressure_data (output_data[count].obs.m.static_pressure,
-				      output_data[count].obs.m.pitot_pressure);
+      organizer.on_new_pressure_data (m.static_pressure, m.pitot_pressure);
+      flex_file.append_record (BASIC_SENSOR_DATA, (uint32_t*) &m,
+			       sizeof(measurement_data_t) / sizeof(uint32_t));
 
-      flex_file.append_record( BASIC_SENSOR_DATA, (uint32_t*)&(output_data[count].obs.m), sizeof( measurement_data_t) / sizeof(uint32_t));
-
-      if (have_GNSS_fix == false)
+      if (c.nano != nano) // 10 Hz by GNSS
 	{
-	  if (output_data[count].obs.c.sat_fix_type > 0)
-	    {
-	      organizer.update_magnetic_induction_data (
-		  output_data[count].obs.c.latitude,
-		  output_data[count].obs.c.longitude);
-	      organizer.initialize_after_first_measurement (output_data[count]);
-	      have_GNSS_fix = true;
-	    }
-	}
-
-      if (output_data[count].obs.c.nano != nano) // 10 Hz by GNSS
-	{
-	  delta_time = output_data[count].obs.c.nano - nano;
+	  delta_time = c.nano - nano;
 	  if (delta_time < 0)
 	    delta_time += 1000000000;
-	  nano = output_data[count].obs.c.nano;
+	  nano = c.nano;
 
-	  organizer.update_GNSS_data (output_data[count].obs.c);
+	  organizer.update_GNSS_data (c);
 
-	  if( using_D_GNSS)
-	    flex_file.append_record( D_GNSS_DATA, (uint32_t*)&(output_data[count].obs.c), sizeof( D_GNSS_coordinates_t) / sizeof(uint32_t));
+	  if (using_D_GNSS)
+	    flex_file.append_record ( D_GNSS_DATA, (uint32_t*) &c, sizeof( D_GNSS_coordinates_t) / sizeof(uint32_t));
 	  else
-	    {
-	      GNSS_coordinates_t out;
-	      out.GNSS_MSL_altitude = output_data[count].obs.c.GNSS_MSL_altitude;
-	      out.latitude = output_data[count].obs.c.latitude;
-	      out.longitude = output_data[count].obs.c.longitude;
-	      out.velocity = output_data[count].obs.c.velocity;
-
-	      out.SATS_number = output_data[count].obs.c.SATS_number;
-	      out.geo_sep_dm = output_data[count].obs.c.geo_sep_dm;
-	      out.sat_fix_type = output_data[count].obs.c.sat_fix_type;
-	      out.pDOP = output_data[count].obs.c.pDOP;
-
-	      out.year = output_data[count].obs.c.year;
-	      out.month = output_data[count].obs.c.month;
-	      out.day = output_data[count].obs.c.day;
-	      out.hour = output_data[count].obs.c.hour;
-	      out.minute = output_data[count].obs.c.minute;
-	      out.second = output_data[count].obs.c.second;
-	      out.nano = output_data[count].obs.c.nano;
-
-	      flex_file.append_record( GNSS_DATA, (uint32_t*)&(out), sizeof( GNSS_coordinates_t) / sizeof(uint32_t));
-	    }
+	    flex_file.append_record ( GNSS_DATA, (uint32_t*) &c,   sizeof( GNSS_coordinates_t)   / sizeof(uint32_t));
 
 	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
 	}
 
-      organizer.update_at_100_Hz (output_data[count]);
+      if (have_GNSS_fix == false)
+	{
+	  if (c.sat_fix_type > 0)
+	    {
+	      organizer.update_magnetic_induction_data (c.latitude, c.longitude);
+	      organizer.initialize_after_first_measurement (c, m);
+	      have_GNSS_fix = true;
+	    }
+	}
+      organizer.update_at_100_Hz (m, system_state, float3vector ());
 
-      --counter_10Hz;
-      if (counter_10Hz == 0)
+      if (--counter_10Hz == 0)
 	{
 	  counter_10Hz = 10;
 
-	  bool landing_detected = organizer.update_at_10Hz ( output_data[count]);
+	  bool landing_detected = organizer.update_at_10Hz (c, m);
 
 	  if (landing_detected)
 	    {
-	      organizer.cleanup_after_landing();
-	      printf ("landed at log time %d minutes.\n", count / 6000);
+	      organizer.cleanup_after_landing ();
+	      printf ("landed at log time %d minutes.\n", i / 6000);
 	    }
 	}
-
-      organizer.report_data (output_data[count]);
     }
 
-  organizer.cleanup_after_landing(); // at least: now !
-
-  flex_file.close();
-
+  delete[] in_data;
+  flex_file.close ();
   printf ("%d records\n", records);
 
-  delete[] output_data;
-  exit( 0);
+  exit (0);
 }
