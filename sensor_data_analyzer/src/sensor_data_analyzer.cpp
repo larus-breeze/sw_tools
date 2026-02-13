@@ -158,6 +158,7 @@ int main (int argc, char *argv[])
 	  (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
 
   bool need_to_dump_EEPROM_data = true;
+  bool have_basic_sensor_data = false;
 
   while ( in_file.read (
       (char*) &next_block_identifier,
@@ -196,7 +197,7 @@ int main (int argc, char *argv[])
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
 	  memcpy (permanent_data_file_storage, in_data, bytes_read);
-	  success = permanent_data_file.file_is_consistent();
+	  success = permanent_data_file.is_consistent();
 	  if (not success)
 	    {
 	      cout << "EEPROM data file not consistent\n";
@@ -223,6 +224,7 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
+	  have_basic_sensor_data = true;
 	  if( need_to_dump_EEPROM_data)
 	    {
 	      need_to_dump_EEPROM_data = false;
@@ -299,6 +301,13 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	    case GNSS_DATA:
 	      {
+	      if( need_to_dump_EEPROM_data)
+		{
+		  need_to_dump_EEPROM_data = false;
+		  cout << "EEPROM data read:\n";
+		  permanent_data_file.dump_all_entries();
+		}
+
 	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
 
 	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
@@ -317,16 +326,19 @@ int main (int argc, char *argv[])
 	      coordinates.relPosHeading = 0;
 	      coordinates.relPosNED = float3vector();
 
-	      if( not measurement_initialized)
+	      if( have_basic_sensor_data)
 		{
-		  measurement_initialized = true;
-		  organizer = new organizer_t;
-		  organizer->initialize_before_measurement ();
+		if( not measurement_initialized)
+		  {
+		    measurement_initialized = true;
+		    organizer = new organizer_t;
+		    organizer->initialize_before_measurement ();
 
-		  organizer->initialize_after_first_measurement ( coordinates, obs);
+		    organizer->initialize_after_first_measurement ( coordinates, obs);
+		  }
+		organizer->update_GNSS_data ( coordinates);
+		state_vector.satfix = coordinates.sat_fix_type;
 		}
-	      organizer->update_GNSS_data ( coordinates);
-	      state_vector.satfix = coordinates.sat_fix_type;
 	      break;
 	      }
 // ***********************************************************************************************************
