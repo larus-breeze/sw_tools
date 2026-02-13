@@ -147,9 +147,14 @@ main (int argc, char *argv[])
 
   unsigned file_format_version = 0x00000001;
   flex_file.append_record (FILE_FORMAT_VERSION, &file_format_version, 1);
-  flex_file.append_record (EEPROM_FILE,
-			   (uint32_t*) (permanent_data_file.get_head ()),
-			   permanent_data_file.get_size () / sizeof(uint32_t));
+
+  // find all used EEPROM records and write them into the flex file
+  for( EEPROM_file_system_node::ID_t id=1; id < LOWEST_UNUSED_EEPROM_ID; ++id)
+    {
+      EEPROM_file_system_node *node = permanent_data_file.find_datum(id);
+      if( node)
+	  flex_file.append_record ( EEPROM_FILE_RECORD, (uint32_t*)node, node->size);
+    }
 
   streampos size = file.tellg ();
 
