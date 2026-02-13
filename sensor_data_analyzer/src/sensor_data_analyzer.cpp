@@ -121,7 +121,14 @@ int main (int argc, char *argv[])
   strcat( buf, ".f");
   {
   char size_string[10];
-  itoa( sizeof( state_vector_t)/sizeof(uint32_t), size_string, 10);
+  itoa(
+      (
+	  sizeof( measurement_data_t) +
+	  sizeof( float3vector) +
+	  sizeof( D_GNSS_coordinates_t) +
+	  sizeof( uint32_t) +
+	  sizeof( state_vector_t)
+      ) / sizeof(uint32_t), size_string, 10);
   strcat( buf, size_string);
   }
 
@@ -225,6 +232,10 @@ int main (int argc, char *argv[])
 	  if( organizer != 0) // after initialization
 	    {
 	      organizer->report_data ( state_vector);
+	      out_file.write ( (const char*)&obs, sizeof( obs));
+	      out_file.write ( (const char*)&external_induction, sizeof( external_induction));
+	      out_file.write ( (const char*)&coordinates, sizeof(coordinates));
+	      out_file.write ( (const char*)&system_state, sizeof(system_state));
 	      out_file.write ( (const char*)&state_vector, sizeof(state_vector_t));
 	    }
 
@@ -259,6 +270,7 @@ int main (int argc, char *argv[])
 		organizer->initialize_after_first_measurement ( coordinates, obs);
 	      }
 	    organizer->update_GNSS_data ( coordinates);
+	    state_vector.satfix = coordinates.sat_fix_type;
 	    }
 	    break;
 // ***********************************************************************************************************
@@ -291,6 +303,7 @@ int main (int argc, char *argv[])
 		  organizer->initialize_after_first_measurement ( coordinates, obs);
 		}
 	      organizer->update_GNSS_data ( coordinates);
+	      state_vector.satfix = coordinates.sat_fix_type;
 	      break;
 	      }
 // ***********************************************************************************************************
