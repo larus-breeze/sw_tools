@@ -145,8 +145,8 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  unsigned file_format_version = 0x00000001;
-  flex_file.append_record (FILE_FORMAT_VERSION, &file_format_version, 1);
+  unsigned file_format_version = flexible_log_file_implementation_t::FLEXIBLE_LOG_FILE_FORMAT_VERSION;
+  flex_file.append_record ( FILE_FORMAT_VERSION, &file_format_version, 1);
 
   // find all used EEPROM records and write them into the flex file
   for( EEPROM_file_system_node::ID_t id=1; id < LOWEST_UNUSED_EEPROM_ID; ++id)
