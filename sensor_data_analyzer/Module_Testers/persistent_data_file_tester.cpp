@@ -37,20 +37,20 @@ void test_storage( void)
   uint8_t datum1 = 0x34;
   file.store_data(1, EEPROM_file_system_node::DIRECT_8_BIT, &datum1);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
 
   file.dump_all_entries();
 
   float32_t datum2[10]={ 1, 2, 3, 4, -1, -1, -1, -1, -1};
   file.store_data(2, 3, datum2);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
   file.dump_all_entries();
 
   datum1 = 0x21;
   file.store_data(1, datum1);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
   file.dump_all_entries();
 
   uint8_t test = 0xff;
@@ -61,7 +61,7 @@ void test_storage( void)
   datum2[2]=6;
   success = file.retrieve_data( 2, 3, datum2);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
   file.dump_all_entries();
 
   unsigned id=5;
@@ -73,7 +73,7 @@ void test_storage( void)
     }
   while( success == true);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
   file.dump_all_entries();
 
   datum2[0]=0;
@@ -81,7 +81,7 @@ void test_storage( void)
   datum2[2]=0;
   success = file.retrieve_data( 2, 3, datum2);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
   file.dump_all_entries();
 
   do
@@ -91,7 +91,7 @@ void test_storage( void)
     }
   while( success);
 
-  success = file.is_consistent();
+  success = file.file_is_consistent();
   file.dump_all_entries();
 
   success = file.retrieve_data( 1, test);

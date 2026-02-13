@@ -149,6 +149,16 @@ int main (int argc, char *argv[])
 
   unsigned counter_10Hz=0;
 
+  // initialize empty EEPROM data file
+  memset ((uint8_t*) permanent_data_file_storage, 0xff,
+	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  success =
+      permanent_data_file.set_memory_to_existing_data (
+	  (uint32_t*) permanent_data_file_storage,
+	  (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
+
+  bool need_to_dump_EEPROM_data = true;
+
   while ( in_file.read (
       (char*) &next_block_identifier,
       sizeof(next_block_identifier)))
@@ -186,11 +196,7 @@ int main (int argc, char *argv[])
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
 	  memcpy (permanent_data_file_storage, in_data, bytes_read);
-	  success =
-	      permanent_data_file.set_memory_to_existing_data (
-		  (uint32_t*) permanent_data_file_storage,
-		  (uint32_t*) permanent_data_file_storage
-		      + EEPROM_FILE_SYSTEM_SIZE);
+	  success = permanent_data_file.file_is_consistent();
 	  if (not success)
 	    {
 	      cout << "EEPROM data file not consistent\n";
@@ -199,14 +205,31 @@ int main (int argc, char *argv[])
 
 	  cout << "EEPROM data read:\n";
 	  permanent_data_file.dump_all_entries();
+	  need_to_dump_EEPROM_data = false;
 
 	  break;
 // ***********************************************************************************************************
 	case EEPROM_FILE_RECORD:
-	  // todo patch implement me !
+	  {
+	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
+	    if( not EEPROM_file_system::node_is_consistent( candidate))
+		{
+		  cout << "EEPROM data entry not consistent\n";
+		  return -1;
+		}
+	    EEPROM_file_system_node::ID_t id = candidate->id;
+	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
+	  }
 	  break;
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
+	  if( need_to_dump_EEPROM_data)
+	    {
+	      need_to_dump_EEPROM_data = false;
+	      cout << "EEPROM data read:\n";
+	      permanent_data_file.dump_all_entries();
+	    }
+
 	  ++records;
 
 	  assert( size * sizeof(uint32_t) == sizeof( measurement_data_t));

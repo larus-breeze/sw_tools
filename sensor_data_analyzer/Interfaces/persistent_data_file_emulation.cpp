@@ -48,7 +48,7 @@ bool read_meta_data_file (char *file_path)
       bool result = permanent_data_file.set_memory_to_existing_data( (uint32_t *)permanent_data_file_storage, (uint32_t *)(permanent_data_file_storage+EEPROM_FILE_SYSTEM_SIZE));
       assert(result == true);
 
-      if ( not permanent_data_file.is_consistent ())
+      if ( not permanent_data_file.file_is_consistent ())
 	{
 	  printf ("configuration_data_file.dat : data not consistent, please delete it !\n");
 	  return -1;
@@ -181,7 +181,7 @@ bool read_meta_data_file (char *file_path)
       permanent_data_file.import_all_data( temp_file);
 
       // do some tests
-      assert( permanent_data_file.is_consistent());
+      assert( permanent_data_file.file_is_consistent());
       permanent_data_file.dump_all_entries ();
 
       char * slash = strrchr( path, '/');
@@ -197,7 +197,7 @@ bool read_meta_data_file (char *file_path)
 
 void write_permanent_data_file( char * file_name)
 {
-  assert( permanent_data_file.is_consistent() );
+  assert( permanent_data_file.file_is_consistent() );
   char path[100];
   strcpy( path, file_name);
   char * slash = strrchr( path, '/');
