@@ -54,12 +54,20 @@
 #include "CAN_gateway.h"
 #include "abstract_EEPROM_storage.h"
 #include "flexible_log_file_implementation.h"
-
+#include "persistent_data.h"
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define FLEX_BUF_SIZE 2048
+
+uint32_t buffer[128];
+flexible_log_file_implementation_t flex_file( buffer, 128);
+
+bool write_block (uint32_t *p_data, uint32_t size_words)
+{
+  flex_file.write_block( p_data, size_words);
+}
 
 Mutex_Wrapper_Type my_mutex;
 
@@ -85,7 +93,7 @@ using namespace std;
 uint32_t system_state;
 state_vector_t state_vector;
 D_GNSS_coordinates_t coordinates;
-measurement_data_t obs;
+measurement_data_t observations;
 float3vector external_induction;
 
 uint32_t fake_system_state // fake system state here in lack of hardware
@@ -139,6 +147,8 @@ int main (int argc, char *argv[])
       return -1;
     }
 
+  ensure_EEPROM_parameter_integrity();
+
   uint32_t * in_data = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
   uint32_t next_block_identifier;
@@ -159,6 +169,7 @@ int main (int argc, char *argv[])
 
   bool need_to_dump_EEPROM_data = true;
   bool have_basic_sensor_data = false;
+  bool have_configuration = false;
 
   while ( in_file.read (
       (char*) &next_block_identifier,
@@ -168,7 +179,10 @@ int main (int argc, char *argv[])
 	  next_block_identifier);
 
       if (size == 0) // error, format not recognized
-	break;
+	{
+	  printf( "\nBAD RECORD %02x\n", next_block_identifier &0xff);
+	  continue;
+	}
 
       if( (next_block_identifier & 0xffff) == 0xffff)
 	{
@@ -189,6 +203,15 @@ int main (int argc, char *argv[])
       unsigned bytes_read = in_file.gcount ();
       if (bytes_read != (size * sizeof(uint32_t)))
 	break;
+
+      static unsigned linecount = 0;
+      printf( "%02x ", next_block_identifier);
+      ++linecount;
+      if( linecount == 50)
+	{
+	  linecount = 0;
+	  printf( "\n");
+	}
 
       switch ( next_block_identifier)
 	{
@@ -220,6 +243,8 @@ int main (int argc, char *argv[])
 		}
 	    EEPROM_file_system_node::ID_t id = candidate->id;
 	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
+	    if( id == 42)
+	      have_configuration = true; // todo patch kind of too simple ...
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -235,29 +260,32 @@ int main (int argc, char *argv[])
 	  ++records;
 
 	  assert( size * sizeof(uint32_t) == sizeof( measurement_data_t));
-	  memcpy( (uint8_t *)&obs, in_data, size * sizeof(uint32_t));
+	  memcpy( (uint8_t *)&observations, in_data, size * sizeof(uint32_t));
 
 	  if( measurement_initialized)
 	    {
-	      organizer->on_new_pressure_data( obs.static_pressure, obs.pitot_pressure);
-	      organizer->update_at_100_Hz( obs, system_state, external_induction);
+	      organizer->on_new_pressure_data( observations.static_pressure, observations.pitot_pressure);
+	      organizer->update_at_100_Hz( observations, system_state, external_induction);
 	    }
 	  if( ++counter_10Hz == 10)
 	    {
 	      counter_10Hz = 0;
-	      bool landing_detected = organizer->update_at_10Hz ( coordinates, obs);
-
-	      if (landing_detected)
+	      if( measurement_initialized)
 		{
-		  organizer->cleanup_after_landing();
-		  printf ("landed at log time %d minutes.\n", records / 6000);
+		    bool landing_detected = organizer->update_at_10Hz ( coordinates, observations);
+
+		    if (landing_detected)
+		      {
+			organizer->cleanup_after_landing();
+			printf ("landed at log time %d minutes.\n", records / 6000);
+		      }
 		}
 	    }
 
 	  if( organizer != 0) // after initialization
 	    {
 	      organizer->report_data ( state_vector);
-	      out_file.write ( (const char*)&obs, sizeof( obs));
+	      out_file.write ( (const char*)&observations, sizeof( observations));
 	      out_file.write ( (const char*)&external_induction, sizeof( external_induction));
 	      out_file.write ( (const char*)&coordinates, sizeof(coordinates));
 	      out_file.write ( (const char*)&system_state, sizeof(system_state));
@@ -278,24 +306,30 @@ int main (int argc, char *argv[])
 
 #if PRINT_GNSS_RATE
 	      static int old;
-	      float delta = state_vector.obs.c.nano - old;
+	      float delta = state_vector.observations.c.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
 	      printf("%3.6f\n", delta / 1000000);
-	      old = state_vector.obs.c.nano;
+	      old = state_vector.observations.c.nano;
 #endif
 
-	      if( not measurement_initialized)
-	      {
-		measurement_initialized = true;
-		organizer = new organizer_t;
-		organizer->initialize_before_measurement ();
+	      if( have_basic_sensor_data)
+		{
+		  if( not measurement_initialized && have_configuration)
+		  {
+		    measurement_initialized = true;
+		    organizer = new organizer_t;
+		    organizer->initialize_before_measurement ();
 
-		organizer->initialize_after_first_measurement ( coordinates, obs);
-	      }
-	    organizer->update_GNSS_data ( coordinates);
-	    state_vector.satfix = coordinates.sat_fix_type;
+		    organizer->initialize_after_first_measurement ( coordinates, observations);
+		  }
+		}
+
+	      if( organizer)
+		organizer->update_GNSS_data ( coordinates);
+
+	      state_vector.satfix = coordinates.sat_fix_type;
 	    }
 	    break;
 // ***********************************************************************************************************
@@ -328,15 +362,16 @@ int main (int argc, char *argv[])
 
 	      if( have_basic_sensor_data)
 		{
-		if( not measurement_initialized)
+		if( not measurement_initialized && have_configuration)
 		  {
 		    measurement_initialized = true;
 		    organizer = new organizer_t;
 		    organizer->initialize_before_measurement ();
-
-		    organizer->initialize_after_first_measurement ( coordinates, obs);
 		  }
-		organizer->update_GNSS_data ( coordinates);
+
+		if( organizer)
+		  organizer->update_GNSS_data ( coordinates);
+
 		state_vector.satfix = coordinates.sat_fix_type;
 		}
 	      break;
@@ -349,7 +384,7 @@ int main (int argc, char *argv[])
 	}
     }
 
-  printf ("%d records read\n", records);
+  printf ("\n%d records read\n", records);
   out_file.close ();
   exit( 0);
 }

@@ -7,6 +7,8 @@
 #include "flexible_log_file.h"
 using namespace std;
 
+bool write_block( uint32_t * begin, uint32_t size_words);
+
 class flexible_log_file_implementation_t : public flexible_log_file_t
 {
 public:
@@ -23,9 +25,9 @@ public:
 
   bool open( char * file_name) override;
   bool close( void) override;
+  bool write_block (uint32_t *p_data, uint32_t size_words);
 
 private:
-  bool write_block( uint32_t * begin, uint32_t size_words) override;
   ofstream outfile;
 };
 
