@@ -59,6 +59,15 @@
 
 #define FLEX_BUF_SIZE 2048
 
+uint32_t flex_buffer[FLEX_BUF_SIZE];
+flexible_log_file_implementation_t flex_file (flex_buffer, FLEX_BUF_SIZE);
+
+bool write_block( uint32_t * begin, uint32_t size_words)
+{
+  return flex_file.write_block( begin, size_words);
+}
+
+
 Mutex_Wrapper_Type my_mutex;
 
 magnetic_calculation_data_t temporary_mag_calculation_data;
@@ -132,13 +141,11 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  uint32_t flex_buffer[FLEX_BUF_SIZE];
-  flexible_log_file_implementation_t flex_file (flex_buffer, FLEX_BUF_SIZE);
   char flex_file_path[256];
   strcpy (flex_file_path, argv[1]);
   extension = strrchr (argv[1], '.');
   *extension = 0;
-  strcat (flex_file_path, ".fff");
+  strcat (flex_file_path, ".lrsx");
   if (not flex_file.open (flex_file_path))
     {
       printf ("Unable to open output file\n");
