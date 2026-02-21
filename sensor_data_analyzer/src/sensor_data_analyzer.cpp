@@ -204,6 +204,7 @@ int main (int argc, char *argv[])
       if (bytes_read != (size * sizeof(uint32_t)))
 	break;
 
+#if 0 // monitor advance
       static unsigned linecount = 0;
       printf( "%02x ", next_block_identifier);
       ++linecount;
@@ -212,6 +213,7 @@ int main (int argc, char *argv[])
 	  linecount = 0;
 	  printf( "\n");
 	}
+#endif
 
       switch ( next_block_identifier)
 	{
