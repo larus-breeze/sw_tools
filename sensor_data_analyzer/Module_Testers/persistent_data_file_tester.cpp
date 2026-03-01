@@ -26,13 +26,15 @@
 #ifdef DEBUG
 
 #define STORAGE_SIZE 1024
+#define LOWEST_UNUSED_EEPROM_ID 254
+
 EEPROM_file_system_node storage[STORAGE_SIZE];
 
 void test_storage( void)
 {
   bool success;
   memset( storage, 0xff, STORAGE_SIZE * sizeof(uint32_t));
-  EEPROM_file_system file( storage, storage+STORAGE_SIZE);
+  EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> file( storage, storage+STORAGE_SIZE);
 
   uint8_t datum1 = 0x34;
   file.store_data(1, EEPROM_file_system_node::DIRECT_8_BIT, &datum1);

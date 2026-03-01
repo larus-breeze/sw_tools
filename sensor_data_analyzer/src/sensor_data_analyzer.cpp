@@ -238,7 +238,7 @@ int main (int argc, char *argv[])
 	case EEPROM_FILE_RECORD:
 	  {
 	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
-	    if( not EEPROM_file_system::node_is_consistent( candidate))
+	    if( not EEPROM_file_system<LOWEST_UNUSED_EEPROM_ID>::node_is_consistent( candidate))
 		{
 		  cout << "EEPROM data entry not consistent\n";
 		  return -1;

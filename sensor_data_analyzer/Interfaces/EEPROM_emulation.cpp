@@ -37,7 +37,7 @@
 using namespace std;
 
 EEPROM_file_system_node permanent_data_file_storage[EEPROM_FILE_SYSTEM_SIZE];
-EEPROM_file_system permanent_data_file;
+EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> permanent_data_file;
 
 void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words)
 {
