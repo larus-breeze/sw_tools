@@ -96,10 +96,13 @@ uint32_t fake_system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
-int
-main (int argc, char *argv[])
+void test_storage( void);
+
+int main (int argc, char *argv[])
 {
-#ifndef _WIN32
+  test_storage();
+
+  #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
   feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);

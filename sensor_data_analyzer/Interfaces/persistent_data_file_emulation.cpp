@@ -15,6 +15,8 @@
 
 using namespace std;
 
+extern EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> permanent_data_file;
+
 bool read_meta_data_file (char *file_path)
 {
   char path[200];
@@ -104,7 +106,7 @@ bool read_meta_data_file (char *file_path)
 
       // use a temporary data file to fill in all found config parameters
       uint32_t temp_file_storage[1024];
-      EEPROM_file_system temp_file;
+      EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> temp_file;
       temp_file.initialize_memory_area( temp_file_storage, temp_file_storage+1024);
 
       value = configuration (SENS_TILT_ROLL);
