@@ -36,6 +36,7 @@
 #include "string.h"
 #include "time.h"
 #include "math.h"
+#include "system_configuration.h"
 #include "persistent_data_file_emulation.h"
 #include "data_structures.h"
 #include "persistent_data.h"
@@ -116,7 +117,6 @@ int main (int argc, char *argv[])
 
 // ************************************************************
 
-  log_file_format_t log_file_format;
   char *extension = strrchr (argv[1], '.');
   if (extension == 0)
     {

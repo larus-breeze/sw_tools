@@ -21,12 +21,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
  **************************************************************************/
+#define LOWEST_UNUSED_EEPROM_ID 254
+
 #include "persistent_data_file.h"
 
 #ifdef DEBUG
 
 #define STORAGE_SIZE 1024
-#define LOWEST_UNUSED_EEPROM_ID 254
 EEPROM_file_system_node storage[STORAGE_SIZE];
 
 void test_storage( void)
