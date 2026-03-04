@@ -25,6 +25,8 @@
 #ifndef SRC_SYSTEM_CONFIGURATION_H_
 #define SRC_SYSTEM_CONFIGURATION_H_
 
+#define DEBUG
+
 #define GIT_TAG_DEC 0x12345678 // dummy
 
 #define UNIX 1   // Indicates to the lib that running on Unix/Windows but not on stm32

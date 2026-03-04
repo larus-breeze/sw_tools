@@ -31,6 +31,7 @@
 #include "math.h"
 #include "system_configuration.h"
 #include "ascii_support.h"
+#include "persistent_data.h"
 #include "persistent_data_file.h"
 #include "EEPROM_emulation.h"
 
