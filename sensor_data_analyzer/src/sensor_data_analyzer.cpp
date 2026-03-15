@@ -244,9 +244,16 @@ int main (int argc, char *argv[])
 		  return -1;
 		}
 	    EEPROM_file_system_node::ID_t id = candidate->id;
+	    float32_t data = *(float32_t *)(in_data+1);
+
 	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
 	    if( id == 42)
-	      have_configuration = true; // todo patch kind of too simple ...
+	      {
+		// todo patch
+		  float yaw_angle = 3.141592f;
+		  permanent_data_file.store_data( 3, 1, &yaw_angle);
+		  have_configuration = true; // todo patch kind of too simple ...
+	      }
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -325,6 +332,7 @@ int main (int argc, char *argv[])
 		    organizer->initialize_before_measurement ();
 
 		    organizer->initialize_after_first_measurement ( coordinates, observations);
+		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
 		  }
 		}
 
@@ -369,6 +377,7 @@ int main (int argc, char *argv[])
 		    measurement_initialized = true;
 		    organizer = new organizer_t;
 		    organizer->initialize_before_measurement ();
+		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
 		  }
 
 		if( organizer)
@@ -382,6 +391,8 @@ int main (int argc, char *argv[])
 	case SENSOR_STATUS:
 	  assert( size == 1);
 	  system_state = *in_data;
+	  system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
+// todo patch
 	  break;
 	}
     }
