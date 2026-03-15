@@ -59,11 +59,11 @@ bool read_meta_data_file (char *file_path)
       printf ("\nConfig file read:\n");
       permanent_data_file.dump_all_entries ();
 
-#if 0 // test data import
+#if 1 // test data import
       {
 	EEPROM_file_system_node copy_data_storage[EEPROM_FILE_SYSTEM_SIZE];
-	EEPROM_file_system permanent_data_copy( copy_data_storage, copy_data_storage+EEPROM_FILE_SYSTEM_SIZE);
-	bool result = permanent_data_copy.setup ( copy_data_storage, EEPROM_FILE_SYSTEM_SIZE);
+	EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> permanent_data_copy( copy_data_storage, copy_data_storage+EEPROM_FILE_SYSTEM_SIZE);
+	permanent_data_copy.set_memory_virgin( (uint32_t *)copy_data_storage, (uint32_t *)(copy_data_storage+EEPROM_FILE_SYSTEM_SIZE));
 	assert(result == true);
 	permanent_data_copy.import_all_data( permanent_data_file);
 	permanent_data_copy.dump_all_entries ();
@@ -150,12 +150,11 @@ bool read_meta_data_file (char *file_path)
       assert(result == true);
 
       value = configuration (HORIZON);
-      result = temp_file.store_data (HORIZON, round (value));
+      result = temp_file.store_data (HORIZON, 1, &value);
       assert(result == true);
 
       value = configuration (GNSS_CONFIGURATION);
-      result = temp_file.store_data (GNSS_CONFIGURATION,
-					       round (value));
+      result = temp_file.store_data (GNSS_CONFIGURATION, 1, &value);
       assert(result == true);
 
       value = configuration (ANT_BASELENGTH);
