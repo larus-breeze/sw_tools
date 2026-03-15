@@ -166,7 +166,7 @@ int main (int argc, char *argv[])
       EEPROM_file_system_node *node = permanent_data_file.find_datum(id);
       if( node)
 	{
-	  flex_file.append_record ( EEPROM_FILE_RECORD, (uint32_t*)node, node->size - 1);
+	  flex_file.append_record ( EEPROM_FILE_RECORD, (uint32_t*)node, node->size);
 	  printf("id: %d size: %d val=%f\n", id, node->size -1, *(float32_t *)(node+1));
 	}
     }
