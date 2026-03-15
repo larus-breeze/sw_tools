@@ -249,12 +249,8 @@ int main (int argc, char *argv[])
 	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
 	    printf( "id= %d val = %e\n", id, *(float*)(candidate+1));
 
-	    if( false && id == 42) // todo patch
-	      {
-		  float yaw_angle = 3.141592f;
-		  permanent_data_file.store_data( 3, 1, &yaw_angle);
-		  have_configuration = true; // todo patch kind of too simple ...
-	      }
+	    if( id == 42)
+	      have_configuration = true; // todo patch kind of too simple ...
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -326,14 +322,15 @@ int main (int argc, char *argv[])
 
 	      if( have_basic_sensor_data)
 		{
-		  if( not measurement_initialized && have_configuration)
+		if( not measurement_initialized && have_configuration)
 		  {
-		    measurement_initialized = true;
 		    organizer = new organizer_t;
-		    organizer->initialize_before_measurement ();
 
+		    organizer->initialize_before_measurement ();
 		    organizer->initialize_after_first_measurement ( coordinates, observations);
 		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
+
+		    measurement_initialized = true;
 		  }
 		}
 
@@ -375,10 +372,13 @@ int main (int argc, char *argv[])
 		{
 		if( not measurement_initialized && have_configuration)
 		  {
-		    measurement_initialized = true;
 		    organizer = new organizer_t;
+
 		    organizer->initialize_before_measurement ();
+		    organizer->initialize_after_first_measurement ( coordinates, observations);
 		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
+
+		    measurement_initialized = true;
 		  }
 
 		if( organizer)
