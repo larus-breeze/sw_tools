@@ -247,9 +247,10 @@ int main (int argc, char *argv[])
 	    float32_t data = *(float32_t *)(in_data+1);
 
 	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
-	    if( id == 42)
+	    printf( "id= %d val = %e\n", id, *(float*)(candidate+1));
+
+	    if( false && id == 42) // todo patch
 	      {
-		// todo patch
 		  float yaw_angle = 3.141592f;
 		  permanent_data_file.store_data( 3, 1, &yaw_angle);
 		  have_configuration = true; // todo patch kind of too simple ...
