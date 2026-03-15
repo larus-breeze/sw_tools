@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
 	  success = permanent_data_file.is_consistent();
 	  if (not success)
 	    {
-	      cout << "EEPROM data file not consistent\n";
+	      cout << "EEPROM data entry not consistent\n";
 	      return -1;
 	    }
 
@@ -240,7 +240,7 @@ int main (int argc, char *argv[])
 	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
 	    if( not EEPROM_file_system<LOWEST_UNUSED_EEPROM_ID>::node_is_consistent( candidate))
 		{
-		  cout << "EEPROM data entry not consistent\n";
+		  printf(" EEPROM data file (id = %d sz= %d) not consistent\n", candidate->id, candidate->size);
 		  return -1;
 		}
 	    EEPROM_file_system_node::ID_t id = candidate->id;
