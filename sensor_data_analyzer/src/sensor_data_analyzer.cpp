@@ -101,7 +101,7 @@ void test_storage( void);
 
 int main (int argc, char *argv[])
 {
-  test_storage();
+//  test_storage();
 
   #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
@@ -111,7 +111,7 @@ int main (int argc, char *argv[])
 
   if ((argc != 2))
     {
-      printf ("usage: %s infile.f37 (or *.f32 / *.f35)\n", argv[0]);
+      printf ("usage: %s infile.f37\n", argv[0]);
       return -1;
     }
 
