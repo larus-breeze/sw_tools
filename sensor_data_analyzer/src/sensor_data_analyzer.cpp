@@ -400,5 +400,13 @@ int main (int argc, char *argv[])
 
   printf ("\n%d records read\n", records);
   out_file.close ();
+
+  strcpy( buf, argv[1]);
+  char * p = strrchr( buf, '/');
+  if( p == 0)
+    exit(1);
+  *p=0;
+  write_EEPROM_dump( buf);
+
   exit( 0);
 }
