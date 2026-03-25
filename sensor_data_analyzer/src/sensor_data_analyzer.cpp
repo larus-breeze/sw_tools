@@ -416,6 +416,7 @@ int main (int argc, char *argv[])
 	}
     }
 
+  organizer->cleanup_after_landing(); // latest here
   printf ("\n%d records read\n", records);
   out_file.close ();
 
