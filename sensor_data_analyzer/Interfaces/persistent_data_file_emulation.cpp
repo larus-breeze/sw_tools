@@ -138,19 +138,21 @@ bool read_meta_data_file (char *file_path)
   // do some tests
   assert( permanent_data_file.is_consistent());
   permanent_data_file.dump_all_entries ();
+
   return true;
 }
 
-void write_permanent_data_file( char * file_name)
+void write_permanent_data_file( char * path)
 {
   assert( permanent_data_file.is_consistent() );
-  char path[100];
-  strcpy( path, file_name);
-  char * slash = strrchr( path, '/');
-  assert( slash != 0);
+  char file_path[100];
+  strcpy( file_path, path);
+  char * slash = strrchr( file_path, '/');
+  if( slash == 0)
+    return;
   slash[1]=0;
-  strcat( path, "configuration_data_file.dat");
-  ofstream perm_data_file_stream (path, ios::out | ios::binary | ios::ate);
+  strcat( file_path, "configuration.lrsx");
+  ofstream perm_data_file_stream ( file_path, ios::out | ios::binary | ios::ate);
   if (!perm_data_file_stream.is_open ())
     {
       printf ("cannot open file : configuration_data_file.dat - closing");
@@ -161,5 +163,34 @@ void write_permanent_data_file( char * file_name)
   perm_data_file_stream.close ();
 
   printf("permanent setup data:\n");
+  permanent_data_file.dump_all_entries ();
+}
+
+#define CONFIG_SIZE 1024
+
+void read_permanent_data_file( char * file_path_name)
+{
+  ifstream in_file ( file_path_name, ios::in | ios::binary | ios::ate);
+  if (not in_file.is_open ())
+    return;
+
+  uint32_t data[ CONFIG_SIZE];
+  in_file.seekg (0, ios::beg);
+
+  if( not in_file.read ( (char*) data, sizeof( data)))
+    return;
+
+  EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> temp_file;
+  if( not temp_file.set_memory_to_existing_data( data, data+CONFIG_SIZE))
+    return; // inconsistent
+
+  // now we initialize the permanent data file
+  permanent_data_file.initialize_memory_area(
+	  (uint32_t *)permanent_data_file_storage,
+	  (uint32_t *)(permanent_data_file_storage+EEPROM_FILE_SYSTEM_SIZE));
+
+  // and copy all collected information into it
+  permanent_data_file.import_all_data( temp_file);
+  printf("Extra configuration read:\n");
   permanent_data_file.dump_all_entries ();
 }

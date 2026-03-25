@@ -109,10 +109,30 @@ int main (int argc, char *argv[])
   feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-  if ((argc != 2))
-    {
-      printf ("usage: %s infile.larus_log\n", argv[0]);
+  if ((argc != 2) && (argc != 3))
+      {
+      printf ("usage: %s infile.larus_log [configuration.lrsx]\n", argv[0]);
       return -1;
+    }
+
+  bool have_configuration = false;
+
+  bool ignore_incoming_configuration;
+  if( argc == 3)
+    {
+      read_permanent_data_file( argv[2]);
+      ignore_incoming_configuration = true;
+      have_configuration = true;
+    }
+  else
+    {
+      // initialize empty EEPROM data file
+      memset ((uint8_t*) permanent_data_file_storage, 0xff,
+    	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+      permanent_data_file.set_memory_to_existing_data (
+    	  (uint32_t*) permanent_data_file_storage,
+    	  (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
+      ignore_incoming_configuration = false;
     }
 
   ifstream in_file (argv[1], ios::in | ios::binary | ios::ate);
@@ -159,17 +179,9 @@ int main (int argc, char *argv[])
 
   unsigned counter_10Hz=0;
 
-  // initialize empty EEPROM data file
-  memset ((uint8_t*) permanent_data_file_storage, 0xff,
-	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-  success =
-      permanent_data_file.set_memory_to_existing_data (
-	  (uint32_t*) permanent_data_file_storage,
-	  (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
 
   bool need_to_dump_EEPROM_data = true;
   bool have_basic_sensor_data = false;
-  bool have_configuration = false;
 
   while ( in_file.read (
       (char*) &next_block_identifier,
@@ -219,6 +231,9 @@ int main (int argc, char *argv[])
 	{
 // ***********************************************************************************************************
 	case EEPROM_FILE:
+	  if( ignore_incoming_configuration)
+	    break;
+
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
 	  memcpy (permanent_data_file_storage, in_data, bytes_read);
@@ -237,6 +252,9 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case EEPROM_FILE_RECORD:
 	  {
+	    if( ignore_incoming_configuration)
+		break;
+
 	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
 	    if( not EEPROM_file_system<LOWEST_UNUSED_EEPROM_ID>::node_is_consistent( candidate))
 		{
@@ -407,6 +425,7 @@ int main (int argc, char *argv[])
     exit(1);
   *p=0;
   write_EEPROM_dump( buf);
+  write_permanent_data_file( argv[1]);
 
   exit( 0);
 }
