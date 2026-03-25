@@ -36,6 +36,7 @@
 #include "string.h"
 #include "time.h"
 #include "math.h"
+#include "persistent_data_file_emulation.h"
 #include "data_structures.h"
 #include "persistent_data.h"
 #include "EEPROM_emulation.h"
@@ -51,28 +52,37 @@
 #include "ascii_support.h"
 #include "CAN_socket_driver.h"
 #include "CAN_gateway.h"
-
-#if USE_SOFT_IRON_COMPENSATION
-
-#include "soft_iron_compensator.h"
-soft_iron_compensator_t soft_iron_compensator;
-void trigger_soft_iron_compensator_calculation()
-{
-  soft_iron_compensator.calculate();
-  printf( "soft iron compensation done \n");
-}
-
-#endif
-
-#if 0
+#include "abstract_EEPROM_storage.h"
+#include "flexible_log_file_implementation.h"
+#include "persistent_data.h"
 #include "compass_calibrator_3D.h"
-compass_calibrator_3D_t compass_calibrator_3D;
+#include "mutex_implementation.h"
 
-void trigger_compass_calibrator_3D_calculation(void)
+#define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
+#define FLEX_BUF_SIZE 2048
+
+uint32_t buffer[128];
+flexible_log_file_implementation_t flex_file( buffer, 128);
+
+bool write_block (uint32_t *p_data, uint32_t size_words)
 {
-  compass_calibrator_3D.calculate();
+  flex_file.write_block( p_data, size_words);
 }
-#endif
+
+Mutex_Wrapper_Type my_mutex;
+
+magnetic_calculation_data_t temporary_mag_calculation_data;
+
+compass_calibrator_3D_t compass_calibrator_3D( temporary_mag_calculation_data);
+compass_calibrator_3D_t external_compass_calibrator_3D( temporary_mag_calculation_data);
+
+void trigger_compass_calibrator_3D_calculation( bool calculate_external_magnetometer)
+{
+  if( calculate_external_magnetometer)
+    external_compass_calibrator_3D.calculate();
+  else
+    compass_calibrator_3D.calculate();
+}
 
 #ifdef _WIN32
 # pragma float_control(except, on)
@@ -80,276 +90,323 @@ void trigger_compass_calibrator_3D_calculation(void)
 
 using namespace std;
 
-auto awake_time(std::chrono::steady_clock::time_point stime) {
-  using std::chrono::operator""ms;
-  return stime + 100ms;
-}
+uint32_t system_state;
+state_vector_t state_vector;
+D_GNSS_coordinates_t coordinates;
+measurement_data_t observations;
+float3vector external_induction;
 
-uint32_t system_state // fake system state here in lack of hardware
+uint32_t fake_system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
 int main (int argc, char *argv[])
 {
-  unsigned skiptime;
-
 #ifndef _WIN32
+  // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
-  // don't enable UNDERFLOW as this can happen regularly when filter outputs decay
-  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  feenableexcept ( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-  if ((argc != 2) && (argc != 3))
+  if ((argc != 2))
     {
-      printf ("usage: %s infile.f50 [skiptime for TCP version]\n", argv[0]);
+      printf ("usage: %s infile.larus_log\n", argv[0]);
       return -1;
     }
 
-  bool realtime_with_TCP_server = argc == 3;
-  if( realtime_with_TCP_server)
-    skiptime = 10 * atoi( argv[2]); // at 10Hz output rate
-
-  output_data_t * output_data;
-
-  ifstream file (argv[1], ios::in | ios::binary | ios::ate);
-  if (!file.is_open ())
+  ifstream in_file (argv[1], ios::in | ios::binary | ios::ate);
+  if (not in_file.is_open ())
     {
       cout << "Unable to open file";
       return -1;
     }
 
-  if( realtime_with_TCP_server)
-    {
-      realtime_with_TCP_server = open_TCP_port();
-      realtime_with_TCP_server = accept_TCP_client(true);
-    }
+  in_file.seekg (0, ios::beg);
 
-#ifndef _WIN32
-  if( realtime_with_TCP_server)
-    {
-      open_USB_serial ( (char*)"/dev/ttyUSB0");
-#if ENABLE_LINUX_CAN_INTERFACE
-      CAN_socket_initialize();
-#endif
-    }
-#endif
+  char buf[512];
+  strcpy( buf, argv[1]);
+  strcat( buf, ".f");
+  {
+  char size_string[10];
+  itoa(
+      (
+	  sizeof( measurement_data_t) +
+	  sizeof( float3vector) +
+	  sizeof( D_GNSS_coordinates_t) +
+	  sizeof( uint32_t) +
+	  sizeof( state_vector_t)
+      ) / sizeof(uint32_t), size_string, 10);
+  strcat( buf, size_string);
+  }
 
-  // cut off file extension
-  char basename[100];
-  strcpy( basename, argv[1]);
-  char * dot = strrchr( basename, '.');
-  if( (dot != 0) && (dot[1] == 'f')) // old format: filename.f37.EEPROM new: filename.EEPROM
-    *dot=0; // cut off .f37 extension
-
-#if LONGTIME_MAG_TEST
-// try to read "config.EEPROM" first
-  char config_path[200];
-  strcpy( config_path, basename);
-  char * slash_location = strrchr( config_path, '/');
-  *slash_location = 0;
-  strcat( config_path, "/config");
-
-  if( read_EEPROM_file ( config_path) == EXIT_FAILURE)
+  ofstream out_file ( buf, ios::out | ios::binary | ios::ate);
+  if( not out_file.is_open ())
     {
-      // try to read the EEPROM file accompanying the data file
-      if( read_EEPROM_file ( basename) == EXIT_FAILURE)
-	{
-	  cout << "Unable to open EEPROM file";
-	  return -1;
-	}
-    }
-#else // read the accompanying *.EEPROM only
-  if( read_EEPROM_file ( basename) == EXIT_FAILURE)
-    {
-      cout << "Unable to open EEPROM file";
+      cout << "Unable to open output file\n";
       return -1;
     }
-#endif
+
   ensure_EEPROM_parameter_integrity();
 
-  organizer_t organizer;
-  organizer.set_GNSS_type((GNSS_configration_t)configuration(GNSS_CONFIGURATION));
+  uint32_t * in_data = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
+  unsigned records = 0;
+  uint32_t next_block_identifier;
 
-  streampos size = file.tellg ();
-  observations_type  * in_data;
-  in_data = (observations_type*) new char[size];
-  unsigned records = size / sizeof(observations_type);
+  organizer_t *organizer = 0;
+  bool success;
+  bool measurement_initialized = false;
 
-  size_t outfile_size = records * sizeof(output_data_t);
-  output_data = (output_data_t*) new char[outfile_size];
+  unsigned counter_10Hz=0;
 
-  file.seekg (0, ios::beg);
-  file.read ((char*) in_data, size);
-  file.close ();
+  // initialize empty EEPROM data file
+  memset ((uint8_t*) permanent_data_file_storage, 0xff,
+	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+  success =
+      permanent_data_file.set_memory_to_existing_data (
+	  (uint32_t*) permanent_data_file_storage,
+	  (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
 
-// ************************************************************
+  bool need_to_dump_EEPROM_data = true;
+  bool have_basic_sensor_data = false;
+  bool have_configuration = false;
 
-  organizer.initialize_before_measurement();
-
-  int32_t nano = 0;
-  int delta_time;
-
-  output_data[0].m = in_data[0].m;
-  output_data[0].c = in_data[0].c;
-
-  organizer.update_GNSS_data(output_data[0].c);
-  organizer.update_magnetic_induction_data( output_data[0].c.latitude, output_data[0].c.longitude);
-
-  unsigned counter_10Hz = 10;
-  auto until = awake_time(std::chrono::steady_clock::now());  // start with now + 100ms
-
-  bool have_GNSS_fix = false;
-
-  unsigned count;
-  for ( count = 1; count < records; ++count)
+  while ( in_file.read (
+      (char*) &next_block_identifier,
+      sizeof(next_block_identifier)))
     {
-      output_data[count].m = in_data[count].m;
-      output_data[count].c = in_data[count].c;
-      organizer.on_new_pressure_data( output_data[count]);
+      int size = flexible_log_file_t::verify_record_get_size (
+	  next_block_identifier);
 
-      if( have_GNSS_fix == false)
+      if (size == 0) // error, format not recognized
 	{
-	  if( output_data[count].c.sat_fix_type > 0)
+	  printf( "\nBAD RECORD %02x\n", next_block_identifier &0xff);
+	  continue;
+	}
+
+      if( (next_block_identifier & 0xffff) == 0xffff)
+	{
+	  uint32_t extended_header[2]; // 32bit identifier and 32bit length
+	  in_file.read ((char*) extended_header, sizeof( extended_header));
+	  size = flexible_log_file_t::verify_extended_record_get_size ( next_block_identifier, extended_header[0], extended_header[1]);
+	  if( size == 0)
+	    break; // error
+	  next_block_identifier = extended_header[0]; // replace short ID by extended ID
+	}
+      else
+	next_block_identifier &= 0xff; // keep only the ID
+
+      if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
+	break;
+
+      in_file.read ((char*) in_data, size * sizeof(uint32_t));
+      unsigned bytes_read = in_file.gcount ();
+      if (bytes_read != (size * sizeof(uint32_t)))
+	break;
+
+#if 0 // monitor advance
+      static unsigned linecount = 0;
+      printf( "%02x ", next_block_identifier);
+      ++linecount;
+      if( linecount == 50)
+	{
+	  linecount = 0;
+	  printf( "\n");
+	}
+#endif
+
+      switch ( next_block_identifier)
+	{
+// ***********************************************************************************************************
+	case EEPROM_FILE:
+	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
+		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+	  memcpy (permanent_data_file_storage, in_data, bytes_read);
+	  success = permanent_data_file.is_consistent();
+	  if (not success)
 	    {
-	      organizer.update_magnetic_induction_data( output_data[count].c.latitude, output_data[count].c.longitude);
-	      organizer.initialize_after_first_measurement( output_data[count]);
-	      have_GNSS_fix = true;
+	      cout << "EEPROM data entry not consistent\n";
+	      return -1;
 	    }
-	}
 
-      if (output_data[count].c.nano != nano) // 10 Hz by GNSS
-	{
-	  delta_time = output_data[count].c.nano - nano;
-	  if( delta_time < 0 )
-	    delta_time += 1000000000;
-	  nano = output_data[count].c.nano;
+	  cout << "EEPROM data read:\n";
+	  permanent_data_file.dump_all_entries();
+	  need_to_dump_EEPROM_data = false;
 
-	  organizer.update_GNSS_data(output_data[count].c);
-	  counter_10Hz = 1; // synchronize the 10Hz processing as early as new data are observed
-	}
-
-      organizer.update_every_10ms( output_data[count]);
-
-      --counter_10Hz;
-      if(counter_10Hz == 0)
-	{
-	  organizer.update_every_100ms( output_data[count]);
-	  counter_10Hz = 10;
-	}
-
-      organizer.report_data(output_data[count]);
-
-      if( count % 10 == 0)
-	{
-	  if( realtime_with_TCP_server)
-	    {
-	      if( skiptime > 0)
+	  break;
+// ***********************************************************************************************************
+	case EEPROM_FILE_RECORD:
+	  {
+	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
+	    if( not EEPROM_file_system<LOWEST_UNUSED_EEPROM_ID>::node_is_consistent( candidate))
 		{
-		  --skiptime;
-		  continue;
+		  printf(" EEPROM data file (id = %d sz= %d) not consistent\n", candidate->id, candidate->size);
+		  return -1;
+		}
+	    EEPROM_file_system_node::ID_t id = candidate->id;
+	    float32_t data = *(float32_t *)(in_data+1);
+
+	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
+	    printf( "id= %d val = %e\n", id, *(float*)(candidate+1));
+
+	    if( id == 42)
+	      have_configuration = true; // todo patch kind of too simple ...
+	  }
+	  break;
+// ***********************************************************************************************************
+	case BASIC_SENSOR_DATA:
+	  have_basic_sensor_data = true;
+	  if( need_to_dump_EEPROM_data)
+	    {
+	      need_to_dump_EEPROM_data = false;
+	      cout << "EEPROM data read:\n";
+	      permanent_data_file.dump_all_entries();
+	    }
+
+	  ++records;
+
+	  assert( size * sizeof(uint32_t) == sizeof( measurement_data_t));
+	  memcpy( (uint8_t *)&observations, in_data, size * sizeof(uint32_t));
+
+	  if( measurement_initialized)
+	    {
+	      organizer->on_new_pressure_data( observations.static_pressure, observations.pitot_pressure);
+	      organizer->update_at_100_Hz( observations, system_state, external_induction);
+	    }
+	  if( ++counter_10Hz == 10)
+	    {
+	      counter_10Hz = 0;
+	      if( measurement_initialized)
+		{
+		    bool landing_detected = organizer->update_at_10Hz ( coordinates, observations);
+
+		    if (landing_detected)
+		      {
+			organizer->cleanup_after_landing();
+			printf ("landed at log time %d minutes.\n", records / 6000);
+		      }
+		}
+	    }
+
+	  if( organizer != 0) // after initialization
+	    {
+	      organizer->report_data ( state_vector);
+	      out_file.write ( (const char*)&observations, sizeof( observations));
+	      out_file.write ( (const char*)&external_induction, sizeof( external_induction));
+	      out_file.write ( (const char*)&coordinates, sizeof(coordinates));
+	      out_file.write ( (const char*)&system_state, sizeof(system_state));
+	      out_file.write ( (const char*)&state_vector, sizeof(state_vector_t));
+	    }
+
+	  break;
+// ***********************************************************************************************************
+	case MAGNETOMETER_DATA:
+	  assert( size * sizeof(uint32_t) == sizeof( float3vector));
+	  memcpy( (uint8_t *)&(external_induction), in_data, size * sizeof(uint32_t));
+	  break;
+// ***********************************************************************************************************
+	  case D_GNSS_DATA:
+	    {
+	    assert( size * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
+	    memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
+
+#if PRINT_GNSS_RATE
+	      static int old;
+	      float delta = state_vector.observations.c.nano - old;
+	      if( delta < 0)
+		delta += 1000000000;
+
+	      printf("%3.6f\n", delta / 1000000);
+	      old = state_vector.observations.c.nano;
+#endif
+
+	      if( have_basic_sensor_data)
+		{
+		if( not measurement_initialized && have_configuration)
+		  {
+		    organizer = new organizer_t;
+
+		    organizer->initialize_before_measurement ();
+		    organizer->initialize_after_first_measurement ( coordinates, observations);
+		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
+
+		    measurement_initialized = true;
+		  }
 		}
 
-	      string_buffer_t buffer;
-	      buffer.length=0;
+	      if( organizer)
+		organizer->update_GNSS_data ( coordinates);
 
-	      if( count % 40 == 0)
-		format_NMEA_string_fast( (const output_data_t&) *(output_data+count), buffer, true);
-
-	      if( count % 160 == 0)
-		format_NMEA_string_slow( (const output_data_t&) *(output_data+count), buffer);
-
-	      if( buffer.length != 0)
-		write_TCP_port( buffer.string, buffer.length);
-
-#if ENABLE_LINUX_CAN_INTERFACE
-	      CAN_output( (const output_data_t&) *(output_data+count), true);
-#endif
-
-	      if (until <= std::chrono::steady_clock::now())
-			    until = awake_time(std::chrono::steady_clock::now());
-	      std::this_thread::sleep_until(until);
-	      until = awake_time(until);
+	      state_vector.satfix = coordinates.sat_fix_type;
 	    }
-	}
+	    break;
+// ***********************************************************************************************************
+	    case GNSS_DATA:
+	      {
+	      if( need_to_dump_EEPROM_data)
+		{
+		  need_to_dump_EEPROM_data = false;
+		  cout << "EEPROM data read:\n";
+		  permanent_data_file.dump_all_entries();
+		}
 
-    }
-  printf ("%d records\n", count);
+	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
 
-  char buf[200];
-  char ascii_len[10];
-  sprintf (ascii_len, "%d", (int)(sizeof(output_data_t) / sizeof(float)));
-  strcpy (buf, argv[1]);
-  strcat (buf, ".f");
-  strcat (buf, ascii_len);
+	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
-  if( ! realtime_with_TCP_server)
-    {
-      ofstream outfile (buf, ios::out | ios::binary | ios::ate);
-      if (outfile.is_open ())
-	{
-	  outfile.write ((const char*) output_data,
-			 records * sizeof(output_data_t));
-	  outfile.close ();
-	}
+#if PRINT_GNSS_RATE
+	      static int old;
 
-#if LONGTIME_MAG_TEST
-      char * path_end = strrchr( buf, '/');
-      *path_end=0;
-      write_EEPROM_dump(buf); // make new magnetic data permanent
+	      float delta = input.nano - old;
+	      if( delta < 0)
+		delta += 1000000000;
+
+	      printf("%3.6f\n", delta / 1000000);
+	      old = input.nano;
 #endif
+
+	      coordinates.relPosHeading = 0;
+	      coordinates.relPosNED = float3vector();
+
+	      if( have_basic_sensor_data)
+		{
+		if( not measurement_initialized && have_configuration)
+		  {
+		    organizer = new organizer_t;
+
+		    organizer->initialize_before_measurement ();
+		    organizer->initialize_after_first_measurement ( coordinates, observations);
+		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
+
+		    measurement_initialized = true;
+		  }
+
+		if( organizer)
+		  organizer->update_GNSS_data ( coordinates);
+
+		state_vector.satfix = coordinates.sat_fix_type;
+		}
+	      break;
+	      }
+// ***********************************************************************************************************
+	case SENSOR_STATUS:
+	  assert( size == 1);
+	  system_state = *in_data;
+	  system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
+// todo patch
+	  break;
+	}
     }
 
-  delete[] in_data;
-  delete[] output_data;
+  printf ("\n%d records read\n", records);
+  out_file.close ();
 
-  if( realtime_with_TCP_server)
-    close_TCP_port();
-}
+  strcpy( buf, argv[1]);
+  char * p = strrchr( buf, '/');
+  if( p == 0)
+    exit(1);
+  *p=0;
+  write_EEPROM_dump( buf);
 
-void report_magnetic_calibration_has_changed ( magnetic_induction_report_t *p_magnetic_induction_report, char )
-{
-  magnetic_induction_report_t magnetic_induction_report = *p_magnetic_induction_report;
-  char buffer[50];
-
-  for (unsigned i = 0; i < 3; ++i)
-    {
-      char *next = buffer;
-      next = my_ftoa (next, magnetic_induction_report.calibration[i].offset);
-      *next++ = ' ';
-      next = my_ftoa (next, magnetic_induction_report.calibration[i].scale);
-      *next++ = ' ';
-      next = my_ftoa (next,
-		      SQRT(magnetic_induction_report.calibration[i].variance));
-      *next++ = ' ';
-      *next++ = 0;
-      printf ("%s\t", buffer);
-    }
-
-#if USE_EARTH_INDUCTION_DATA_COLLECTOR
-
-  float3vector induction = magnetic_induction_report.nav_induction;
-  for (unsigned i = 0; i < 3; ++i)
-    {
-      next = my_ftoa (next, induction[i]);
-      *next++ = ' ';
-    }
-
-  next = my_ftoa (next, magnetic_induction_report.nav_induction_std_deviation);
-  *next++ = 0;
-
-  printf( "Dev=%f Inc=%f\n",
-      atan2 (magnetic_induction_report.nav_induction[EAST],
-	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI,
-      atan2 (magnetic_induction_report.nav_induction[DOWN],
-	     magnetic_induction_report.nav_induction[NORTH]) * 180.0 / M_PI);
-
-#else
-  printf ("\n");
-#endif
-}
-
-bool CAN_gateway_poll(CANpacket&, unsigned int)
-{
-  return false; // presently just an empty stub
+  exit( 0);
 }

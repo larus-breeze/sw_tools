@@ -102,6 +102,8 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1292367667" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/Generic_Algorithms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/Persistent_Data}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Interfaces}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/ARM_math}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/NAV_Algorithms}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/Output_Formatter}&quot;"/>
@@ -132,10 +134,23 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.84738672.268622728.2101835759.364585848" name="/" resourcePath="Interfaces">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.base.363276610" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.base" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1914160663" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1535897186"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1273541728" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.2091286829" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.544763675" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.706286308"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1301607871" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.177196441"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.base.723430632" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.616871668">
+								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.2013144611" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Communication"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Interfaces"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="lib"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="larus_legacy_file_import.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
