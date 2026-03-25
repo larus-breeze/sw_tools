@@ -78,7 +78,7 @@ float configuration (EEPROM_PARAMETER_ID id)
 }
 
 const persistent_data_t * find_parameter_from_ID( EEPROM_PARAMETER_ID id);
-
+#if 0
 bool read_EEPROM_value( EEPROM_PARAMETER_ID id, float &value)
 {
 	if( id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
@@ -89,6 +89,13 @@ bool read_EEPROM_value( EEPROM_PARAMETER_ID id, float &value)
 
 	return true;
 }
+#else
+//!< interface to legacy read function
+bool read_EEPROM_value (EEPROM_PARAMETER_ID id, float &value)
+{
+  return not permanent_data_file.retrieve_data( id, 1, &value);
+}
+#endif
 
 bool write_EEPROM_value( EEPROM_PARAMETER_ID id, float value)
 {
@@ -244,6 +251,36 @@ bool write_EEPROM_dump( char * basename)
 	  outfile.write ( (const char *)buffer, next-buffer);
 	}
       }
+
+  float32_t mag_calib_param[4*3];
+
+  if( permanent_data_file.retrieve_data( MAG_SENSOR_XFER_MATRIX, 4*3, (uint32_t *)mag_calib_param))
+    {
+      for( unsigned i=0; i< 4*3; ++i)
+	{
+	  next = buffer;
+	  append_string( next, "Mag_");
+	  utox( next, i, 1);
+	  append_string( next, " = ");
+	  next = my_ftoa (next, mag_calib_param[i]);
+	  newline( next);
+	  outfile.write( buffer, next-buffer);
+	}
+    }
+
+  if( permanent_data_file.retrieve_data( EXT_MAG_SENSOR_XFER_MATRIX, 4*3, (uint32_t *)mag_calib_param))
+    {
+      for( unsigned i=0; i< 4*3; ++i)
+	{
+	  next = buffer;
+	  append_string( next, "XMag_");
+	  utox( next, i, 1);
+	  append_string( next, " = ");
+	  next = my_ftoa (next, mag_calib_param[i]);
+	  newline( next);
+	  outfile.write( buffer, next-buffer);
+	}
+    }
 
   outfile.close ();
   return false;
