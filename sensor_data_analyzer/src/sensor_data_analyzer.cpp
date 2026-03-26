@@ -237,6 +237,8 @@ int main (int argc, char *argv[])
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
 	  memcpy (permanent_data_file_storage, in_data, bytes_read);
+	  permanent_data_file.set_free_space();
+	  permanent_data_file.setup_registry();
 	  success = permanent_data_file.is_consistent();
 	  if (not success)
 	    {
@@ -248,6 +250,7 @@ int main (int argc, char *argv[])
 	  permanent_data_file.dump_all_entries();
 	  need_to_dump_EEPROM_data = false;
 
+	  have_configuration = true;
 	  break;
 // ***********************************************************************************************************
 	case EEPROM_FILE_RECORD:
@@ -416,7 +419,9 @@ int main (int argc, char *argv[])
 	}
     }
 
-  organizer->cleanup_after_landing(); // latest here
+  if( organizer)
+    organizer->cleanup_after_landing(); // latest here
+
   printf ("\n%d records read\n", records);
   out_file.close ();
 
