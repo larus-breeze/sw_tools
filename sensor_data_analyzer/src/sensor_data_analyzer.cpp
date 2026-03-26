@@ -274,6 +274,14 @@ int main (int argc, char *argv[])
 	      have_configuration = true; // todo patch kind of too simple ...
 	  }
 	  break;
+	case LARUS_DESCRIPTION:
+	  {
+	    printf("Firmware: %s\n", in_data);
+	    printf("Larus ID:\n%08x%08x%08x%08x\n", in_data[8], in_data[9], in_data[10], in_data[11]);
+	    printf("Flash SHA256:\n%08x%08x%08x%08x\n%08x%08x%08x%08x\n",
+		   in_data[12], in_data[13], in_data[14], in_data[15], in_data[16], in_data[17], in_data[18], in_data[19]);
+	  }
+	  break;
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
 	  have_basic_sensor_data = true;
