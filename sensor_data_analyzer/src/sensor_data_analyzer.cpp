@@ -69,6 +69,11 @@ bool write_block (uint32_t *p_data, uint32_t size_words)
   flex_file.write_block( p_data, size_words);
 }
 
+void signal_logger_event( uint32_t event)
+{
+
+}
+
 Mutex_Wrapper_Type my_mutex;
 
 magnetic_calculation_data_t temporary_mag_calculation_data;
@@ -230,6 +235,9 @@ int main (int argc, char *argv[])
       switch ( next_block_identifier)
 	{
 // ***********************************************************************************************************
+	case FLIGHT_EVENT:
+	    printf("Event: %d %08x\n", (*in_data)&0xff, (*in_data) >> 8);
+	  break;
 	case EEPROM_FILE:
 	  if( ignore_incoming_configuration)
 	    break;
@@ -252,7 +260,7 @@ int main (int argc, char *argv[])
 
 	  have_configuration = true;
 	  break;
-// ***********************************************************************************************************
+	  // ***********************************************************************************************************
 	case EEPROM_FILE_RECORD:
 	  {
 	    if( ignore_incoming_configuration)
@@ -274,6 +282,7 @@ int main (int argc, char *argv[])
 	      have_configuration = true; // todo patch kind of too simple ...
 	  }
 	  break;
+	  // ***********************************************************************************************************
 	case LARUS_DESCRIPTION:
 	  {
 	    printf("Firmware: %s\n", in_data);
@@ -421,8 +430,6 @@ int main (int argc, char *argv[])
 	case SENSOR_STATUS:
 	  assert( size == 1);
 	  system_state = *in_data;
-	  system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
-// todo patch
 	  break;
 	}
     }
