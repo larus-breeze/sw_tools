@@ -161,9 +161,6 @@ void write_permanent_data_file( char * path)
 
   perm_data_file_stream.write ((const char*) permanent_data_file_storage, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
   perm_data_file_stream.close ();
-
-  printf("permanent setup data:\n");
-  permanent_data_file.dump_all_entries ();
 }
 
 #define CONFIG_SIZE 1024

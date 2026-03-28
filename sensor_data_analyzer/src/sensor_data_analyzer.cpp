@@ -187,6 +187,7 @@ int main (int argc, char *argv[])
 
   bool need_to_dump_EEPROM_data = true;
   bool have_basic_sensor_data = false;
+  unsigned record_count_100Hz = 0;
 
   while ( in_file.read (
       (char*) &next_block_identifier,
@@ -236,7 +237,34 @@ int main (int argc, char *argv[])
 	{
 // ***********************************************************************************************************
 	case FLIGHT_EVENT:
-	    printf("Event: %d %08x\n", (*in_data)&0xff, (*in_data) >> 8);
+	  {
+	  const char * event_name[] =
+	      {
+		  "NO_EVENT",
+
+		  "MAG_CALIBRATION_DONE",
+		  "EXT_MAG_CALIBRATION_DONE",
+		  "AIR_DENSITY_MODIFIED",
+
+		  "EEPROM_CONFIGURATION_CHANGED",
+		  "CAN_COMMAND_RECEIVED"
+	      };
+	  const char * communicator_command[] =
+	      {
+		  "NO_COMMAND",
+		  "MEASURE_CALIB_LEFT",
+		  "MEASURE_CALIB_RIGHT",
+		  "MEASURE_CALIB_LEVEL",
+		  "SET_SENSOR_ROTATION",
+		  "FINE_TUNE_CALIB",
+		  "SOME_EEPROM_VALUE_HAS_CHANGED"
+
+	      };
+	  if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
+	    printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+	  else
+	    printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
+	  }
 	  break;
 	case EEPROM_FILE:
 	  if( ignore_incoming_configuration)
@@ -293,6 +321,7 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
+	  ++record_count_100Hz;
 	  have_basic_sensor_data = true;
 	  if( need_to_dump_EEPROM_data)
 	    {
