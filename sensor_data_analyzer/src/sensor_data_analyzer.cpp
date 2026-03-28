@@ -176,6 +176,7 @@ int main (int argc, char *argv[])
 
   uint32_t * in_data = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
+  uint32_t next_block_identifier_read;
   uint32_t next_block_identifier;
 
   organizer_t *organizer = 0;
@@ -190,15 +191,14 @@ int main (int argc, char *argv[])
   unsigned record_count_100Hz = 0;
 
   while ( in_file.read (
-      (char*) &next_block_identifier,
-      sizeof(next_block_identifier)))
+      (char*) &next_block_identifier_read,
+      sizeof(next_block_identifier_read)))
     {
-      int size = flexible_log_file_t::verify_record_get_size (
-	  next_block_identifier);
+      int size = flexible_log_file_t::verify_record_get_size ( next_block_identifier_read);
 
       if (size == 0) // error, format not recognized
 	{
-	  printf( "\nBAD RECORD %02x\n", next_block_identifier &0xff);
+	  printf( "\nBAD RECORD, WRONG CRC, id=%02x\n", next_block_identifier_read & 0xff);
 	  continue;
 	}
 
@@ -208,11 +208,14 @@ int main (int argc, char *argv[])
 	  in_file.read ((char*) extended_header, sizeof( extended_header));
 	  size = flexible_log_file_t::verify_extended_record_get_size ( next_block_identifier, extended_header[0], extended_header[1]);
 	  if( size == 0)
-	    break; // error
+	    {
+	      printf( "\nBAD EXTENDED RECORD %02x\n", next_block_identifier &0xff);
+	      break; // error
+	    }
 	  next_block_identifier = extended_header[0]; // replace short ID by extended ID
 	}
       else
-	next_block_identifier &= 0xff; // keep only the ID
+	next_block_identifier =   next_block_identifier_read & 0xff; // keep only the ID
 
       if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
 	break;
@@ -258,12 +261,19 @@ int main (int argc, char *argv[])
 		  "SET_SENSOR_ROTATION",
 		  "FINE_TUNE_CALIB",
 		  "SOME_EEPROM_VALUE_HAS_CHANGED"
-
 	      };
-	  if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
-	    printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+
+	  if( (size != 1) || ((*in_data)&0xff) > (sizeof(event_name)/sizeof(char *)) )
+	    {
+		printf("Event: %08x size = %d INVALID\n", *in_data, size);
+	    }
 	  else
-	    printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
+	    {
+	      if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
+		printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+	      else
+		printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
+	    }
 	  }
 	  break;
 	case EEPROM_FILE:
