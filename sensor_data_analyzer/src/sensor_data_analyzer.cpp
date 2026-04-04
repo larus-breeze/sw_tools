@@ -122,11 +122,11 @@ int main (int argc, char *argv[])
 
   bool have_configuration = false;
 
-  bool ignore_incoming_configuration;
+  bool start_with_given_configuration;
   if( argc == 3)
     {
       read_permanent_data_file( argv[2]);
-      ignore_incoming_configuration = true;
+      start_with_given_configuration = true;
       have_configuration = true;
     }
   else
@@ -137,7 +137,7 @@ int main (int argc, char *argv[])
       permanent_data_file.set_memory_to_existing_data (
     	  (uint32_t*) permanent_data_file_storage,
     	  (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
-      ignore_incoming_configuration = false;
+      start_with_given_configuration = false;
     }
 
   ifstream in_file (argv[1], ios::in | ios::binary | ios::ate);
@@ -238,7 +238,7 @@ int main (int argc, char *argv[])
 	  continue;
 	}
 
-      if (next_block_identifier == EEPROM_FILE)
+      if (next_block_identifier == EEPROM_FILE && not start_with_given_configuration)
 	{
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
@@ -381,7 +381,7 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	case EEPROM_FILE:
-	  if( ignore_incoming_configuration)
+	  if( start_with_given_configuration)
 	    break;
 
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
@@ -405,7 +405,7 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case EEPROM_FILE_RECORD:
 	  {
-	    if( ignore_incoming_configuration)
+	    if( start_with_given_configuration)
 		break;
 
 	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
