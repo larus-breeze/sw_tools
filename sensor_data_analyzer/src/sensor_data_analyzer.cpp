@@ -486,8 +486,11 @@ int main (int argc, char *argv[])
 	  ++x_mag_records;
 	  assert( size * sizeof(uint32_t) == sizeof( float3vector));
 	  memcpy( (uint8_t *)&(external_induction), in_data, size * sizeof(uint32_t));
-//	  system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
-//	  system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
+#if 1
+	  system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
+#else
+	  system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
+#endif
 	  break;
 // ***********************************************************************************************************
 	  case D_GNSS_DATA:
