@@ -121,13 +121,29 @@ int main (int argc, char *argv[])
     }
 
   bool have_configuration = false;
+  bool write_f37 = false;
 
   bool start_with_given_configuration;
   if( argc == 3)
     {
-      read_permanent_data_file( argv[2]);
-      start_with_given_configuration = true;
-      have_configuration = true;
+      if( strcmp( argv[2], "f37") == 0)
+	{
+	  write_f37 = true;
+	  // initialize empty EEPROM data file
+	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
+	      EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+	  permanent_data_file.set_memory_to_existing_data (
+	      (uint32_t*) permanent_data_file_storage,
+	      (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
+	  start_with_given_configuration = false;
+	  have_configuration = false;
+	}
+      else
+	{
+	  read_permanent_data_file( argv[2]);
+	  start_with_given_configuration = true;
+	  have_configuration = true;
+	}
     }
   else
     {
@@ -170,6 +186,24 @@ int main (int argc, char *argv[])
     {
       cout << "Unable to open output file\n";
       return -1;
+    }
+
+  legacy_observations_type f37_data;
+  f37_data.c.position = float3vector();
+  ofstream f37_file;
+  if( write_f37)
+    {
+      char * dot = strrchr( buf, '.');
+      if( dot == 0)
+	exit(0);
+      dot[1] = 0;
+      strcat( buf, "f37");
+      f37_file.open( buf, ios::out | ios::binary | ios::ate);
+      if( not f37_file.is_open ())
+        {
+          cout << "Unable to open output file\n";
+          return -1;
+        }
     }
 
   ensure_EEPROM_parameter_integrity();
@@ -478,6 +512,33 @@ int main (int argc, char *argv[])
 	      out_file.write ( (const char*)&system_state, sizeof(system_state));
 	      out_file.write ( (const char*)&state_vector, sizeof(state_vector_t));
 	      ++records_out;
+
+	      if( write_f37)
+		{
+		  f37_data.m = observations;
+		  f37_data.c.speed = coordinates.velocity;
+		  f37_data.c.relPosNED = coordinates.relPosNED;
+		  f37_data.c.relPosHeading = coordinates.relPosHeading;
+		  f37_data.c.speed_acc = coordinates.speed_acc;
+		  f37_data.c.latitude = coordinates.latitude;
+		  f37_data.c.longitude = coordinates.longitude;
+		  f37_data.c.position[DOWN] = -coordinates.GNSS_MSL_altitude;
+
+		  f37_data.c.year = coordinates.year;
+		  f37_data.c.month = coordinates.month;
+		  f37_data.c.day = coordinates.day;
+		  f37_data.c.hour = coordinates.hour;
+		  f37_data.c.minute = coordinates.minute;
+		  f37_data.c.second = coordinates.second;
+
+		  f37_data.c.SATS_number = coordinates.SATS_number;
+		  f37_data.c.sat_fix_type = coordinates.sat_fix_type;
+		  f37_data.c.second = coordinates.second;
+		  f37_data.c.nano = coordinates.nano;
+		  f37_data.c.geo_sep_dm = coordinates.geo_sep_dm;
+
+		  f37_file.write ( (const char*)&f37_data, sizeof( legacy_observations_type));
+		}
 	    }
 
 	  break;
@@ -591,6 +652,9 @@ int main (int argc, char *argv[])
 
   printf ("\n%d records in, %d ext_mag_records,  %d records out\n", records, x_mag_records, records_out);
   out_file.close ();
+
+  if( write_f37)
+    f37_file.close();
 
   strcpy( buf, argv[1]);
   char * p = strrchr( buf, '/');

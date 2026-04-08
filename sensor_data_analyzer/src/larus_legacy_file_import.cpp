@@ -68,6 +68,10 @@ bool write_block( uint32_t * begin, uint32_t size_words)
   return flex_file.write_block( begin, size_words);
 }
 
+void signal_logger_event( uint32_t event)
+{
+
+}
 
 Mutex_Wrapper_Type my_mutex;
 
