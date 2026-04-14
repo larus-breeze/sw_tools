@@ -286,10 +286,6 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 
-	  cout << "EEPROM data read:\n";
-	  permanent_data_file.dump_all_entries ();
-	  need_to_dump_EEPROM_data = false;
-
 	  have_configuration = true;
 	}
 
@@ -594,13 +590,6 @@ int main (int argc, char *argv[])
 	    case GNSS_DATA:
 	      {
 		++GNSS_sample_number;
-	      if( need_to_dump_EEPROM_data)
-		{
-		  need_to_dump_EEPROM_data = false;
-		  cout << "EEPROM data read:\n";
-		  permanent_data_file.dump_all_entries();
-		}
-
 	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
 
 	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
