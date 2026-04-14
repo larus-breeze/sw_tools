@@ -403,9 +403,15 @@ int main (int argc, char *argv[])
 	  else
 	    {
 	      if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
-		printf("\nEvent: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+		{
+		  printf("\nEvent: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+		  communicator_command_t command = (communicator_command_t)((*in_data) >> 8);
+		  organizer->on_command( command, coordinates, observations);
+		}
 	      else
 		printf("\nEvent: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
+
+
 	    }
 	  }
 	  break;
