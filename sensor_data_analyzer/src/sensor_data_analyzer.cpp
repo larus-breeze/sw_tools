@@ -383,8 +383,9 @@ int main (int argc, char *argv[])
 		  "EEPROM_CONFIGURATION_CHANGED",
 		  "CAN_COMMAND_RECEIVED",
 
-		  "DEBUGGER_EVENT"
-};
+		  "DEBUGGER_EVENT",
+		  "ACCELERATION_CALIBRATION_DONE"
+	      };
 	  const char * communicator_command[] =
 	      {
 		  "NO_COMMAND",
