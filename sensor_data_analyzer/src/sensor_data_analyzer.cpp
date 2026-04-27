@@ -64,6 +64,11 @@
 uint32_t buffer[128];
 flexible_log_file_implementation_t flex_file( buffer, 128);
 
+void signal_logger_event( unsigned event)
+{
+  printf("event: %x", event);
+}
+
 bool write_block (uint32_t *p_data, uint32_t size_words)
 {
   flex_file.write_block( p_data, size_words);
