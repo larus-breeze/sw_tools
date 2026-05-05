@@ -405,14 +405,12 @@ int main (int argc, char *argv[])
 	    {
 	      if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
 		{
-		  printf("\nEvent: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+		  printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
 		  communicator_command_t command = (communicator_command_t)((*in_data) >> 8);
 		  organizer->on_command( command, coordinates, observations);
 		}
 	      else
-		printf("\nEvent: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
-
-
+		printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
 	    }
 	  }
 	  break;
@@ -472,6 +470,7 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
+	  {
 	  ++record_count_100Hz;
 	  have_basic_sensor_data = true;
 	  if( need_to_dump_EEPROM_data)
@@ -505,6 +504,16 @@ int main (int argc, char *argv[])
 		      }
 		}
 	    }
+
+	  if(organizer != 0)
+	      {
+	      bool significant_configuration_change = organizer->manage_attitude_setup_in_progress( coordinates, observations);
+
+	      if( significant_configuration_change)
+		{
+		  printf("Significant configuration change\n");
+		}
+	      }
 
 	  if( (organizer != 0) && (GNSS_sample_number > GNSS_sample_on_takeoff)) // after initialization
 	    {
@@ -543,7 +552,7 @@ int main (int argc, char *argv[])
 		  f37_file.write ( (const char*)&f37_data, sizeof( legacy_observations_type));
 		}
 	    }
-
+	}
 	  break;
 // ***********************************************************************************************************
 	case MAGNETOMETER_DATA:
