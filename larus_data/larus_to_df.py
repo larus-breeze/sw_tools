@@ -11,8 +11,7 @@ from pathlib import Path
 # (identifier, data type, description)
 # dtypes  int32_t  = i4,  int8_t = i1, uint16_t = u2,  f4 = float, f8 = double
 
-# Raw data sensor files without low-cost ins sensor
-data_f37 = [
+data_measurement_base = [
     ('acceleration_x', 'f4', 'acceleration body frame front'),
     ('acceleration_y', 'f4', 'acceleration body frame right'),
     ('acceleration_z', 'f4', 'acceleration body frame down'),
@@ -25,7 +24,132 @@ data_f37 = [
     ('pitot', 'f4', 'pitot difference pressure'),
     ('static_pressure', 'f4', 'static absolute pressure'),
     ('temperature_pcb', 'f4', 'pcb sensor temperature'),
-    ('voltage', 'f4', 'sensor supply voltage'),
+    ('voltage', 'f4', 'sensor supply voltage')]
+
+data_measurement_external_induction = [
+    ('magnetic_ext_x', 'f4', 'magnetic body frame front'),
+    ('magnetic_ext_y', 'f4', 'magnetic body frame right'),
+    ('magnetic_ext_z', 'f4', 'magnetic body frame down')]
+
+data_measurement_coordinates = [
+    ('latitude', 'f8', 'GNSS latitude'),
+    ('longitude', 'f8', 'GNSS longitude'),
+    ('position_down', 'f4', 'position down'),
+    ('velocity_north', 'f4', 'velocity world frame north'),
+    ('velocity_east', 'f4', 'velocity world frame east'),
+    ('velocity_down', 'f4', 'velocity world frame down'),
+    ('speed_accuracy', 'f4', 'GNSS speed accuracy'),
+    ('year', 'u1', 'GNSS timestamp'),
+    ('month', 'u1', 'GNSS timestamp'),
+    ('day', 'u1', 'GNSS timestamp'),
+    ('hour', 'u1', 'GNSS timestamp'),
+    ('minute', 'u1', 'GNSS timestamp'),
+    ('second', 'u1', 'GNSS timestamp'),
+    ('sat_count', 'u1', 'Number of currently used GNSS satellites'),
+    ('sat_fix_type', 'u1', 'Type of GNSS satfix (None, 2D, 3D, RTK-Heading)'),
+    ('nanoseconds', 'i4', 'GNSS timestamp'),
+    ('geo_separation', 'i2', 'GNSS geoid separation'),
+    ('pos_dilution_of_recision', 'u2', 'dilution of precision 0.01 units'),
+    ('relpos_north', 'f4', 'relative position of 2nd GNSS antenna north'),
+    ('relpos_east', 'f4', 'relative position of 2nd GNSS antenna east'),
+    ('relpos_down', 'f4', 'relative position of 2nd GNSS antenna down'),
+    ('rel_heading', 'f4', 'relative heading between GNSS antennas')]
+
+data_system_state = [('system_state', 'u4', 'System status bits')]
+
+data_system_state_vector = [
+    ('ias', 'f4', 'indicated airspeed'),
+    ('tas', 'f4', 'true airspeed'),
+    ('speed_ground', 'f4', 'gnss based ground speed'),
+    ('track_ground', 'f4', 'gnss based ground track'),
+    ('vario', 'f4', 'speed compensated total energy variometer signal'),
+    ('vario_average', 'f4', 'averaged mean vario signal'),
+    ('wind_north', 'f4', 'instant wind in north direction'),
+    ('wind_east', 'f4', 'instant wind in east direction'),
+    ('wind_down', 'f4', 'instant wind in down direction'),
+    ('wind_average_north', 'f4', 'average wind in north direction'),
+    ('wind_average_east', 'f4', 'average wind in east direction'),
+    ('wind_average_down', 'f4', 'average wind in down direction'),
+    ('circle_mode', 'f4', 'sensors operating mode: ground, straight, transition, circling'),
+    ('q0', 'f4', 'quaternion component 0'),
+    ('q1', 'f4', 'quaternion component 1'),
+    ('q2', 'f4', 'quaternion component 2'),
+    ('q3', 'f4', 'quaternion component 3'),
+    ('roll_angle', 'f4', 'roll angle'),
+    ('pitch_angle', 'f4', 'pitch angle'),
+    ('yaw_angle', 'f4', 'heading angle'),
+    ('effective_acceleration_vertical', 'f4', 'vertical effective acceleration (gravitation removed)'),
+    ('turn_rate', 'f4', 'turn yaw rotation rate'),
+    ('slip_angle', 'f4', 'slip angle'),
+    ('apparent_pitch_angle', 'f4', 'apparent pitch angle'),
+    ('g_load', 'f4', 'total g load'),
+    ('pressure_altitude', 'f4', 'pressure altitude above standard atmosphere'),
+    ('air_density', 'f4', 'estimated air density'),
+    ('magnetic_disturbance', 'f4', 'magnetic disturbance after applied calibration factors'),
+    ('acceleration_north', 'f4', 'inertial acceleration world frame north'),
+    ('acceleration_east', 'f4', 'inertial acceleration world frame east'),
+    ('acceleration_down', 'f4', 'inertial acceleration world frame down'),
+    ('magnetic_north', 'f4', 'magnetic induction in world frame north'),
+    ('magnetic_east', 'f4', 'magnetic induction in world frame east'),
+    ('magnetic_down', 'f4', 'magnetic induction in world frame down'),
+    ('vario_pressure', 'f4', 'pneumatic variometer value'),
+    ('speed_compensation_tas', 'f4', 'speed compensation true airspeed signal'),
+    ('vario_uncompensated', 'f4', 'uncompensated variometer signal'),
+    ('speed_compensation_ins', 'f4', 'speed compensation inertial navigation system signal'),
+    ('dev_nav_correction_north', 'f4', 'development debug'),
+    ('dev_nav_correction_east', 'f4', 'development debug'),
+    ('dev_nav_correction_down', 'f4', 'development debug'),
+    ('dev_gyro_correction_front', 'f4', 'development debug'),
+    ('dev_gyro_correction_right', 'f4', 'development debug'),
+    ('dev_gyro_correction_down', 'f4', 'development debug'),
+    ('dev_gyro_correction_power', 'f4', 'development debug'),
+    ('dev_cross_acc_correction', 'f4', 'development debug'),
+    ('dev_acc_front', 'f4', 'development debug'),
+    ('dev_acc_right', 'f4', 'development debug'),
+    ('dev_acc_down', 'f4', 'development debug'),
+    ('dev_gyro_front', 'f4', 'development debug'),
+    ('dev_gyro_right', 'f4', 'development debug'),
+    ('dev_gyro_down', 'f4', 'development debug'),
+    ('dev_qff', 'f4', 'development debug'),
+    ('dev_sat_fix_type_f', 'f4', 'development debug'),
+    ('dev_inst_wind_north', 'f4', 'development debug'),
+    ('dev_inst_wind_east', 'f4', 'development debug'),
+    ('dev_inst_wind_down', 'f4', 'development debug'),
+    ('dev_body_induction_x', 'f4', 'development debug'),
+    ('dev_body_induction_y', 'f4', 'development debug'),
+    ('dev_body_induction_z', 'f4', 'development debug'),
+    ('dev_body_induction_error_x', 'f4', 'development debug'),
+    ('dev_body_induction_error_y', 'f4', 'development debug'),
+    ('dev_body_induction_error_z', 'f4', 'development debug'),
+    ('dev_nav_ind_expected_north', 'f4', 'development debug'),
+    ('dev_nav_ind_expected_east', 'f4', 'development debug'),
+    ('dev_nav_ind_expected_down', 'f4', 'development debug'),
+    ('dev_vario_wind_north', 'f4', 'development debug'),
+    ('dev_vario_wind_east', 'f4', 'development debug'),
+    ('dev_average_headwind', 'f4', 'development debug'),
+    ('dev_average_crosswind', 'f4', 'development debug'),
+    ('dev_inst_wind_corrected_north', 'f4', 'development debug'),
+    ('dev_inst_wind_corrected_east', 'f4', 'development debug'),
+    ('dev_q1_mag', 'f4', 'development debug'),
+    ('dev_q2_mag', 'f4', 'development debug'),
+    ('dev_q3_mag', 'f4', 'development debug'),
+    ('dev_q4_mag', 'f4', 'development debug'),
+    ('dev_roll_mag', 'f4', 'development debug'),
+    ('dev_pitch_mag', 'f4', 'development debug'),
+    ('dev_yaw_mag', 'f4', 'development debug'),
+    ('dev_heading_difference', 'f4', 'development debug'),
+    ('dev_nav_acc_mag_north', 'f4', 'development debug'),
+    ('dev_nav_acc_mag_east', 'f4', 'development debug'),
+    ('dev_nav_acc_mag_down', 'f4', 'development debug'),
+    ('dev_nav_ind_mag_north', 'f4', 'development debug'),
+    ('dev_nav_ind_mag_east', 'f4', 'development debug'),
+    ('dev_nav_ind_mag_down', 'f4', 'development debug'),
+    ('dev_speed_comp_1', 'f4', 'development debug'),
+    ('dev_speed_comp_2', 'f4', 'development debug'),
+    ('dev_speed_comp_3', 'f4', 'development debug')]
+
+# Raw data sensor files without low-cost ins sensor
+data_f37 = data_measurement_base + [
     ('position_north', 'f4', 'position north'),
     ('position_east', 'f4', 'position east'),
     ('position_down', 'f4', 'position down'),
@@ -369,8 +493,16 @@ data_f123 = data_f50 + [
     ('dev_speed_comp_2', 'f4', 'development debug'),
     ('dev_speed_comp_3', 'f4', 'development debug')]
 
-raw_data_formats = {'.f37':data_f37, '.f50':data_f50}
-processed_data_formats = {'.f114':data_f114, '.f119':data_f119, '.f120':data_f120_no_low_cost_imu, '.f123':data_f123}
+data_f124 = data_measurement_base + data_measurement_external_induction + \
+    data_measurement_coordinates + data_system_state + \
+    data_system_state_vector
+
+raw_data_formats = {'.f37':data_f37, '.f50':data_f50, '.lrsx':None}
+processed_data_formats = {'.f114':data_f114,
+                          '.f119':data_f119,
+                          '.f120':data_f120_no_low_cost_imu,
+                          '.f123':data_f123,
+                          '.f124':data_f124}
 
 # Supported Lib Versions and corresponding output formats for lib
 lib_versions = {'v0.1.0':'.f114',
@@ -380,6 +512,7 @@ lib_versions = {'v0.1.0':'.f114',
                 'v0.2.2':'.f120',
                 'v0.2.3':'.f120',
                 'v0.3.0':'.f120',
+                'v0.4.0':'.f124',
                 'xyz':'.f120'
                 }
 
@@ -400,7 +533,7 @@ class Larus2Df:
     file = None
     datatype = None
     dataformat = None
-    def __init__(self, file, recalc=True, version='v0.3.0'):
+    def __init__(self, file, recalc=True, version='v0.4.0'):
 
         if version in lib_versions:
             lib_output_format = lib_versions[version]
@@ -446,6 +579,23 @@ class Larus2Df:
                 self.dataformat = processed_data_formats[lib_versions[version]]
                 self.datatype = 'PROCESSED_DATA'
 
+            elif file.endswith('.lrsx'):
+                result_file = str(file) + lib_output_format
+                if recalc is False and os.path.isfile(result_file):
+                    pass  # Just use the existing result file and read it into the dataframe
+                else:
+                    if "linux" in sys.platform:
+                        print("Executing: {}".format(version))
+                        subprocess.call(["{}/_internal/data_analyzer_lib_linux_tag_{}".format(Path(__file__).parent.absolute(), version), file])
+                    elif "win" in sys.platform:
+                        subprocess.call(["{}/_internal/data_analyzer_lib_windows_tag_{}.exe".format(Path(__file__).parent.absolute(), version), file])
+                    else:
+                        raise Exception("Platform not supported: {}".format(sys.platform))
+
+                file = result_file
+                self.dataformat = processed_data_formats[lib_versions[version]]
+                self.datatype = 'PROCESSED_DATA'
+
             else:
                 raise Exception("Raw data format {} not implemented yet.".format(self.dataformat))
 
@@ -453,6 +603,8 @@ class Larus2Df:
         numpy_dataformat = []
         for entry in self.dataformat:
             numpy_dataformat.append((entry[0], entry[1]))
+
+        print(numpy_dataformat)
 
         dt = np.dtype(numpy_dataformat)
         data = np.fromfile(file, dtype=dt, sep="")
@@ -473,7 +625,26 @@ class Larus2Df:
 
 
 if __name__ == "__main__":
-    df = Larus2Df('240520_091630.f37')
+    type_cnt = {}
+    for element in data_f124:
+        type = element[1]
+
+        if type in type_cnt.keys():
+            type_cnt[type] += 1
+        else:
+            type_cnt[type] = 1
+
+    size = type_cnt['f8'] * 8  + \
+    type_cnt['f4'] * 4 + \
+    type_cnt['u1'] * 1 + \
+    type_cnt['u2'] * 2 + \
+    type_cnt['u4'] * 4 + \
+    type_cnt['i4'] * 4 + \
+    type_cnt['i2'] * 2
+    print(f"Size in Bytes: {size}  Size in 32-bit unit: {size/4}")
+
+
+    df = Larus2Df('/home/mbetz/Documents/vmware/shared_folder/260326_172348_still_data.lrsx')
     print(df.get_df().columns)
 
 
