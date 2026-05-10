@@ -53,7 +53,8 @@ data_measurement_coordinates = [
     ('relpos_north', 'f4', 'relative position of 2nd GNSS antenna north'),
     ('relpos_east', 'f4', 'relative position of 2nd GNSS antenna east'),
     ('relpos_down', 'f4', 'relative position of 2nd GNSS antenna down'),
-    ('rel_heading', 'f4', 'relative heading between GNSS antennas')]
+    ('rel_heading', 'f4', 'relative heading between GNSS antennas'),
+    ('dummy_for_data_alignment', 'u4', 'data alignment dummy')]
 
 data_system_state = [('system_state', 'u4', 'System status bits')]
 
@@ -528,6 +529,24 @@ def check_if_larus_file(file):
     return False # This is not a known Larus File format
 
 # Class to load a binary larus logfile into a pandas dataframe.  Converts raw data into processed data.
+def calculate_data_size(data_structure):
+    type_cnt = {}
+    for element in data_structure:
+        variable_type = element[1]
+        if variable_type in type_cnt.keys():
+            type_cnt[variable_type] += 1
+        else:
+            type_cnt[variable_type] = 1
+
+    size = type_cnt['f8'] * 8 + \
+           type_cnt['f4'] * 4 + \
+           type_cnt['u1'] * 1 + \
+           type_cnt['u2'] * 2 + \
+           type_cnt['u4'] * 4 + \
+           type_cnt['i4'] * 4 + \
+           type_cnt['i2'] * 2
+    print(f"Size in Bytes: {size}  Size in 32-bit unit: {size / 4}")
+
 class Larus2Df:
     df = None
     file = None
@@ -625,24 +644,7 @@ class Larus2Df:
 
 
 if __name__ == "__main__":
-    type_cnt = {}
-    for element in data_f124:
-        type = element[1]
-
-        if type in type_cnt.keys():
-            type_cnt[type] += 1
-        else:
-            type_cnt[type] = 1
-
-    size = type_cnt['f8'] * 8  + \
-    type_cnt['f4'] * 4 + \
-    type_cnt['u1'] * 1 + \
-    type_cnt['u2'] * 2 + \
-    type_cnt['u4'] * 4 + \
-    type_cnt['i4'] * 4 + \
-    type_cnt['i2'] * 2
-    print(f"Size in Bytes: {size}  Size in 32-bit unit: {size/4}")
-
+    calculate_data_size(data_f124)
 
     df = Larus2Df('/home/mbetz/Documents/vmware/shared_folder/260326_172348_still_data.lrsx')
     print(df.get_df().columns)
