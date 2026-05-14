@@ -169,6 +169,7 @@ int main (int argc, char *argv[])
   ensure_EEPROM_parameter_integrity();
 
   organizer_t organizer;
+  organizer.set_GNSS_type((GNSS_configration_t)configuration(GNSS_CONFIGURATION));
 
   streampos size = file.tellg ();
   observations_type  * in_data;

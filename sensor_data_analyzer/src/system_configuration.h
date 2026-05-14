@@ -62,4 +62,6 @@
 
 #define LIMIT_DENSITY_CORRECTION( x)
 
+#define ASSERT  assert     //ASSERT is available in the sensor firmware.  assert in the C++ analyser environment.
+
 #endif /* SRC_SYSTEM_CONFIGURATION_H_ */

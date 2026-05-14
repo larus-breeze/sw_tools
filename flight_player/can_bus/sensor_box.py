@@ -15,20 +15,29 @@ class Setting():
     
     @value.setter
     def value(self, value: str):
-        self._value = float(value)
+        if self._id in (0x0010, ):
+            self._value = int(value)
+        else:
+            self._value = float(value)
 
     @property
     def data(self):
         value = self._value
-        if self._id in (0, 1, 2):
-            value = value * math.pi / 180.0
-        return struct.pack('<f', value)
+        if self._id in (0x0010, ):
+            return struct.pack('<I', value)
+        else:
+            if self._id in (0x000, 0x001, 0x002):
+                value = value * math.pi / 180.0
+            return struct.pack('<f', value)
     
     @data.setter
     def data(self, data):
-        self._value = struct.unpack("<f", data[-4:])[0]
-        if self._id in (0, 1, 2):
-            self._value = self._value * 180.0 / math.pi
+        if self._id in (0x0010, ):
+            self._value =  struct.unpack("<I", data[-4:])[0]
+        else:
+            self._value = struct.unpack("<f", data[-4:])[0]
+            if self._id in (0x000, 0x001, 0x002):
+                self._value = self._value * 180.0 / math.pi
 
     @property
     def line(self):
@@ -60,6 +69,7 @@ SETTINGS_LIST = (
     ("ANT_SLAVE_RIGHT", 0.0, 0x00e),
 
     ("Vario_Press_TC", 7, 0x00f),
+    ("Horizon_Date", 131072257, 0x0010), # 2000-01-01
 )
 
 INI_DEFS = (
@@ -68,6 +78,7 @@ INI_DEFS = (
     ("preferences", ("Mag_Auto_Calib", "Vario_TC", "Vario_Int_TC", "Wind_TC", "Mean_Wind_TC", "Vario_Press_TC")),
     ("GNSS-type", ("GNSS_CONFIG", )), 
     ("D-GNSS-configuration", ("ANT_BASELEN", "ANT_SLAVE_DOWN", "ANT_SLAVE_RIGHT")),
+    ("horizon", ("Horizon_Date", )),
 )
 
 SETTINGS_FILE_NAME = "sensor_config.ini"
@@ -147,7 +158,7 @@ class SensorBox(CanDataParser):
         if can_frame.is_setting:
             config_id = struct.unpack('<H', can_frame.data[:2])[0]
             config_data = can_frame.data[2:]
-            idx = config_id & 0x0f 
+            idx = config_id & 0xff 
     
             if config_id >= 0x2000 and config_id <= 0x2fff: # Specific Config Data
                 self._settings.parse(idx, config_data, can_frames, log)

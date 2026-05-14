@@ -22,9 +22,11 @@
 
  **************************************************************************/
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include "assert.h"
+#include "persistent_data.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -36,8 +38,11 @@ using namespace std;
 
 #include "EEPROM_emulation.h"
 
+#ifdef _WIN32
 #include <istream>
 #include <string>
+
+#endif
 
 config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
@@ -45,8 +50,16 @@ float configuration( EEPROM_PARAMETER_ID id)
 {
 	if( id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
 		return config_parameters[id].value;
-	else
-		return 0.0f;
+	else{
+    // Return default value if it is not presend in the configuration file
+    for (unsigned i = 0; i < PERSISTENT_DATA_ENTRIES; i++){
+      if (PERSISTENT_DATA[i].id == id){
+        cout << "using default value for EEPROM Parameter(" << id << ")=" << PERSISTENT_DATA[i].default_value << endl;
+        return PERSISTENT_DATA[i].default_value;
+      }
+    }
+  }
+	return NAN;  //This shall not happen!
 }
 
 const persistent_data_t * find_parameter_from_ID( EEPROM_PARAMETER_ID id);
@@ -203,10 +216,10 @@ bool write_EEPROM_dump( char * basename)
 	    value *= 180.0 / M_PI; // format it human readable
 
 	  next = buffer;
-	  next = format_2_digits(next, PERSISTENT_DATA[index].id);
+	  format_2_digits(next, PERSISTENT_DATA[index].id);
 	  *next++=' ';
-	  next = append_string( next, PERSISTENT_DATA[index].mnemonic);
-	  next = append_string (next," = ");
+	  append_string( next, PERSISTENT_DATA[index].mnemonic);
+	  append_string (next," = ");
 	  next = my_ftoa (next, value);
 	  *next++='\r';
 	  *next++='\n';
