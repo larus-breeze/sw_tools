@@ -66,7 +66,6 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Communication"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="lib"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
@@ -136,20 +135,28 @@
 					</folderInfo>
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.84738672.268622728.2101835759.956926883" name="/" resourcePath="Interfaces">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.base.198734429" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.base" unusedChildren="">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.target.gnu.platform.base" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1216258744" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1535897186"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1756772400" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491"/>
-							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.66484451" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1756772400" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.866717646" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.66484451" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777">
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1889881086" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1869621173" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.706286308"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1908445323" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.177196441"/>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.base.378383817" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.616871668">
-								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.889449721" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.889449721" name="Debug Level" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.827429869" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.84738672.268622728.2101835759.397694376" name="CAN_output.cpp" rcbsApplicability="disable" resourcePath="lib/Output_Formatter/CAN_output.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491.175019214">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491.175019214" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491"/>
+					</fileInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Communication"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Interfaces"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="lib"/>
+						<entry excluding="Output_Formatter/CAN_output.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="lib"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
