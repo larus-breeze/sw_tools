@@ -60,6 +60,7 @@ SETTINGS_LIST = (
     ("ANT_SLAVE_RIGHT", 0.0, 0x00e),
 
     ("Vario_Press_TC", 7, 0x00f),
+    ("Horizon_Date", 0, 0x0010),
 )
 
 INI_DEFS = (
@@ -68,6 +69,7 @@ INI_DEFS = (
     ("preferences", ("Mag_Auto_Calib", "Vario_TC", "Vario_Int_TC", "Wind_TC", "Mean_Wind_TC", "Vario_Press_TC")),
     ("GNSS-type", ("GNSS_CONFIG", )), 
     ("D-GNSS-configuration", ("ANT_BASELEN", "ANT_SLAVE_DOWN", "ANT_SLAVE_RIGHT")),
+    ("horizon", ("Horizon_Date", )),
 )
 
 SETTINGS_FILE_NAME = "sensor_config.ini"
