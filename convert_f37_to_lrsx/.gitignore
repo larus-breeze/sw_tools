@@ -1,0 +1,12 @@
+/Release_Win/
+/Release_Linux/
+/lib/
+
+/Matlab/
+*.EEPROM
+*.f37
+*.f114
+*.launch
+
+/Debug/
+/.cproject
