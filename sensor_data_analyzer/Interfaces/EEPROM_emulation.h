@@ -25,8 +25,13 @@
 #ifndef EEPROM_EMULATION_H_
 #define EEPROM_EMULATION_H_
 
+#define EEPROM_FILE_SYSTEM_SIZE 1024
+
 #include "persistent_data.h"
 float configuration( EEPROM_PARAMETER_ID id);
+
+#include "persistent_data_file.h"
+extern EEPROM_file_system_node permanent_data_file_storage[];
 
 //! this structure describes one persistent parameter
 struct config_param_type
@@ -39,5 +44,6 @@ extern config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
 int read_EEPROM_file (char *basename);
 bool write_EEPROM_dump( char * basename);
+void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words);
 
 #endif /* EEPROM_EMULATION_H_ */

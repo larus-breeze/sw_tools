@@ -22,48 +22,63 @@
 
  **************************************************************************/
 
-#include <cmath>
 #include <iostream>
 #include <fstream>
 #include "assert.h"
-#include "persistent_data.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
 #include "math.h"
 #include "system_configuration.h"
 #include "ascii_support.h"
+#include "persistent_data.h"
+#include "persistent_data_file.h"
+#include "EEPROM_emulation.h"
 
 using namespace std;
 
-#include "EEPROM_emulation.h"
+EEPROM_file_system_node permanent_data_file_storage[EEPROM_FILE_SYSTEM_SIZE];
 
-#ifdef _WIN32
+
+EEPROM_file_system <LOWEST_UNUSED_EEPROM_ID> permanent_data_file;
+
+void FLASH_write( uint32_t * dest, uint32_t * source, unsigned n_words, bool synchronized)
+{
+  memcpy( dest, source, n_words * sizeof( uint32_t));
+}
+
 #include <istream>
 #include <string>
 
-#endif
-
 config_param_type config_parameters[EEPROM_PARAMETER_ID_END];
 
-float configuration( EEPROM_PARAMETER_ID id)
+float configuration (EEPROM_PARAMETER_ID id)
 {
-	if( id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
-		return config_parameters[id].value;
-	else{
-    // Return default value if it is not presend in the configuration file
-    for (unsigned i = 0; i < PERSISTENT_DATA_ENTRIES; i++){
-      if (PERSISTENT_DATA[i].id == id){
-        cout << "using default value for EEPROM Parameter(" << id << ")=" << PERSISTENT_DATA[i].default_value << endl;
-        return PERSISTENT_DATA[i].default_value;
-      }
+  if( permanent_data_file.in_use())
+    {
+      float value;
+      bool result = permanent_data_file.retrieve_data (id, 1, (uint32_t *)&value);
+      if (result)
+	return value;
+      else
+	{
+	  uint8_t value;
+	  result = permanent_data_file.retrieve_data (id, value);
+	  assert( result);
+	  return value;
+	}
     }
-  }
-	return NAN;  //This shall not happen!
+  else
+    {
+      if (id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
+	return config_parameters[id].value;
+      else
+	return 0.0f;
+    }
 }
 
 const persistent_data_t * find_parameter_from_ID( EEPROM_PARAMETER_ID id);
-
+#if 0
 bool read_EEPROM_value( EEPROM_PARAMETER_ID id, float &value)
 {
 	if( id < EEPROM_PARAMETER_ID_END && config_parameters[id].identifier == id)
@@ -74,6 +89,13 @@ bool read_EEPROM_value( EEPROM_PARAMETER_ID id, float &value)
 
 	return true;
 }
+#else
+//!< interface to legacy read function
+bool read_EEPROM_value (EEPROM_PARAMETER_ID id, float &value)
+{
+  return not permanent_data_file.retrieve_data( id, 1, &value);
+}
+#endif
 
 bool write_EEPROM_value( EEPROM_PARAMETER_ID id, float value)
 {
@@ -81,6 +103,7 @@ bool write_EEPROM_value( EEPROM_PARAMETER_ID id, float value)
   assert( id < EEPROM_PARAMETER_ID_END);
   float old_value = config_parameters[id].value;
   config_parameters[id].value = value;
+  config_parameters[id].identifier = id;
   cout << "EEPROM(" << id << ")=" << old_value << "->" << value << endl;
 #endif
   return false;
@@ -136,10 +159,12 @@ int read_EEPROM_file (char *basename)
   while ((getline(&line, &len, fp)) != -1)
     {
 #endif
+
     bool new_format = false;
     EEPROM_PARAMETER_ID identifier = (EEPROM_PARAMETER_ID)read_identifier(line);
     if (identifier == EEPROM_PARAMETER_ID_END)
       {
+	// if the line starts with the parameter name
 	param = find_parameter_from_name( line);
 	new_format = true;
       }
@@ -160,7 +185,7 @@ int read_EEPROM_file (char *basename)
       )
       continue;
 
-      float value;
+    float value;
 
       if ( new_format)
 	{
@@ -216,8 +241,6 @@ bool write_EEPROM_dump( char * basename)
 	    value *= 180.0 / M_PI; // format it human readable
 
 	  next = buffer;
-	  format_2_digits(next, PERSISTENT_DATA[index].id);
-	  *next++=' ';
 	  append_string( next, PERSISTENT_DATA[index].mnemonic);
 	  append_string (next," = ");
 	  next = my_ftoa (next, value);
@@ -228,6 +251,36 @@ bool write_EEPROM_dump( char * basename)
 	  outfile.write ( (const char *)buffer, next-buffer);
 	}
       }
+
+  float32_t mag_calib_param[4*3];
+
+  if( permanent_data_file.retrieve_data( MAG_SENSOR_XFER_MATRIX, 4*3, (uint32_t *)mag_calib_param))
+    {
+      for( unsigned i=0; i< 4*3; ++i)
+	{
+	  next = buffer;
+	  append_string( next, "Mag_");
+	  utox( next, i, 1);
+	  append_string( next, " = ");
+	  next = my_ftoa (next, mag_calib_param[i]);
+	  newline( next);
+	  outfile.write( buffer, next-buffer);
+	}
+    }
+
+  if( permanent_data_file.retrieve_data( EXT_MAG_SENSOR_XFER_MATRIX, 4*3, (uint32_t *)mag_calib_param))
+    {
+      for( unsigned i=0; i< 4*3; ++i)
+	{
+	  next = buffer;
+	  append_string( next, "XMag_");
+	  utox( next, i, 1);
+	  append_string( next, " = ");
+	  next = my_ftoa (next, mag_calib_param[i]);
+	  newline( next);
+	  outfile.write( buffer, next-buffer);
+	}
+    }
 
   outfile.close ();
   return false;
