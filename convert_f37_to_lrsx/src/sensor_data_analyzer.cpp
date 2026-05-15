@@ -46,8 +46,6 @@
 #include <fenv.h>
 #include "CAN_output.h"
 #include "NMEA_format.h"
-#include "TCP_server.h"
-#include "USB_serial.h"
 #include "system_state.h"
 #include "magnetic_induction_report.h"
 #include "ascii_support.h"
@@ -63,15 +61,16 @@
 uint32_t flex_buffer[FLEX_BUF_SIZE];
 flexible_log_file_implementation_t flex_file (flex_buffer, FLEX_BUF_SIZE);
 
+void signal_logger_event( unsigned event)
+{
+  printf("event: %x\n", event);
+}
+
 bool write_block( uint32_t * begin, uint32_t size_words)
 {
   return flex_file.write_block( begin, size_words);
 }
 
-void signal_logger_event( uint32_t event)
-{
-
-}
 
 Mutex_Wrapper_Type my_mutex;
 
