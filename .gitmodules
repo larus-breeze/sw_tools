@@ -1,3 +1,6 @@
 [submodule "sensor_data_analyzer/lib"]
 	path = sensor_data_analyzer/lib
 	url = ../sw_algorithms_lib.git
+[submodule "convert_f37_to_lrsx/lib"]
+	path = convert_f37_to_lrsx/lib
+	url = ../sw_algorithms_lib.git
