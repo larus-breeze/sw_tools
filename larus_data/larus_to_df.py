@@ -545,7 +545,8 @@ def calculate_data_size(data_structure):
            type_cnt['u4'] * 4 + \
            type_cnt['i4'] * 4 + \
            type_cnt['i2'] * 2
-    print(f"Size in Bytes: {size}  Size in 32-bit unit: {size / 4}")
+    print(f"Types: {type_cnt}")
+    print(f"Size in Bytes: {size}  Size in 32-bit units: {size / 4}")
 
 class Larus2Df:
     df = None

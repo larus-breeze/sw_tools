@@ -346,7 +346,16 @@ if __name__ == "__main__":
     #file = basepath + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
     #file = basepath + '/250522_142340.f37'         # Single GNSS short flight
     #file = basepath + '/251003_090210.f37'         # ASK21 Winch launch
-    file = basepath + '/250510_112200.f37'          # Duo Discus Thermal Flight (no prior magnetic calibration)
+    #file = basepath + '/250510_112200.f37'          # Duo Discus Thermal Flight (no prior magnetic calibration)
+
+
+
+    file = basepath + '/260510_133237.lrsx'          # ASK21 Bensheim
+    file = basepath + '/260509_121441.lrsx'          # ASK21 Bensheim
+    #file = basepath + '/260326_172348_still_data.lrsx'          # Lab Still test
+    #file = basepath + '/260508_080630.lrsx'          # Stefly  neue Version... Geht nicht
+
+
 
     data = Larus2Df(file).get_df()
     plot_attitude_histogram(data, file)
