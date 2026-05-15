@@ -14,7 +14,10 @@ def plot_mag_track(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
 
     nav_ind_abs = np.sqrt(
-        np.square(df['dev_nav_ind_mag_north']) + np.square(df['dev_nav_ind_mag_east']) + np.square(df['dev_nav_ind_mag_down']))
+        np.square(df['magnetic_north']) +
+        np.square(df['magnetic_east']) +
+        np.square(df['magnetic_down'])
+    )
 
     # Plot the data
     figure, axis = plt.subplots(2, 1, sharex=True)
@@ -24,25 +27,25 @@ def plot_mag_track(df, path = None):
     axis[0,].grid()
     axis[0,].set_xlabel('t [minutes]')
 
-    axis[0,].plot(t, nav_ind_abs.to_numpy(), "k", linewidth=1)
+    axis[0,].plot(t, nav_ind_abs, "k", linewidth=1)
     axis[0,].legend(["nav ind abs"], loc="lower left")
     par1 = axis[0,].twinx()
-    par1.plot(t, df['dev_nav_ind_mag_north'].to_numpy(), "r-", linewidth=0.5)
-    par1.plot(t, df['dev_nav_ind_mag_east'].to_numpy(), "g-", linewidth=0.5)
-    par1.plot(t, df['dev_nav_ind_mag_down'].to_numpy(), "b-", linewidth=0.5)
+    par1.plot(t, df['magnetic_north'].to_numpy(), "r-", linewidth=0.5)
+    par1.plot(t, df['magnetic_east'].to_numpy(), "g-", linewidth=0.5)
+    par1.plot(t, df['magnetic_down'].to_numpy(), "b-", linewidth=0.5)
 
-    minimum = df['dev_nav_ind_mag_north'].min()
-    maximum = df['dev_nav_ind_mag_north'].max()
-    if df['dev_nav_ind_mag_east'].min() < minimum:
-        minimum = df['dev_nav_ind_mag_east'].min()
-    if df['dev_nav_ind_mag_east'].max() > maximum:
-        maximum = df['dev_nav_ind_mag_east'].max()
-    if df['dev_nav_ind_mag_down'].min() < minimum:
-        minimum = df['dev_nav_ind_mag_down'].min()
-    if df['dev_nav_ind_mag_down'].max() > maximum:
-        maximum = df['dev_nav_ind_mag_down'].max()
+    minimum = df['magnetic_north'].min()
+    maximum = df['magnetic_north'].max()
+    if df['magnetic_east'].min() < minimum:
+        minimum = df['magnetic_east'].min()
+    if df['magnetic_east'].max() > maximum:
+        maximum = df['magnetic_east'].max()
+    if df['magnetic_down'].min() < minimum:
+        minimum = df['magnetic_down'].min()
+    if df['magnetic_down'].max() > maximum:
+        maximum = df['magnetic_down'].max()
     par1.set_ylim(minimum - 0.5, maximum + 1.5)
-    par1.legend(['dev_nav_ind_mag_north', 'dev_nav_ind_mag_east', 'dev_nav_ind_mag_down'], loc="lower right")
+    par1.legend(['magnetic_north', 'magnetic_east', 'magnetic_down'], loc="lower right")
 
 
     parameter = "track_ground"
@@ -62,8 +65,10 @@ def plot_mag(df, path = None):
     t = (df.index / 100.0 / 60.0).to_numpy()  # 100Hz ticks to minutes for the time axis
 
     nav_ind_abs = np.sqrt(
-        np.square(df['dev_nav_ind_mag_north']) + np.square(df['dev_nav_ind_mag_east']) + np.square(
-            df['dev_nav_ind_mag_down']))
+        np.square(df['magnetic_north']) +
+        np.square(df['magnetic_east']) +
+        np.square(df['magnetic_down'])
+    )
 
     # Plot the data
     figure, axis = plt.subplots()
@@ -76,22 +81,22 @@ def plot_mag(df, path = None):
     axis.plot(t, nav_ind_abs.to_numpy(), "k", linewidth=1)
     axis.legend(["nav ind abs"], loc="lower left")
     par1 = axis.twinx()
-    par1.plot(t, df['dev_nav_ind_mag_north'].to_numpy(), "r-", linewidth=0.5)
-    par1.plot(t, df['dev_nav_ind_mag_east'].to_numpy(), "g-", linewidth=0.5)
-    par1.plot(t, df['dev_nav_ind_mag_down'].to_numpy(), "b-", linewidth=0.5)
+    par1.plot(t, df['magnetic_north'].to_numpy(), "r-", linewidth=0.5)
+    par1.plot(t, df['magnetic_east'].to_numpy(), "g-", linewidth=0.5)
+    par1.plot(t, df['magnetic_down'].to_numpy(), "b-", linewidth=0.5)
 
-    minimum = df['dev_nav_ind_mag_north'].min()
-    maximum = df['dev_nav_ind_mag_north'].max()
-    if df['dev_nav_ind_mag_east'].min() < minimum:
-        minimum = df['dev_nav_ind_mag_east'].min()
-    if df['dev_nav_ind_mag_east'].max() > maximum:
-        maximum = df['dev_nav_ind_mag_east'].max()
-    if df['dev_nav_ind_mag_down'].min() < minimum:
-        minimum = df['dev_nav_ind_mag_down'].min()
-    if df['dev_nav_ind_mag_down'].max() > maximum:
-        maximum = df['dev_nav_ind_mag_down'].max()
+    minimum = df['magnetic_north'].min()
+    maximum = df['magnetic_north'].max()
+    if df['magnetic_east'].min() < minimum:
+        minimum = df['magnetic_east'].min()
+    if df['magnetic_east'].max() > maximum:
+        maximum = df['magnetic_east'].max()
+    if df['magnetic_down'].min() < minimum:
+        minimum = df['magnetic_down'].min()
+    if df['magnetic_down'].max() > maximum:
+        maximum = df['magnetic_down'].max()
     par1.set_ylim(minimum - 0.5, maximum + 1.5)
-    par1.legend(['dev_nav_ind_mag_north', 'dev_nav_ind_mag_east', 'dev_nav_ind_mag_down'], loc="lower right")
+    par1.legend(['magnetic_north', 'magnetic_east', 'magnetic_down'], loc="lower right")
     plt.show()
 
 def plot_track(df, path = None):
@@ -120,7 +125,7 @@ def plot_wind(df, path = None):
     wind_speed_inst = np.sqrt(np.square(df['wind_east']) + np.square(df['wind_north']))
     heading = df['yaw_angle'] / 2 / np.pi * 360
     roll_deg = df['roll_angle'] / 2 / np.pi * 360
-    nav_ind_abs = np.sqrt(np.square(df['dev_nav_ind_mag_north'])*np.square(df['dev_nav_ind_mag_north'] + df['dev_nav_ind_mag_east'])*np.square(df['dev_nav_ind_mag_east']) + df['dev_nav_ind_mag_down'])*np.square(df['dev_nav_ind_mag_down'])
+    nav_ind_abs = np.sqrt(np.square(df['magnetic_north'])*np.square(df['magnetic_north'] + df['magnetic_east'])*np.square(df['magnetic_east']) + df['magnetic_down'])*np.square(df['magnetic_down'])
 
     # Plot the data:
     figure, axis = plt.subplots(2, 2, sharex=True)
@@ -165,7 +170,7 @@ def plot_wind(df, path = None):
     axis[1, 1].grid()
     axis[1, 1].set_xlabel('t [minutes]')
     par1 = axis[1, 1].twinx()
-    par1.plot(t, - df['position_down'].to_numpy(), "b--", alpha=1, linewidth=0.5)
+    par1.plot(t, df['position_up'].to_numpy(), "b--", alpha=1, linewidth=0.5)
     par1.legend(["position up"], loc="lower right")
     plt.show()
 
@@ -294,7 +299,7 @@ def plot_altitude_speed(df, path = None):
     # Prepare the data
     t = (df.index / 100.0 / 60.0).to_numpy()   # 100Hz ticks to minutes for the time axis
 
-    altitude_m = - df['position_down']
+    altitude_m = df['position_up']
     speed_kmh = df['tas'] * 3.6
 
     # Plot the data:
@@ -338,24 +343,13 @@ def  plot_attitude_histogram(df, path = None):
 if __name__ == "__main__":
     basepath = '/home/mbetz/Documents/vmware/shared_folder/'
     # D-GNSS Flight data:
-    #file = basepath + '/230430.f37'                # DGNSS OM flight.
     #file = basepath + '/240830_short.f37'          # DGNSS Stefly WM Texas
-    #file = basepath + '/250824_091030.f37'         # DGNSS OM new sensor good magnetic data but not prior calibration
-
     # S-GNSS flight data:
-    #file = basepath + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
-    #file = basepath + '/250522_142340.f37'         # Single GNSS short flight
-    #file = basepath + '/251003_090210.f37'         # ASK21 Winch launch
-    #file = basepath + '/250510_112200.f37'          # Duo Discus Thermal Flight (no prior magnetic calibration)
+    #file = basepath + '/251003_090210.f37'         # ASK21 Winch launches
 
-
-
-    file = basepath + '/260510_133237.lrsx'          # ASK21 Bensheim
-    file = basepath + '/260509_121441.lrsx'          # ASK21 Bensheim
-    #file = basepath + '/260326_172348_still_data.lrsx'          # Lab Still test
-    #file = basepath + '/260508_080630.lrsx'          # Stefly  neue Version... Geht nicht
-
-
+    # New lrsx format:
+    #file = basepath + '/260513_092717.lrsx'             # AS33
+    file = basepath + '/260510_122915.lrsx'           #Single GNSS ASK21 one winch start
 
     data = Larus2Df(file).get_df()
     plot_attitude_histogram(data, file)

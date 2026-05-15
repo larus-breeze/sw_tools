@@ -34,7 +34,7 @@ data_measurement_external_induction = [
 data_measurement_coordinates = [
     ('latitude', 'f8', 'GNSS latitude'),
     ('longitude', 'f8', 'GNSS longitude'),
-    ('position_down', 'f4', 'position down'),
+    ('position_up', 'f4', 'GNSS MSL altitude'),
     ('velocity_north', 'f4', 'velocity world frame north'),
     ('velocity_east', 'f4', 'velocity world frame east'),
     ('velocity_down', 'f4', 'velocity world frame down'),
@@ -257,26 +257,8 @@ processed_data_common = [
     ('dev_speed_comp_2', 'f4', 'development debug'),
     ('dev_speed_comp_3', 'f4', 'development debug')]
 
-# Processed data with vario, wind and ahrs values, ...
-data_f114 = data_f37 + processed_data_common + [
-    ("speed_comp_4", "f4", "development debug"),
-    ("dev_cross_acc_correction", "f4"),
-    ("dev_vario_wind_north", "f4"),
-    ("dev_vario_wind_east", "f4")]
-
-data_f119 = data_f37 + processed_data_common + [
-    ("dev_cross_acc_correction", "f4", "development debug"),
-    ("dev_vario_wind_north", "f4", "development debug"),
-    ("dev_vario_wind_east", "f4", "development debug"),
-    ("dev_body_induction_x", "f4", "development debug"),
-    ("dev_body_induction_y", "f4", "development debug"),
-    ("dev_body_induction_z", "f4", "development debug"),
-    ("dev_body_induction_error_x", "f4", "development debug"),
-    ("dev_body_induction_error_y", "f4", "development debug"),
-    ("dev_body_induction_error_z", "f4", "development debug")]
-
-#f120 files exist already in legacy format versions.
-data_f120_no_low_cost_imu = data_f37 + processed_data_common +[
+# Format for old version v0.3.0 lib.
+data_f120 = data_f37 + processed_data_common +[
     ("dev_cross_acc_correction", "f4", "development debug"),
     ("dev_vario_wind_north", "f4", "development debug"),
     ("dev_vario_wind_east", "f4", "development debug"),
@@ -288,232 +270,17 @@ data_f120_no_low_cost_imu = data_f37 + processed_data_common +[
     ("dev_body_induction_error_z", "f4", "development debug"),
     ("dev_gyro_correction_power" ,"f4", "development debug")]
 
-# Raw data sensor files with low-cost ins sensor. Only required for the first legacy larus sensor hardware version.
-data_f50 = [
-    ('acceleration_x', 'f4', 'acceleration body frame front'),
-    ('acceleration_y', 'f4', 'acceleration body frame right'),
-    ('acceleration_z', 'f4', 'acceleration body frame down'),
-    ('rotation_x', 'f4', 'rotation body frame roll'),
-    ('rotation_y', 'f4', 'rotation body frame pitch'),
-    ('rotation_z', 'f4', 'rotation body frame yaw'),
-    ('magnetic_x', 'f4', 'magnetic body frame front'),
-    ('magnetic_y', 'f4', 'magnetic body frame right'),
-    ('magnetic_z', 'f4', 'magnetic body frame down'),
-    ('low_cost_acceleration_x', 'f4', 'not known'),
-    ('low_cost_acceleration_y', 'f4', 'not known'),
-    ('low_cost_acceleration_z', 'f4', 'not known'),
-    ('low_cost_gyro_x', 'f4', 'not known'),
-    ('low_cost_gyro_y', 'f4', 'not known'),
-    ('low_cost_gyro_z', 'f4', 'not known'),
-    ('low_cost_mag_x', 'f4', 'not known'),
-    ('low_cost_mag_y', 'f4', 'not known'),
-    ('low_cost_mag_z', 'f4', 'not known'),
-    ('pitot', 'f4', 'pitot difference pressure'),
-    ('static_pressure', 'f4', 'static absolute pressure'),
-    ('absolute_pressure', 'f4', 'not known'),
-    ('temperature_pcb', 'f4', 'pcb sensor temperature'),
-    ('absolute_pressure_temperature', 'f4', 'not known'),
-    ('voltage', 'f4', 'sensor supply voltage'),
-    ('outside_air_temperature', 'f4', 'not known'),
-    ('humidity', 'f4', 'not known'),
-    ('position_north', 'f4', 'position north'),
-    ('position_east', 'f4', 'position east'),
-    ('position_down', 'f4', 'position down'),
-    ('velocity_north', 'f4', 'velocity world frame north'),
-    ('velocity_east', 'f4', 'velocity world frame east'),
-    ('velocity_down', 'f4', 'velocity world frame down'),
-    ('acceleration_gnss_north', 'f4', 'gnss acceleration world frame north'),
-    ('acceleration_gnss_east', 'f4', 'gnss acceleration world frame east'),
-    ('acceleration_gnss_down', 'f4', 'not available always set to 0'),
-    ('track_ground', 'f4', 'gnss based ground track'),
-    ('speed_ground', 'f4', 'gnss based ground speed'),
-    ('relpos_north', 'f4', 'relative position of 2nd GNSS antenna north'),
-    ('relpos_east', 'f4', 'relative position of 2nd GNSS antenna east'),
-    ('relpos_down', 'f4', 'relative position of 2nd GNSS antenna down'),
-    ('rel_heading', 'f4', 'relative heading between GNSS antennas'),
-    ('speed_accuracy', 'f4', 'GNSS speed accuracy'),
-    ('latitude', 'f8', 'GNSS latitude'),
-    ('longitude', 'f8', 'GNSS longitude'),
-    ('year', 'u1', 'GNSS timestamp'),
-    ('month', 'u1', 'GNSS timestamp'),
-    ('day', 'u1', 'GNSS timestamp'),
-    ('hour', 'u1', 'GNSS timestamp'),
-    ('minute', 'u1', 'GNSS timestamp'),
-    ('second', 'u1', 'GNSS timestamp'),
-    ('sat_count', 'u1', 'Number of currently used GNSS satellites'),
-    ('sat_fix_type', 'u1', 'Type of GNSS satfix (None, 2D, 3D, RTK-Heading)'),
-    ('nanoseconds', 'f4', 'GNSS timestamp'),
-    ('geo_separation', 'f4', 'GNSS geoid separation')]
-
-data_f120 = data_f50 + [
-    ('dummy', 'u2', 'reserved'),
-    ('ias', 'f4', 'indicated airspeed'),
-    ('tas', 'f4', 'true airspeed'),
-    ('vario_uncompensated', 'f4', 'uncompensated variometer signal'),
-    ('vario', 'f4', 'speed compensated total energy variometer signal'),
-    ('vario_pressure', 'f4', 'pneumatic variometer value'),
-    ('speed_compensation_tas', 'f4', 'speed compensation true airspeed signal'),
-    ('speed_compensation_ins', 'f4', 'speed compensation inertial navigation system signal'),
-    ('vario_average', 'f4', 'averaged mean vario signal'),
-    ('wind_north', 'f4', 'instant wind in north direction'),
-    ('wind_east', 'f4', 'instant wind in east direction'),
-    ('wind_down', 'f4', 'instant wind in down direction'),
-    ('wind_average_north', 'f4', 'average wind in north direction'),
-    ('wind_average_east', 'f4', 'average wind in east direction'),
-    ('wind_average_down', 'f4', 'average wind in down direction'),
-    ('circle_mode', 'u4', 'sensors operating mode: circling, straight or in between'),
-    ('q0', 'f4', 'quaternion component 0'),
-    ('q1', 'f4', 'quaternion component 1'),
-    ('q2', 'f4', 'quaternion component 2'),
-    ('q3', 'f4', 'quaternion component 3'),
-    ('roll_angle', 'f4', 'roll angle'),
-    ('pitch ', 'f4', 'not known'),
-    ('yaw_angle', 'f4', 'heading angle'),
-    ('effective_acceleration_vertical', 'f4', 'vertical effective acceleration (gravitation removed)'),
-    ('turn_rate', 'f4', 'turn yaw rotation rate'),
-    ('slip_angle', 'f4', 'slip angle'),
-    ('apparent_pitch_angle', 'f4', 'apparent pitch angle'),
-    ('g_load', 'f4', 'total g load'),
-    ('pressure_altitude', 'f4', 'pressure altitude above standard atmosphere'),
-    ('air_density', 'f4', 'estimated air density'),
-    ('magnetic_disturbance', 'f4', 'magnetic disturbance after applied calibration factors'),
-    ('acceleration_north', 'f4', 'inertial acceleration world frame north'),
-    ('acceleration_east', 'f4', 'inertial acceleration world frame east'),
-    ('acceleration_down', 'f4', 'inertial acceleration world frame down'),
-    ('magnetic_north', 'f4', 'magnetic induction in world frame north'),
-    ('magnetic_east', 'f4', 'magnetic induction in world frame east'),
-    ('magnetic_down', 'f4', 'magnetic induction in world frame down'),
-    ('dev_nav_correction_north', 'f4', 'development debug'),
-    ('dev_nav_correction_east', 'f4', 'development debug'),
-    ('dev_nav_correction_down', 'f4', 'development debug'),
-    ('dev_gyro_correction_front', 'f4', 'development debug'),
-    ('dev_gyro_correction_right', 'f4', 'development debug'),
-    ('dev_gyro_correction_down', 'f4', 'development debug'),
-    ('dev_nav_acc_mag_north', 'f4', 'development debug'),
-    ('dev_nav_acc_mag_east', 'f4', 'development debug'),
-    ('dev_nav_acc_mag_down', 'f4', 'development debug'),
-    ('dev_nav_ind_mag_north', 'f4', 'development debug'),
-    ('dev_nav_ind_mag_east', 'f4', 'development debug'),
-    ('dev_nav_ind_mag_down', 'f4', 'development debug'),
-    ('dev_roll_mag', 'f4', 'development debug'),
-    ('dev_pitch_mag', 'f4', 'development debug'),
-    ('dev_yaw_mag', 'f4', 'development debug'),
-    ('dev_q1_mag', 'f4', 'development debug'),
-    ('dev_q2_mag', 'f4', 'development debug'),
-    ('dev_q3_mag', 'f4', 'development debug'),
-    ('dev_q4_mag', 'f4', 'development debug'),
-    ('dev_acc_front', 'f4', 'development debug'),
-    ('dev_acc_right', 'f4', 'development debug'),
-    ('dev_acc_down', 'f4', 'development debug'),
-    ('dev_gyro_front', 'f4', 'development debug'),
-    ('dev_gyro_right', 'f4', 'development debug'),
-    ('dev_gyro_down', 'f4', 'development debug'),
-    ('dev_sat_ahrs_heading', 'f4', 'development debug'),
-    ('dev_qff', 'f4', 'development debug'),
-    ('dev_sat_fix_type_f', 'f4', 'development debug'),
-    ('dev_average_headwind', 'f4', 'development debug'),
-    ('dev_average_crosswind', 'f4', 'development debug'),
-    ('dev_vario_wind_north', 'f4', 'development debug'),
-    ('dev_vario_wind_east', 'f4', 'development debug'),
-    ('dev_inst_wind_north', 'f4', 'development debug'),
-    ('dev_inst_wind_east', 'f4', 'development debug')]
-
-data_f123 = data_f50 + [
-    ('dummy', 'u2', 'reserved'),
-    ('ias', 'f4', 'indicated airspeed'),
-    ('tas', 'f4', 'true airspeed'),
-    ('vario_uncompensated', 'f4', 'uncompensated variometer signal'),
-    ('vario', 'f4', 'speed compensated total energy variometer signal'),
-    ('vario_pressure', 'f4', 'pneumatic variometer value'),
-    ('speed_compensation_tas', 'f4', 'speed compensation true airspeed signal'),
-    ('speed_compensation_ins', 'f4', 'speed compensation inertial navigation system signal'),
-    ('vario_average', 'f4', 'averaged mean vario signal'),
-    ('wind_north', 'f4', 'instant wind in north direction'),
-    ('wind_east', 'f4', 'instant wind in east direction'),
-    ('wind_down', 'f4', 'instant wind in down direction'),
-    ('wind_average_north', 'f4', 'average wind in north direction'),
-    ('wind_average_east', 'f4', 'average wind in east direction'),
-    ('wind_average_down', 'f4', 'average wind in down direction'),
-    ('circle_mode', 'u4', 'sensors operating mode: circling, straight or in between'),
-    ('q0', 'f4', 'quaternion component 0'),
-    ('q1', 'f4', 'quaternion component 1'),
-    ('q2', 'f4', 'quaternion component 2'),
-    ('q3', 'f4', 'quaternion component 3'),
-    ('roll_angle', 'f4', 'roll angle'),
-    ('pitch_angle', 'f4', 'pitch angle'),
-    ('yaw_angle', 'f4', 'heading angle'),
-    ('effective_acceleration_vertical', 'f4', 'vertical effective acceleration (gravitation removed)'),
-    ('turn_rate', 'f4', 'turn yaw rotation rate'),
-    ('slip_angle', 'f4', 'slip angle'),
-    ('apparent_pitch_angle', 'f4', 'apparent pitch angle'),
-    ('g_load', 'f4', 'total g load'),
-    ('pressure_altitude', 'f4', 'pressure altitude above standard atmosphere'),
-    ('air_density', 'f4', 'estimated air density'),
-    ('magnetic_disturbance', 'f4', 'magnetic disturbance after applied calibration factors'),
-    ('acceleration_north', 'f4', 'inertial acceleration world frame north'),
-    ('acceleration_east', 'f4', 'inertial acceleration world frame east'),
-    ('acceleration_down', 'f4', 'inertial acceleration world frame down'),
-    ('magnetic_north', 'f4', 'magnetic induction in world frame north'),
-    ('magnetic_east', 'f4', 'magnetic induction in world frame east'),
-    ('magnetic_down', 'f4', 'magnetic induction in world frame down'),
-    ('dev_nav_correction_north', 'f4', 'development debug'),
-    ('dev_nav_correction_east', 'f4', 'development debug'),
-    ('dev_nav_correction_down', 'f4', 'development debug'),
-    ('dev_gyro_correction_front', 'f4', 'development debug'),
-    ('dev_gyro_correction_right', 'f4', 'development debug'),
-    ('dev_gyro_correction_down', 'f4', 'development debug'),
-    ('dev_nav_acc_mag_north', 'f4', 'development debug'),
-    ('dev_nav_acc_mag_east', 'f4', 'development debug'),
-    ('dev_nav_acc_mag_down', 'f4', 'development debug'),
-    ('dev_nav_ind_mag_north', 'f4', 'development debug'),
-    ('dev_nav_ind_mag_east', 'f4', 'development debug'),
-    ('dev_nav_ind_mag_down', 'f4', 'development debug'),
-    ('dev_roll_mag', 'f4', 'development debug'),
-    ('dev_pitch_mag', 'f4', 'development debug'),
-    ('dev_yaw_mag', 'f4', 'development debug'),
-    ('dev_q1_mag', 'f4', 'development debug'),
-    ('dev_q2_mag', 'f4', 'development debug'),
-    ('dev_q3_mag', 'f4', 'development debug'),
-    ('dev_q4_mag', 'f4', 'development debug'),
-    ('dev_acc_front', 'f4', 'development debug'),
-    ('dev_acc_right', 'f4', 'development debug'),
-    ('dev_acc_down', 'f4', 'development debug'),
-    ('dev_gyro_front', 'f4', 'development debug'),
-    ('dev_gyro_right', 'f4', 'development debug'),
-    ('dev_gyro_down', 'f4', 'development debug'),
-    ('dev_sat_ahrs_heading', 'f4', 'development debug'),
-    ('dev_qff', 'f4', 'development debug'),
-    ('dev_sat_fix_type_f', 'f4', 'development debug'),
-    ('dev_average_headwind', 'f4', 'development debug'),
-    ('dev_average_crosswind', 'f4', 'development debug'),
-    ('dev_vario_wind_north', 'f4', 'development debug'),
-    ('dev_vario_wind_east', 'f4', 'development debug'),
-    ('dev_inst_wind_north', 'f4', 'development debug'),
-    ('dev_inst_wind_east', 'f4', 'development debug'),
-    ('dev_speed_comp_1', 'f4', 'development debug'),
-    ('dev_speed_comp_2', 'f4', 'development debug'),
-    ('dev_speed_comp_3', 'f4', 'development debug')]
-
 data_f124 = data_measurement_base + data_measurement_external_induction + \
     data_measurement_coordinates + data_system_state + \
     data_system_state_vector
 
-raw_data_formats = {'.f37':data_f37, '.f50':data_f50, '.lrsx':None}
-processed_data_formats = {'.f114':data_f114,
-                          '.f119':data_f119,
-                          '.f120':data_f120_no_low_cost_imu,
-                          '.f123':data_f123,
+raw_data_formats = {'.f37':data_f37, '.lrsx':None}
+processed_data_formats = {'.f120':data_f120,
                           '.f124':data_f124}
 
 # Supported Lib Versions and corresponding output formats for lib
-lib_versions = {'v0.1.0':'.f114',
-                'v0.1.1':'.f114',
-                'v0.1.2':'.f119',
-                'v0.2.1':'.f120',
-                'v0.2.2':'.f120',
-                'v0.2.3':'.f120',
-                'v0.3.0':'.f120',
-                'v0.4.0':'.f124',
+lib_versions = {'v0.3.0':'.f120',
+                'v0.5.0':'.f124',
                 'xyz':'.f120'
                 }
 
@@ -553,7 +320,11 @@ class Larus2Df:
     file = None
     datatype = None
     dataformat = None
-    def __init__(self, file, recalc=True, version='v0.4.0'):
+    def __init__(self, file, recalc=True, version='v0.5.0'):
+
+        if file.endswith('.f37'):
+            # Use old lib as lib version > v0.3.0 does not support *.f37 anymore
+            version = 'v0.3.0'
 
         if version in lib_versions:
             lib_output_format = lib_versions[version]
@@ -624,11 +395,17 @@ class Larus2Df:
         for entry in self.dataformat:
             numpy_dataformat.append((entry[0], entry[1]))
 
-        print(numpy_dataformat)
-
         dt = np.dtype(numpy_dataformat)
         data = np.fromfile(file, dtype=dt, sep="")
         self.df = pd.DataFrame(data)
+
+        if ('position_down' in self.df.columns)  and ('position_up' not in self.df.columns):
+            # Add a new field as _down has been replaced by _up
+            self.df['position_up'] = - self.df['position_down']
+
+        if ('position_up' in self.df.columns)  and ('position_down' not in self.df.columns):
+            # Add a legacy field as _down has been replaced by _up
+            self.df['position_down'] = - self.df['position_up']
 
         try:
             # Simplified file validation which checks if the first and last row contains a valid date value.
@@ -646,7 +423,6 @@ class Larus2Df:
 
 if __name__ == "__main__":
     calculate_data_size(data_f124)
-
     df = Larus2Df('/home/mbetz/Documents/vmware/shared_folder/260326_172348_still_data.lrsx')
     print(df.get_df().columns)
 

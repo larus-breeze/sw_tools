@@ -171,19 +171,17 @@ class LarusLibComparison:
 if __name__ == "__main__":
     basepath = '/home/mbetz/Documents/vmware/shared_folder/'
     # D-GNSS Flight data:
-    #file = basepath + '/230430.f37'                # DGNSS OM flight.
     #file = basepath + '/240830_short.f37'          # DGNSS Stefly WM Texas
-    #file = basepath + '/250824_091030.f37'         # DGNSS OM new sensor good magnetic data but not prior calibration
-
     # S-GNSS flight data:
-    #file = basepath + '/240520_091630_nomag.f37'   # Single GNSS Magnetic calibration test with slightly wrong roll, pitch configuration
-    #file = basepath + '/250522_142340.f37'         # Single GNSS short flight
-    #file = basepath + '/251003_090210.f37'         # ASK21 Winch launch
-    file = basepath + '/250510_112200.f37'          # Duo Discus Thermal Flight (no prior magnetic calibration)
+    #file = basepath + '/251003_090210.f37'         # ASK21 Winch launches
 
-    #available versions 'v0.1.0', 'v0.1.1', 'v0.1.2', 'v0.2.1', 'v0.2.2',
-    # versions  < v0.2.2 do not support EEPROM files without a leading numeric parameter id.
-    cmp = LarusLibComparison(file,'v0.2.3', 'v0.3.0' )
+    # New lrsx format:
+    #file = basepath + '/260513_092717.lrsx'             # AS33
+    file = basepath + '/260510_122915.lrsx'           #Single GNSS ASK21 one winch start
+
+    # TODO:  currently not working as old lib does not understand lrsx format and
+    #  new one does not understand f37 anymore
+    cmp = LarusLibComparison(file,'v0.3.0', 'v0.5.0' )
 
     cmp.plot_mag_comparison()
     cmp.plot_ahrs_comparison()
