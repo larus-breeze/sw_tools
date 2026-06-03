@@ -122,6 +122,7 @@ int main (int argc, char *argv[])
 
   bool have_configuration = false;
   bool write_f37 = false;
+  bool write_csv = false;
 
   bool start_with_given_configuration;
   if( argc == 3)
@@ -129,6 +130,18 @@ int main (int argc, char *argv[])
       if( strcmp( argv[2], "f37") == 0)
 	{
 	  write_f37 = true;
+	  // initialize empty EEPROM data file
+	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
+	      EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+	  permanent_data_file.set_memory_to_existing_data (
+	      (uint32_t*) permanent_data_file_storage,
+	      (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
+	  start_with_given_configuration = false;
+	  have_configuration = false;
+	}
+      else if( strcmp( argv[2], "csv") == 0)
+	{
+	  write_csv = true;
 	  // initialize empty EEPROM data file
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 	      EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
@@ -206,6 +219,22 @@ int main (int argc, char *argv[])
         }
     }
 
+  ofstream csv_file;
+  if( write_csv)
+    {
+      char * dot = strrchr( buf, '.');
+      if( dot == 0)
+	exit(0);
+      dot[1] = 0;
+      strcat( buf, "csv");
+      csv_file.open( buf, ios::out | ios::binary | ios::ate);
+      if( not csv_file.is_open ())
+        {
+          cout << "Unable to open output file\n";
+          return -1;
+        }
+    }
+
   ensure_EEPROM_parameter_integrity();
 
   uint32_t * in_data = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
@@ -225,6 +254,7 @@ int main (int argc, char *argv[])
   unsigned GNSS_sample_on_takeoff = 0;
   unsigned GNSS_sample_number = 0;
   system_state = fake_system_state;
+  bool takeoff_reported = false;
 
 // read until a configuration file is found
   while (in_file.read ((char*) &next_block_identifier_read,
@@ -450,7 +480,6 @@ int main (int argc, char *argv[])
 		  return -1;
 		}
 	    EEPROM_file_system_node::ID_t id = candidate->id;
-	    float32_t data = *(float32_t *)(in_data+1);
 
 	    permanent_data_file.store_data( id, candidate->size - 1, (void *)(candidate+1));
 	    printf( "id= %d val = %e\n", id, *(float*)(candidate+1));
@@ -500,7 +529,7 @@ int main (int argc, char *argv[])
 		    if (landing_detected)
 		      {
 			organizer->cleanup_after_landing();
-			printf ("landed at log time %d minutes.\n", records / 6000);
+			printf("Landed at: %d:%02d UTC \n", coordinates.hour, coordinates.minute);
 		      }
 		}
 	    }
@@ -515,6 +544,11 @@ int main (int argc, char *argv[])
 		}
 	      }
 
+	  if( not takeoff_reported and GNSS_sample_number == GNSS_sample_on_takeoff)
+	    {
+	      takeoff_reported = true;
+	      printf("\nTakeoff: %d:%02d UTC \n", coordinates.hour, coordinates.minute);
+	    }
 	  if( (organizer != 0) && (GNSS_sample_number > GNSS_sample_on_takeoff)) // after initialization
 	    {
 	      organizer->report_data ( state_vector);
@@ -550,6 +584,20 @@ int main (int argc, char *argv[])
 		  f37_data.c.geo_sep_dm = coordinates.geo_sep_dm;
 
 		  f37_file.write ( (const char*)&f37_data, sizeof( legacy_observations_type));
+		}
+
+	      if( write_csv)
+		{
+		  csv_file << coordinates.latitude << ',' << coordinates.longitude << ',' << coordinates.GNSS_MSL_altitude;
+		  double velocity = sqrt( SQR( coordinates.velocity[EAST]) + SQR( coordinates.velocity[NORTH]));
+		  double heading = atan2( coordinates.velocity[EAST], coordinates.velocity[NORTH]);
+		  csv_file << ',' << velocity << ',' << heading * 180.0 / M_PI;
+		  csv_file << ',' << state_vector.IAS;
+		  csv_file << ',' << state_vector.vario;
+		  csv_file << ',' << state_vector.euler.roll * 180.0 / M_PI;
+		  csv_file << ',' << state_vector.euler.pitch * 180.0 / M_PI;
+		  csv_file << ',' << state_vector.euler.yaw * 180.0 / M_PI;
+		  csv_file << endl;
 		}
 	    }
 	}
@@ -596,8 +644,11 @@ int main (int argc, char *argv[])
 		  }
 		}
 
-	      if( organizer)
-		organizer->update_GNSS_data ( coordinates);
+		if( organizer)
+		  {
+		    organizer->update_GNSS_data ( coordinates);
+		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
+		  }
 
 	      state_vector.satfix = coordinates.sat_fix_type;
 	    }
@@ -638,8 +689,10 @@ int main (int argc, char *argv[])
 		  }
 
 		if( organizer)
-		  organizer->update_GNSS_data ( coordinates);
-
+		  {
+		    organizer->update_GNSS_data ( coordinates);
+		    organizer->update_magnetic_induction_data( coordinates.latitude, coordinates.longitude);
+		  }
 		state_vector.satfix = coordinates.sat_fix_type;
 		}
 	      break;
@@ -660,6 +713,9 @@ int main (int argc, char *argv[])
 
   if( write_f37)
     f37_file.close();
+
+  if( write_csv)
+    csv_file.close();
 
   strcpy( buf, argv[1]);
   char * p = strrchr( buf, '/');
