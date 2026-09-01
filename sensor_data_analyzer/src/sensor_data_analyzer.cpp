@@ -66,7 +66,7 @@ flexible_log_file_implementation_t flex_file( buffer, 128);
 
 bool write_block (uint32_t *p_data, uint32_t size_words)
 {
-  flex_file.write_block( p_data, size_words);
+  return flex_file.write_block( p_data, size_words);
 }
 
 void signal_logger_event( uint32_t event)
@@ -491,7 +491,7 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case LARUS_DESCRIPTION:
 	  {
-	    printf("Firmware: %s\n", in_data);
+	    printf("Firmware: %s\n", (char *)in_data);
 	    printf("Larus ID:\n%08x%08x%08x%08x\n", in_data[8], in_data[9], in_data[10], in_data[11]);
 	    printf("Flash SHA256:\n%08x%08x%08x%08x\n%08x%08x%08x%08x\n",
 		   in_data[12], in_data[13], in_data[14], in_data[15], in_data[16], in_data[17], in_data[18], in_data[19]);
