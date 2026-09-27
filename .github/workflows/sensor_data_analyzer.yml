@@ -2,6 +2,9 @@ name: sensor_data_analyzer
 
 # Builds the SIL simulator in the environments named in
 # sensor_data_analyzer/README.md: Linux (GCC) and Windows (w64devkit).
+# Also builds the algorithm library (submodule "lib") for the sensor's
+# Cortex-M4F with the firmware's compiler flags, so the SIL and the firmware
+# are known to compile the same library version.
 
 on:
   push:
@@ -13,6 +16,11 @@ on:
       - 'sensor_data_analyzer/**'
       - '.github/workflows/sensor_data_analyzer.yml'
   workflow_dispatch:
+
+env:
+  # upstream of "GNU Tools for STM32 13.3.rel1" used for sw_sensor release 0.7.6
+  ARM_TOOLCHAIN_VERSION: '13.3.rel1'
+  ARM_TOOLCHAIN_SHA256: '95c011cee430e64dd6087c75c800f04b9c49832cc1000127a92a97f9c8d83af4'
 
 jobs:
   linux:
@@ -73,3 +81,64 @@ jobs:
         with:
           name: larus_emulator-windows
           path: build/larus_emulator.exe
+
+  cortex-m4f:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        opt: ['-O0', '-O3'] # sw_sensor: debug build and Release build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Arm GNU Toolchain
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/arm-gnu-toolchain
+          key: arm-gnu-toolchain-${{ env.ARM_TOOLCHAIN_VERSION }}-x86_64
+
+      - name: Install Arm GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: |
+          archive=arm-gnu-toolchain-${ARM_TOOLCHAIN_VERSION}-x86_64-arm-none-eabi.tar.xz
+          curl -sSfL -o $archive "https://developer.arm.com/-/media/Files/downloads/gnu/${ARM_TOOLCHAIN_VERSION}/binrel/$archive"
+          echo "${ARM_TOOLCHAIN_SHA256}  $archive" | sha256sum -c
+          mkdir -p ~/arm-gnu-toolchain
+          tar xf $archive -C ~/arm-gnu-toolchain --strip-components=1
+
+      - name: Toolchain version
+        run: |
+          echo "$HOME/arm-gnu-toolchain/bin" >> $GITHUB_PATH
+          ~/arm-gnu-toolchain/bin/arm-none-eabi-gcc --version | head -1
+
+      # Library versions with their own test setup (sw_algorithms_lib tests/) use it,
+      # older ones are compiled with the SIL's platform headers.
+      - name: Compile the library for Cortex-M4F
+        working-directory: sensor_data_analyzer
+        run: |
+          if [ -f lib/tests/Makefile ]; then
+            make -C lib/tests target-compile OPT=${{ matrix.opt }}
+            exit 0
+          fi
+          flags="-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb ${{ matrix.opt }}"
+          includes="-Isrc -IInterfaces -Ilib/Generic_Algorithms -Ilib/NAV_Algorithms -Ilib/Output_Formatter -Ilib/Persistent_Data -Ilib/ARM_math"
+          mkdir -p build_m4f
+          for f in lib/Generic_Algorithms/*.cpp lib/NAV_Algorithms/*.cpp lib/Output_Formatter/*.cpp lib/Persistent_Data/*.cpp; do
+            [ -f "$f" ] || continue
+            echo "$f"
+            arm-none-eabi-g++ $flags -std=c++17 -DM_PI=3.14159265358979323846 -fno-exceptions -fno-rtti $includes -c "$f" -o build_m4f/$(basename "$f").o
+          done
+          for f in lib/ARM_math/*.c; do
+            echo "$f"
+            arm-none-eabi-gcc $flags $includes -c "$f" -o build_m4f/$(basename "$f").o
+          done
+
+      - name: Run library tests on Cortex-M4F (QEMU)
+        if: hashFiles('sensor_data_analyzer/lib/tests/Makefile') != ''
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-arm
+          make -C sensor_data_analyzer/lib/tests target OPT=${{ matrix.opt }}
