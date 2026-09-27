@@ -28,6 +28,7 @@
 # include <unistd.h>
 #endif
 #include <iostream>
+#include <string>
 #include <fstream>
 #include <chrono>
 #include <thread>
@@ -179,6 +180,11 @@ int main (int argc, char *argv[])
   in_file.seekg (0, ios::beg);
 
   char buf[512];
+  if( strlen( argv[1]) + 16 >= sizeof( buf)) // room for the output file suffixes
+    {
+      cout << "Input file path too long\n";
+      return -1;
+    }
   strcpy( buf, argv[1]);
   strcat( buf, ".f");
   {
@@ -717,12 +723,17 @@ int main (int argc, char *argv[])
   if( write_csv)
     csv_file.close();
 
-  strcpy( buf, argv[1]);
-  char * p = strrchr( buf, '/');
-  if( p == 0)
-    exit(1);
-  *p=0;
-  write_EEPROM_dump( buf);
+  if( records == 0)
+    {
+      cout << "No sensor data found. Is this an LRSX file? (Older formats: use convert_f37_to_lrsx)\n";
+      exit( 1);
+    }
+
+  // the outputs go into the directory of the input file
+  std::string input_path( argv[1]);
+  size_t separator = input_path.find_last_of( "/\\");
+  std::string directory = ( separator == std::string::npos) ? "." : input_path.substr( 0, separator);
+  write_EEPROM_dump( (char *)directory.c_str());
   write_permanent_data_file( argv[1]);
 
   exit( 0);
