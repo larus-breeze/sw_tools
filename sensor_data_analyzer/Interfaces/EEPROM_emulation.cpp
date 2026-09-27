@@ -225,9 +225,8 @@ bool write_EEPROM_dump( char * basename)
   char buffer[200];
   char *next = buffer;
 
-  strcpy(buffer, basename);
-  strcat( buffer, "/config.EEPROM");
-  ofstream outfile ( buffer, ios::out | ios::binary | ios::ate);
+  std::string file_name = std::string( basename) + "/config.EEPROM";
+  ofstream outfile ( file_name, ios::out | ios::binary | ios::ate);
   if ( ! outfile.is_open ())
     return true;
 
