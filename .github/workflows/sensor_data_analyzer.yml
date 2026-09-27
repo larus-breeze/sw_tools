@@ -1,0 +1,75 @@
+name: sensor_data_analyzer
+
+# Builds the SIL simulator in the environments named in
+# sensor_data_analyzer/README.md: Linux (GCC) and Windows (w64devkit).
+
+on:
+  push:
+    paths:
+      - 'sensor_data_analyzer/**'
+      - '.github/workflows/sensor_data_analyzer.yml'
+  pull_request:
+    paths:
+      - 'sensor_data_analyzer/**'
+      - '.github/workflows/sensor_data_analyzer.yml'
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -S sensor_data_analyzer -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Smoke test
+        run: ./build/larus_emulator | grep -q "usage:"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: larus_emulator-linux
+          path: build/larus_emulator
+
+  windows:
+    runs-on: windows-2022
+    env:
+      W64DEVKIT_VERSION: '2.10.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install w64devkit
+        shell: pwsh
+        run: |
+          $installer = "w64devkit-x64-$env:W64DEVKIT_VERSION.7z.exe"
+          Invoke-WebRequest "https://github.com/skeeto/w64devkit/releases/download/v$env:W64DEVKIT_VERSION/$installer" -OutFile $installer
+          Start-Process -FilePath ".\$installer" -ArgumentList '-y', '-oC:\' -Wait
+          "C:\w64devkit\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S sensor_data_analyzer -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_MAKE_PROGRAM=make
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build build --parallel
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $out = & .\build\larus_emulator.exe 2>&1 | Out-String
+          Write-Output $out
+          if ($out -notmatch 'usage:') { exit 1 }
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: larus_emulator-windows
+          path: build/larus_emulator.exe
