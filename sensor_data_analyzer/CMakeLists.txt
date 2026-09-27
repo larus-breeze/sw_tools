@@ -63,14 +63,14 @@ target_include_directories(larus_emulator PRIVATE
     lib/Persistent_Data
 )
 
-if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
+if (WIN32)
   set_target_properties(larus_emulator PROPERTIES CXX_STANDARD 14)
   target_compile_definitions(larus_emulator PRIVATE _USE_MATH_DEFINES)   # necessary under C++17!
 else()
   set_target_properties(larus_emulator PROPERTIES CXX_STANDARD 17)
 endif()
 
-if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   target_compile_definitions(larus_emulator PRIVATE _WITH_USB2CAN)
 endif()
 
@@ -82,13 +82,11 @@ if (WIN32)
     )
 endif()
 
-if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
-    target_link_libraries(larus_emulator PRIVATE  ws2_32.lib)
+if (WIN32)
+    target_link_libraries(larus_emulator PRIVATE ws2_32)
+endif()
 
-    if(NOT MSVC)
-      target_link_libraries(larus_emulator PRIVATE pthread.lib)
-    endif()
-else()
+if (NOT MSVC)
     find_package(Threads REQUIRED)
     target_link_libraries(larus_emulator PRIVATE Threads::Threads)
 endif()
