@@ -1,0 +1,16 @@
+# Dependabot keeps the sw_algorithms_lib submodules up to date:
+# once a week it opens one pull request that moves both "lib" submodules
+# to the latest commit of sw_algorithms_lib's default branch.
+version: 2
+updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      sw_algorithms_lib:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "lib"
