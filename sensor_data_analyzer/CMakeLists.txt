@@ -63,11 +63,14 @@ target_include_directories(larus_emulator PRIVATE
     lib/Persistent_Data
 )
 
+# gnu++14 / gnu11 like sw_sensor's release builds, so SIL and firmware compile
+# the library as the same language version
+set_target_properties(larus_emulator PROPERTIES
+  CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS ON
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS ON)
+
 if (WIN32)
-  set_target_properties(larus_emulator PROPERTIES CXX_STANDARD 14)
   target_compile_definitions(larus_emulator PRIVATE _USE_MATH_DEFINES)   # necessary under C++17!
-else()
-  set_target_properties(larus_emulator PROPERTIES CXX_STANDARD 17)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
