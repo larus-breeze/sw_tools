@@ -157,11 +157,13 @@ jobs:
           for f in lib/Generic_Algorithms/*.cpp lib/NAV_Algorithms/*.cpp lib/Output_Formatter/*.cpp lib/Persistent_Data/*.cpp; do
             [ -f "$f" ] || continue
             echo "$f"
-            arm-none-eabi-g++ $flags -std=c++17 -DM_PI=3.14159265358979323846 -fno-exceptions -fno-rtti $includes -c "$f" -o build_m4f/$(basename "$f").o
+            # C++14 like sw_sensor's release builds (gnu++14); the ISO variant because the
+            # SIL's embedded_math.h declares itoa(), which clashes with newlib in GNU mode
+            arm-none-eabi-g++ $flags -std=c++14 -DM_PI=3.14159265358979323846 -fno-exceptions -fno-rtti $includes -c "$f" -o build_m4f/$(basename "$f").o
           done
           for f in lib/ARM_math/*.c; do
             echo "$f"
-            arm-none-eabi-gcc $flags $includes -c "$f" -o build_m4f/$(basename "$f").o
+            arm-none-eabi-gcc $flags -std=gnu11 $includes -c "$f" -o build_m4f/$(basename "$f").o
           done
 
       - name: Run library tests on Cortex-M4F (QEMU)
