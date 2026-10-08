@@ -59,6 +59,8 @@
 #include "mutex_implementation.h"
 #include "INSLIB_wrapper.h"
 
+#define RUN_INSLIB 1
+
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define FLEX_BUF_SIZE 2048
 
@@ -194,7 +196,8 @@ int main (int argc, char *argv[])
 	  sizeof( D_GNSS_coordinates_t) +
 	  sizeof( uint32_t) +
 	  sizeof( state_vector_t) +
-	  sizeof( eulerangle<float>)
+	  sizeof( eulerangle<float>) +
+	  8
       ) / sizeof(uint32_t), size_string, 10);
   strcat( buf, size_string);
   }
@@ -261,8 +264,12 @@ int main (int argc, char *argv[])
   system_state = fake_system_state;
   bool takeoff_reported = false;
 
+#if RUN_INSLIB
   INSLIB_wrapper ekf;
+#endif
   eulerangle<float> rpy;
+  float latitude;
+  float longitude;
 
 // read until a configuration file is found
   while (in_file.read ((char*) &next_block_identifier_read,
@@ -530,9 +537,12 @@ int main (int argc, char *argv[])
 	      organizer->update_at_100_Hz( observations, system_state, external_induction);
 	      organizer->report_data ( state_vector);
 
+#if RUN_INSLIB
 	      ekf.update( coordinates, state_vector, false);
 	      (void) ekf.get_rpy( rpy);
-
+	      latitude = ekf.get_latitude();
+	      longitude = ekf.get_longitude();
+#endif
 	    }
 	  if( ++counter_10Hz == 10)
 	    {
@@ -574,6 +584,8 @@ int main (int argc, char *argv[])
 	      out_file.write ( (const char*)&(rpy.roll), sizeof(float));
 	      out_file.write ( (const char*)&(rpy.pitch), sizeof(float));
 	      out_file.write ( (const char*)&(rpy.yaw), sizeof(float));
+	      out_file.write ( (const char*)&(latitude), sizeof(float));
+	      out_file.write ( (const char*)&(longitude), sizeof(float));
 	      ++records_out;
 
 	      if( write_f37)
@@ -657,6 +669,8 @@ int main (int argc, char *argv[])
 	      old = state_vector.observations.c.nano;
 #endif
 
+	      state_vector.satfix = coordinates.sat_fix_type;
+
 	      if (have_basic_sensor_data)
 		{
 		  if (not measurement_initialized && have_configuration)
@@ -670,12 +684,13 @@ int main (int argc, char *argv[])
 			  coordinates.latitude, coordinates.longitude,
 			  coordinates.year);
 
+#if RUN_INSLIB
 		      if (ekf.initialize (coordinates) != 0)
 			{
 			  fprintf (stderr, "ins_init failed\n");
 			  return 1;
 			}
-
+#endif
 		      measurement_initialized = true;
 		    }
 		  else if (organizer)
@@ -686,12 +701,11 @@ int main (int argc, char *argv[])
 			  coordinates.year);
 		      organizer->report_data ( state_vector);
 
-		      float3vector dummy;
+#if RUN_INSLIB
 		      ekf.update (coordinates, state_vector, true);
+#endif
 		    }
 		}
-
-	      state_vector.satfix = coordinates.sat_fix_type;
 	    }
 	    break;
 // ***********************************************************************************************************
