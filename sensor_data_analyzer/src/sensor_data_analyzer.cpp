@@ -528,8 +528,9 @@ int main (int argc, char *argv[])
 	    {
 	      organizer->on_new_pressure_data( observations.static_pressure, observations.pitot_pressure);
 	      organizer->update_at_100_Hz( observations, system_state, external_induction);
+	      organizer->report_data ( state_vector);
 
-	      ekf.update( coordinates, observations, organizer->getBodyInduction(), false);
+	      ekf.update( coordinates, state_vector, false);
 	      (void) ekf.get_rpy( rpy);
 
 	    }
@@ -565,7 +566,6 @@ int main (int argc, char *argv[])
 	    }
 	  if( (organizer != 0) && (GNSS_sample_number > GNSS_sample_on_takeoff)) // after initialization
 	    {
-	      organizer->report_data ( state_vector);
 	      out_file.write ( (const char*)&observations, sizeof( observations));
 	      out_file.write ( (const char*)&external_induction, sizeof( external_induction));
 	      out_file.write ( (const char*)&coordinates, sizeof(coordinates));
@@ -684,9 +684,10 @@ int main (int argc, char *argv[])
 		      organizer->update_magnetic_induction_vector (
 			  coordinates.latitude, coordinates.longitude,
 			  coordinates.year);
+		      organizer->report_data ( state_vector);
 
 		      float3vector dummy;
-		      ekf.update (coordinates, observations, dummy, true);
+		      ekf.update (coordinates, state_vector, true);
 		    }
 		}
 
