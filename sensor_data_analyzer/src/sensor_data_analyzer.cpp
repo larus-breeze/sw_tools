@@ -632,9 +632,19 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	  case D_GNSS_DATA:
+	  case GNSS_DATA:
 	    {
 	    ++GNSS_sample_number;
-	    assert( size * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
+
+	    if ( next_block_identifier == D_GNSS_DATA)
+	      assert( size * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
+	    else
+	      {
+		assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
+		coordinates.relPosHeading = 0;
+		coordinates.relPosNED = float3vector();
+	      }
+
 	    memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
@@ -647,91 +657,42 @@ int main (int argc, char *argv[])
 	      old = state_vector.observations.c.nano;
 #endif
 
-	      if( have_basic_sensor_data)
+	      if (have_basic_sensor_data)
 		{
-		if( not measurement_initialized && have_configuration)
-		  {
-		    organizer = new organizer_t;
+		  if (not measurement_initialized && have_configuration)
+		    {
+		      organizer = new organizer_t;
 
-		    organizer->initialize_before_measurement ();
-		    organizer->initialize_after_first_measurement ( coordinates, observations);
-		    organizer->update_magnetic_induction_vector( coordinates.latitude, coordinates.longitude, coordinates.year);
+		      organizer->initialize_before_measurement ();
+		      organizer->initialize_after_first_measurement (
+			  coordinates, observations);
+		      organizer->update_magnetic_induction_vector (
+			  coordinates.latitude, coordinates.longitude,
+			  coordinates.year);
 
-		    if ( ekf.initialize( coordinates) != 0)
-			      {
-				fprintf(stderr, "ins_init failed\n");
-				return 1;
-			    }
+		      if (ekf.initialize (coordinates) != 0)
+			{
+			  fprintf (stderr, "ins_init failed\n");
+			  return 1;
+			}
 
-		    measurement_initialized = true;
-		  }
+		      measurement_initialized = true;
+		    }
+		  else if (organizer)
+		    {
+		      organizer->update_GNSS_data (coordinates);
+		      organizer->update_magnetic_induction_vector (
+			  coordinates.latitude, coordinates.longitude,
+			  coordinates.year);
+
+		      float3vector dummy;
+		      ekf.update (coordinates, observations, dummy, true);
+		    }
 		}
-
-		if( organizer)
-		  {
-		    organizer->update_GNSS_data ( coordinates);
-		    organizer->update_magnetic_induction_vector( coordinates.latitude, coordinates.longitude, coordinates.year);
-
-		    float3vector dummy;
-		    ekf.update( coordinates, observations, dummy, true);
-		  }
 
 	      state_vector.satfix = coordinates.sat_fix_type;
 	    }
 	    break;
-// ***********************************************************************************************************
-	    case GNSS_DATA:
-	      {
-		++GNSS_sample_number;
-	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
-
-	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
-
-#if PRINT_GNSS_RATE
-	      static int old;
-
-	      float delta = input.nano - old;
-	      if( delta < 0)
-		delta += 1000000000;
-
-	      printf("%3.6f\n", delta / 1000000);
-	      old = input.nano;
-#endif
-
-	      coordinates.relPosHeading = 0;
-	      coordinates.relPosNED = float3vector();
-
-	      if( have_basic_sensor_data)
-		{
-		if( not measurement_initialized && have_configuration)
-		  {
-		    organizer = new organizer_t;
-
-		    organizer->initialize_before_measurement ();
-		    organizer->initialize_after_first_measurement ( coordinates, observations);
-		    organizer->update_magnetic_induction_vector( coordinates.latitude, coordinates.longitude, coordinates.year);
-
-		    if ( ekf.initialize( coordinates) != 0)
-			      {
-				fprintf(stderr, "ins_init failed\n");
-				return 1;
-			    }
-
-		    measurement_initialized = true;
-		  }
-
-		if( organizer)
-		  {
-		    organizer->update_GNSS_data ( coordinates);
-		    organizer->update_magnetic_induction_vector( coordinates.latitude, coordinates.longitude, coordinates.year);
-
-		    float3vector dummy;
-		    ekf.update( coordinates, observations, dummy, true);
-		  }
-		state_vector.satfix = coordinates.sat_fix_type;
-		}
-	      break;
-	      }
 // ***********************************************************************************************************
 	case SENSOR_STATUS:
 	  assert( size == 1);
