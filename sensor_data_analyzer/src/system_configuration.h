@@ -34,9 +34,9 @@
 #define DEVELOPMENT_ADDITIONS		1
 #define EEPROM_WRITES_LOGGED		1
 #define DISABLE_SAT_COMPASS		0
-#define PRINT_3D_MAG_PARAMETERS		1
+#define PRINT_3D_MAG_PARAMETERS		0
 
-#define LIMIT_DENSITY_CORRECTION( x)
+#define PATCH_EEPROM_DATA() // {float value = -1.5f * M_PI_F / 180.0; permanent_data_file.store_data( 3, 1, &value, false); }
 
 #define ASSERT  assert     //ASSERT is available in the sensor firmware.  assert in the C++ analyser environment.
 
