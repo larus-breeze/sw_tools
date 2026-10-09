@@ -538,7 +538,7 @@ int main (int argc, char *argv[])
 	      organizer->report_data ( state_vector);
 
 #if RUN_INSLIB
-	      ekf.update( coordinates, state_vector, false);
+	      ekf.update( coordinates, state_vector, organizer->get_GNSS_heading_corrected(), false);
 	      (void) ekf.get_rpy( rpy);
 	      latitude = ekf.get_latitude();
 	      longitude = ekf.get_longitude();
@@ -660,13 +660,22 @@ int main (int argc, char *argv[])
 	    memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
-	      static int old;
-	      float delta = state_vector.observations.c.nano - old;
-	      if( delta < 0)
-		delta += 1000000000;
+	    static int64_t old_timestamp = 0;
+	    static int old_rate = 0;
 
-	      printf("%3.6f\n", delta / 1000000);
-	      old = state_vector.observations.c.nano;
+	    int64_t GNSS_time_ms =
+		  (coordinates.hour   * (int64_t)3600000000000.0 +
+		   coordinates.minute * (int64_t)60000000000.0 +
+		   coordinates.second * (int64_t)1000000000.0 +
+		   (int64_t)(coordinates.nano)) / 1000000;
+
+	    if( GNSS_time_ms - old_timestamp != old_rate)
+	      {
+		old_rate = GNSS_time_ms - old_timestamp;
+	      printf("[Info] GNSS-rate now: %d ms\n", old_rate);
+	      }
+
+	    old_timestamp = GNSS_time_ms;
 #endif
 
 	      state_vector.satfix = coordinates.sat_fix_type;
@@ -702,7 +711,7 @@ int main (int argc, char *argv[])
 		      organizer->report_data ( state_vector);
 
 #if RUN_INSLIB
-		      ekf.update (coordinates, state_vector, true);
+		      ekf.update (coordinates, state_vector, organizer->get_GNSS_heading_corrected(), true);
 #endif
 		    }
 		}
