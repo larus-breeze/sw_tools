@@ -60,9 +60,15 @@
 #include "INSLIB_wrapper.h"
 
 #define RUN_INSLIB 1
+#define REPORT_POSITION_JUMPS 1
+#define MAX_POSITION_DELTA 10.0 // m
+#define EARTH_FIELD_RENEWAL_COUNT (10 * 60 * 5)
+#define PRINT_GNSS_RATE 0
 
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define FLEX_BUF_SIZE 2048
+
+quaternion <float> inslib_q;
 
 uint32_t buffer[128];
 flexible_log_file_implementation_t flex_file( buffer, 128);
@@ -263,6 +269,7 @@ int main (int argc, char *argv[])
   unsigned GNSS_sample_number = 0;
   system_state = fake_system_state;
   bool takeoff_reported = false;
+  unsigned earth_field_renewal_counter = EARTH_FIELD_RENEWAL_COUNT;
 
 #if RUN_INSLIB
   INSLIB_wrapper ekf;
@@ -542,6 +549,9 @@ int main (int argc, char *argv[])
 	      (void) ekf.get_rpy( rpy);
 	      latitude = ekf.get_latitude();
 	      longitude = ekf.get_longitude();
+	      ekf.get_quaternion( inslib_q);
+	      if( isnan( inslib_q[0]))
+		inslib_q = quaternion <float>();
 #endif
 	    }
 	  if( ++counter_10Hz == 10)
@@ -662,6 +672,9 @@ int main (int argc, char *argv[])
 #if PRINT_GNSS_RATE
 	    static int64_t old_timestamp = 0;
 	    static int old_rate = 0;
+	    static unsigned count100=0;
+	    static unsigned count200=0;
+	    static unsigned count_else = 0;
 
 	    int64_t GNSS_time_ms =
 		  (coordinates.hour   * (int64_t)3600000000000.0 +
@@ -672,6 +685,14 @@ int main (int argc, char *argv[])
 	    if( GNSS_time_ms - old_timestamp != old_rate)
 	      {
 		old_rate = GNSS_time_ms - old_timestamp;
+
+		if( old_rate == 100)
+		  ++count100;
+		else if (old_rate == 200)
+		  ++count200;
+		  else
+		    ++count_else;
+
 	      printf("[Info] GNSS-rate now: %d ms\n", old_rate);
 	      }
 
@@ -690,8 +711,9 @@ int main (int argc, char *argv[])
 		      organizer->initialize_after_first_measurement (
 			  coordinates, observations);
 		      organizer->update_magnetic_induction_vector (
-			  coordinates.latitude, coordinates.longitude,
-			  coordinates.year);
+			  (float)(coordinates.latitude),
+			  (float)(coordinates.longitude),
+			  (float)(coordinates.year));
 
 #if RUN_INSLIB
 		      if (ekf.initialize (coordinates) != 0)
@@ -705,13 +727,47 @@ int main (int argc, char *argv[])
 		  else if (organizer)
 		    {
 		      organizer->update_GNSS_data (coordinates);
-		      organizer->update_magnetic_induction_vector (
-			  coordinates.latitude, coordinates.longitude,
-			  coordinates.year);
+
+		      if( --earth_field_renewal_counter == 0)
+			{
+			  earth_field_renewal_counter = EARTH_FIELD_RENEWAL_COUNT;
+			  organizer->update_magnetic_induction_vector (
+			      (float)(coordinates.latitude),
+			      (float)(coordinates.longitude),
+			      (float)(coordinates.year));
+			}
+
 		      organizer->report_data ( state_vector);
 
 #if RUN_INSLIB
 		      ekf.update (coordinates, state_vector, organizer->get_GNSS_heading_corrected(), true);
+#endif
+
+#if REPORT_POSITION_JUMPS
+		      static double GNSS_time;
+		      double now =
+				  (coordinates.hour   * (int64_t)3600000000.0 +
+				   coordinates.minute * (int64_t)60000000.0 +
+				   coordinates.second * (int64_t)1000000.0 +
+				   (int64_t)(coordinates.nano)) / 1000000000.0;
+
+		      double timestep = now - GNSS_time;
+		      GNSS_time = now;
+
+		      static double north = coordinates.latitude * 10000000.0 * M_PI / 180.0;
+		      static double east = coordinates.longitude * 10000000.0 * cos( coordinates.latitude * M_PI / 180.0) * M_PI / 180.0;
+
+		      double north_new = coordinates.latitude * 10000000.0 * M_PI / 180.0;
+		      double east_new = coordinates.longitude * 10000000.0 * cos( coordinates.latitude* M_PI / 180.0) * M_PI / 180.0;
+
+		      double direction = ATAN2( north_new - north, east_new - east);
+		      double jump = sqrt( SQR( north_new - north) + SQR( east_new - east));
+
+		      if( jump / timestep * 3.6 > 500.0)
+			printf("[Warn] Position Jump Speed: %10.1f km/h %5.0f deg.\n", jump / timestep * 3.6, direction * 180.0 / M_PI);
+
+		      north = north_new;
+		      east = east_new;
 #endif
 		    }
 		}
