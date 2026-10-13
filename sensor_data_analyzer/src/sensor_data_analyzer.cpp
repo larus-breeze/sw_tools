@@ -57,6 +57,8 @@
 #include "persistent_data.h"
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
+
+#define LOG_INSLIB_CALLS 1
 #include "INSLIB_wrapper.h"
 
 #define RUN_INSLIB 1
