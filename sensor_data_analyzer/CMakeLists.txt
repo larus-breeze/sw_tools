@@ -1,43 +1,80 @@
+cmake_minimum_required(VERSION 3.16)
+project(sensor_data_analyzer C CXX)
 
-add_subdirectory(lib)
-# add_subdirectory(Communication)
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# The algorithm library (submodule "lib") is compiled directly into the
+# executable, using the same source directories as the Eclipse project.
+# Globbing keeps this list in sync with the library.
+file(GLOB LIB_SOURCE_FILES CONFIGURE_DEPENDS
+    lib/ARM_math/*.c
+    lib/Generic_Algorithms/*.cpp
+    lib/NAV_Algorithms/*.cpp
+    lib/Output_Formatter/*.cpp
+    lib/Persistent_Data/*.cpp
+)
 
 set(SOURCE_FILES
-    src/EEPROM_emulation.cpp
     src/sensor_data_analyzer.cpp
-    src/TCP_server.cpp
+
+    Interfaces/CAN_socket_driver.cpp
+    Interfaces/EEPROM_emulation.cpp
+    Interfaces/flexible_log_file_implementation.cpp
+    Interfaces/persistent_data_file_emulation.cpp
+    Interfaces/TCP_server.cpp
 
     Communication/CAN_USB_gateway.cpp
     Communication/USB_serial.cpp
 )
 
 set(HEADER_FILES
-    src/EEPROM_emulation.h
     src/embedded_math.h
     src/embedded_memory.h
     src/mainpage.h
     src/system_configuration.h
-    src/TCP_server.h
+
+    Interfaces/CAN_socket_driver.h
+    Interfaces/EEPROM_emulation.h
+    Interfaces/flexible_log_file_implementation.h
+    Interfaces/mutex_implementation.h
+    Interfaces/persistent_data_file_emulation.h
+    Interfaces/TCP_server.h
 
     Communication/USB_serial.h
 )
 
-include_directories(
+add_executable(larus_emulator
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
+  ${LIB_SOURCE_FILES}
+)
+
+target_include_directories(larus_emulator PRIVATE
     src
+    Interfaces
     Communication
 
+    lib/ARM_math
     lib/Generic_Algorithms
     lib/NAV_Algorithms
     lib/Output_Formatter
- 
-    Communication
+    lib/Persistent_Data
 )
 
-if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
-  string(APPEND CMAKE_CXX_FLAGS " -std=c++14")
-  add_compile_definitions(_USE_MATH_DEFINES)   # necessary under C++17!
-elseif (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
-  add_compile_definitions(_WITH_USB2CAN)
+# gnu++14 / gnu11 like sw_sensor's release builds, so SIL and firmware compile
+# the library as the same language version
+set_target_properties(larus_emulator PROPERTIES
+  CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS ON
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS ON)
+
+if (WIN32)
+  target_compile_definitions(larus_emulator PRIVATE _USE_MATH_DEFINES)   # necessary under C++17!
+endif()
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  target_compile_definitions(larus_emulator PRIVATE _WITH_USB2CAN)
 endif()
 
 if (WIN32)
@@ -48,21 +85,11 @@ if (WIN32)
     )
 endif()
 
-add_executable(larus_emulator
-  ${SOURCE_FILES}
-  ${HEADER_FILES}
-)
-
-target_link_libraries(larus_emulator PRIVATE
-  larus_lib
-)
-
-if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
-    target_link_libraries(larus_emulator PRIVATE  ws2_32.lib)
-
-    if(NOT MSVC)
-      target_link_libraries(larus_emulator PRIVATE pthread.lib)
-    endif()
+if (WIN32)
+    target_link_libraries(larus_emulator PRIVATE ws2_32)
 endif()
 
-
+if (NOT MSVC)
+    find_package(Threads REQUIRED)
+    target_link_libraries(larus_emulator PRIVATE Threads::Threads)
+endif()
