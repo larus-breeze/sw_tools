@@ -34,6 +34,13 @@ The root within Eclipse shall point to the directory "sensor_data_analyzer".
 "Search for nested projects" must be activated to resolve the library subproject.
 After that you will be able to say "build all" to compile and link the project.
 
+**Alternative to step two:** Build without Eclipse using CMake (Linux, Windows):
+
+      cmake -S sw_tools/sensor_data_analyzer -B build
+      cmake --build build
+
+This creates the executable `larus_emulator` in the `build` directory.
+
 
 The program needs a **pair of files**  foo.f37 (or legacy .f50) and (same name) foo.EEPROM
 
