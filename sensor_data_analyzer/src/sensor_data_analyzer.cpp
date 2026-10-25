@@ -106,6 +106,16 @@ uint32_t fake_system_state // fake system state here in lack of hardware
 
 uint32_t UNIQUE_ID[4]={ 0x4711, 0, 0, 0};
 
+//! check the size of a record read from the log file before copying it into a fixed-size structure
+static bool record_size_is( uint32_t record_id, unsigned size_words, size_t expected_bytes)
+{
+  if( size_words * sizeof(uint32_t) == expected_bytes)
+    return true;
+  printf ("\nBAD RECORD, WRONG SIZE, id=%02x size=%u bytes, expected %u bytes\n",
+	  (unsigned)record_id, (unsigned)(size_words * sizeof(uint32_t)), (unsigned)expected_bytes);
+  return false;
+}
+
 int main (int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -321,19 +331,19 @@ int main (int argc, char *argv[])
 
       if ( GNSS_sample_on_takeoff == 0) // did not find takeoff by now
 	{
-	  if (next_block_identifier == D_GNSS_DATA)
+	  if (next_block_identifier == D_GNSS_DATA
+	      && record_size_is( next_block_identifier, size, sizeof(D_GNSS_coordinates_t)))
 	    {
 	      ++GNSS_sample_number;
-	      assert(size * sizeof(uint32_t) == sizeof(D_GNSS_coordinates_t));
 	      memcpy ((uint8_t*) &(coordinates), in_data, size * sizeof(uint32_t));
 	      if (coordinates.velocity.abs () > 50.0 / 3.6)
 		GNSS_sample_on_takeoff = GNSS_sample_number;
 	    }
 // ***********************************************************************************************************
-	  if (next_block_identifier == GNSS_DATA)
+	  if (next_block_identifier == GNSS_DATA
+	      && record_size_is( next_block_identifier, size, sizeof(GNSS_coordinates_t)))
 	    {
 	      ++GNSS_sample_number;
-	      assert(size * sizeof(uint32_t) == sizeof(GNSS_coordinates_t));
 	      memcpy ((uint8_t*) &(coordinates), in_data, size * sizeof(uint32_t));
 	      if (coordinates.velocity.abs () > 50.0 / 3.6)
 		GNSS_sample_on_takeoff = GNSS_sample_number;
@@ -427,7 +437,7 @@ int main (int argc, char *argv[])
 		  "SOME_EEPROM_VALUE_HAS_CHANGED"
 	      };
 
-	  if( (size != 1) || ((*in_data)&0xff) > (sizeof(event_name)/sizeof(char *)) )
+	  if( (size != 1) || ((*in_data)&0xff) >= (sizeof(event_name)/sizeof(char *)) )
 	    {
 		printf("Event: %08x size = %d INVALID\n", *in_data, size);
 	    }
@@ -435,9 +445,15 @@ int main (int argc, char *argv[])
 	    {
 	      if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
 		{
-		  printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
-		  communicator_command_t command = (communicator_command_t)((*in_data) >> 8);
-		  organizer->on_command( command, coordinates, observations);
+		  if( ((*in_data) >> 8) >= (sizeof(communicator_command)/sizeof(char *)))
+		    printf("Event: %s : %08x INVALID\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
+		  else
+		    {
+		      printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
+		      communicator_command_t command = (communicator_command_t)((*in_data) >> 8);
+		      if( organizer) // not yet initialized before the first GNSS fix
+			organizer->on_command( command, coordinates, observations);
+		    }
 		}
 	      else
 		printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
@@ -500,6 +516,8 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
 	  {
+	  if( not record_size_is( next_block_identifier, size, sizeof( measurement_data_t)))
+	    break;
 	  ++record_count_100Hz;
 	  have_basic_sensor_data = true;
 	  if( need_to_dump_EEPROM_data)
@@ -511,7 +529,6 @@ int main (int argc, char *argv[])
 
 	  ++records;
 
-	  assert( size * sizeof(uint32_t) == sizeof( measurement_data_t));
 	  memcpy( (uint8_t *)&observations, in_data, size * sizeof(uint32_t));
 
 	  if( measurement_initialized)
@@ -604,8 +621,9 @@ int main (int argc, char *argv[])
 	  break;
 // ***********************************************************************************************************
 	case MAGNETOMETER_DATA:
+	  if( not record_size_is( next_block_identifier, size, sizeof( float3vector)))
+	    break;
 	  ++x_mag_records;
-	  assert( size * sizeof(uint32_t) == sizeof( float3vector));
 	  memcpy( (uint8_t *)&(external_induction), in_data, size * sizeof(uint32_t));
 #if 1
 	  system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
@@ -616,8 +634,9 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	  case D_GNSS_DATA:
 	    {
+	    if( not record_size_is( next_block_identifier, size, sizeof( D_GNSS_coordinates_t)))
+	      break;
 	    ++GNSS_sample_number;
-	    assert( size * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
 	    memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
@@ -656,8 +675,9 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	    case GNSS_DATA:
 	      {
-		++GNSS_sample_number;
-	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
+	      if( not record_size_is( next_block_identifier, size, sizeof( GNSS_coordinates_t)))
+		break;
+	      ++GNSS_sample_number;
 
 	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
 
@@ -699,7 +719,8 @@ int main (int argc, char *argv[])
 	      }
 // ***********************************************************************************************************
 	case SENSOR_STATUS:
-	  assert( size == 1);
+	  if( not record_size_is( next_block_identifier, size, sizeof( uint32_t)))
+	    break;
 	  system_state = *in_data;
 	  break;
 	}
