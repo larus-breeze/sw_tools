@@ -2,6 +2,8 @@ from flight_data import FlightData
 from can_bus.can_frames import *
 import math
 
+DEFAULT_RELPOS_HEADING_ACC = math.radians(0.4)  # typical u-blox F9P heading accuracy / rad
+
 def can_new_protocol(data: FlightData, datagrams: CanFrames):
     
     #########################################################
@@ -127,3 +129,32 @@ def can_new_protocol(data: FlightData, datagrams: CanFrames):
     datagrams.add(0x145,
                   to_u8(data['sat_count']) +
                   to_u8(data['sat_fix_type']))
+
+    #########################################################
+    # D-GNSS Accuracy
+    # The recordings contain no D-GNSS accuracy, so the GNSS speed accuracy is used
+    # for the length accuracy and a typical u-blox F9P heading accuracy
+    # (0.4 degrees at 1 m baseline) for the heading accuracy
+    datagrams.add(0x146,
+                  to_f32(data['speed_accuracy']) +
+                  to_f32(DEFAULT_RELPOS_HEADING_ACC))
+
+    # D-GNSS data points (only transmitted, if D-GNSS heading is available)
+    if int(data['sat_fix_type']) & 0x02:
+        relpos_n = data['relpos_north']
+        relpos_e = data['relpos_east']
+        relpos_d = data['relpos_down']
+
+        # D-GNSS Heading
+        datagrams.add(0x147,
+                      to_f32(data['rel_heading']))
+
+        # D-GNSS Relative Position North and East
+        datagrams.add(0x148,
+                      to_f32(relpos_n) +
+                      to_f32(relpos_e))
+
+        # D-GNSS Relative Position Down and Length
+        datagrams.add(0x149,
+                      to_f32(relpos_d) +
+                      to_f32(sqrt(relpos_n ** 2 + relpos_e ** 2 + relpos_d ** 2)))
