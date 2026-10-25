@@ -14,7 +14,7 @@ A base class to load Larus Logfiles of Type *.f37 or *.lrsx into a pandas datafr
 
 ## Sensor Data Analyzer
 Software-In-The-Loop Simulator for the Larus Glider Flight Sensor. Details here: [README](sensor_data_analyzer/README.md)
-Supported Dataformats can be found here: [Formats](analysis/dataformats.py)
+Supported Dataformats can be found here: [Formats](larus_data/larus_to_df.py#278)
 
 ## SW Update
 A solution for firmware updates of the larus devices. 
