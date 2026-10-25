@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <fstream>
 #include <chrono>
 #include <thread>
@@ -145,18 +146,16 @@ bool read_meta_data_file (char *file_path)
 void write_permanent_data_file( char * path)
 {
   assert( permanent_data_file.is_consistent() );
-  char file_path[100];
-  strcpy( file_path, path);
-  char * slash = strrchr( file_path, '/');
-  if( slash == 0)
-    return;
-  slash[1]=0;
-  strcat( file_path, "configuration.lrsx");
+  // write into the directory of the given file, the current directory if the path has none
+  std::string file_path( path);
+  size_t separator = file_path.find_last_of( "/\\");
+  file_path = ( separator == std::string::npos) ? std::string() : file_path.substr( 0, separator + 1);
+  file_path += "configuration.lrsx";
   ofstream perm_data_file_stream ( file_path, ios::out | ios::binary | ios::ate);
   if (!perm_data_file_stream.is_open ())
     {
-      printf ("cannot open file : configuration_data_file.dat - closing");
-      exit (0);
+      printf ("cannot open file : %s\n", file_path.c_str());
+      return;
     }
 
   perm_data_file_stream.write ((const char*) permanent_data_file_storage, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
