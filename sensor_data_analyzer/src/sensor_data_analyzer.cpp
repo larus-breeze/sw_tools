@@ -58,14 +58,14 @@
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
-#define LOG_INSLIB_CALLS 1
+#define RUN_INSLIB 0
+#define LOG_INSLIB_CALLS 0
 #include "INSLIB_wrapper.h"
 
-#define RUN_INSLIB 1
-#define REPORT_POSITION_JUMPS 1
+#define REPORT_POSITION_JUMPS 0
 #define MAX_POSITION_DELTA 10.0 // m
 #define EARTH_FIELD_RENEWAL_COUNT (10 * 60 * 5)
-#define PRINT_GNSS_RATE 0
+#define PRINT_GNSS_RATE 1
 
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define FLEX_BUF_SIZE 2048
@@ -463,6 +463,29 @@ int main (int argc, char *argv[])
 		  communicator_command_t command = (communicator_command_t)((*in_data) >> 8);
 		  organizer->on_command( command, coordinates, observations);
 		}
+	      else if( ((*in_data)&0xff) == DEBUGGER_DATA)
+		{
+		  const char * error_messages[] =
+		      {
+			"UNSPECIFIED_ERROR",
+			"GNSS_TIMEOUT_HALF",
+			"GNSS_TIMEOUT_FULL",
+			"GNSS_DATA_ERROR"
+		      };
+
+		  printf("Debug: %s %x at %02d:%02d:%02d\n", error_messages[ ((*in_data) >> 8) & 0xff], (*in_data) >> 16,
+			 coordinates.hour,
+			 coordinates.minute,
+			 coordinates.second);
+		}
+	      else if( ((*in_data)&0xff) == 8) // GNSS log event
+		{
+		  printf("GNSS: %06x at %02d:%02d:%02d\n",
+			 *in_data >> 8,
+			 coordinates.hour,
+			 coordinates.minute,
+			 coordinates.second);
+		}
 	      else
 		printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
 	    }
@@ -695,13 +718,17 @@ int main (int argc, char *argv[])
 		  else
 		    ++count_else;
 
-	      printf("[Info] GNSS-rate now: %d ms\n", old_rate);
+	      printf("[Info] GNSS-rate now: %d ms at %02d:%02d:%02d\n",
+		     old_rate,
+		     coordinates.hour,
+		     coordinates.minute,
+		     coordinates.second);
 	      }
 
 	    old_timestamp = GNSS_time_ms;
 #endif
 
-	      state_vector.satfix = coordinates.sat_fix_type;
+	      state_vector.satfix = coordinates.sat_fix_type & 0x03;
 
 	      if (have_basic_sensor_data)
 		{
