@@ -59,7 +59,6 @@
 #include "mutex_implementation.h"
 
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
-#define FLEX_BUF_SIZE 2048
 
 uint32_t buffer[128];
 flexible_log_file_implementation_t flex_file( buffer, 128);
@@ -237,10 +236,8 @@ int main (int argc, char *argv[])
 
   ensure_EEPROM_parameter_integrity();
 
-  uint32_t * in_data = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
+  uint32_t * input_buffer = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
-  uint32_t next_block_identifier_read;
-  uint32_t next_block_identifier;
 
   organizer_t *organizer = 0;
   bool success;
@@ -255,58 +252,59 @@ int main (int argc, char *argv[])
   unsigned GNSS_sample_number = 0;
   system_state = fake_system_state;
   bool takeoff_reported = false;
+  record_header_t record_header;
+  unsigned data_size_words;
+  unsigned LRSX_file_format_version = 1; // start with default value
 
 // read until a configuration file is found
-  while (in_file.read ((char*) &next_block_identifier_read,
-		       sizeof(next_block_identifier_read)))
+  while ( in_file.read ((char*) input_buffer, sizeof( record_header_t)))
     {
-      int size = flexible_log_file_t::verify_record_get_size (
-	  next_block_identifier_read);
+      uint32_t * data_start;
 
-      if (size == 0) // error, format not recognized
-	{
-	  printf ("\nBAD RECORD, WRONG CRC, id=%02x\n",
-		  next_block_identifier_read & 0xff);
-	  continue;
-	}
-
-      if ((next_block_identifier & 0xffff) == 0xffff)
-	{
-	  uint32_t extended_header[2]; // 32bit identifier and 32bit length
-	  in_file.read ((char*) extended_header, sizeof(extended_header));
-	  size = flexible_log_file_t::verify_extended_record_get_size (
-	      next_block_identifier, extended_header[0], extended_header[1]);
-	  if (size == 0)
-	    {
-	      printf ("\nBAD EXTENDED RECORD %02x\n",
-		      next_block_identifier & 0xff);
-	      break; // error
-	    }
-	  next_block_identifier = extended_header[0]; // replace short ID by extended ID
-	}
-      else
-	next_block_identifier = next_block_identifier_read & 0xff; // keep only the ID
-
-      if (size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
-	break;
-
-      in_file.read ((char*) in_data, size * sizeof(uint32_t));
+      // read the record header
       unsigned bytes_read = in_file.gcount ();
-      if (bytes_read != (size * sizeof(uint32_t)))
-	break;
+      if( bytes_read != sizeof( record_header_t))
+	break; // EOF ?
 
-      if (size == 0) // error, format not recognized
+      record_header = *(record_header_t *)input_buffer;
+
+      data_start = input_buffer + 1;
+
+      // read the record data
+      unsigned data_size_bytes = (record_header.total_size - 1) * sizeof( uint32_t);
+      in_file.read ( (char*) data_start, data_size_bytes);
+      if( in_file.gcount () != data_size_bytes)
+	break; // EOF ?
+
+      // verify the record's integrity
+      data_size_words = flexible_log_file_t::verify_record_get_size ( input_buffer, LRSX_file_format_version);
+      if (data_size_words == 0) // error, format not recognized
 	{
-	  printf ("\nBAD RECORD, WRONG CRC, id=%02x\n",
-		  next_block_identifier_read & 0xff);
-	  continue;
+	  // try interpreting the record as file format version 2
+	      if (( record_header.record_type == FILE_FORMAT_VERSION) && ( record_header.total_size == 2))
+		{
+		  data_size_words = flexible_log_file_t::verify_record_get_size ( input_buffer, 2);
+		  if( data_size_words == 1)
+		    LRSX_file_format_version = input_buffer[1];
+		  else
+		    printf ("\nBAD RECORD, WRONG CRC, ID=%08x\n", input_buffer[0]);
+		}
+	      else
+		printf ("\nBAD RECORD, WRONG CRC, ID=%08x\n", input_buffer[0]);
+
+	      continue;
 	}
 
-      if (next_block_identifier == EEPROM_FILE && not start_with_given_configuration)
+      if (( record_header.record_type == FILE_FORMAT_VERSION) && ( record_header.total_size == 2))
+	{
+	  LRSX_file_format_version = input_buffer[1];
+	}
+
+      if ( record_header.record_type == EEPROM_FILE && not start_with_given_configuration)
 	{
 	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
 	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-	  memcpy (permanent_data_file_storage, in_data, bytes_read);
+	  memcpy (permanent_data_file_storage, (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 	  permanent_data_file.set_free_space ();
 	  permanent_data_file.setup_registry ();
 	  success = permanent_data_file.is_consistent ();
@@ -321,20 +319,20 @@ int main (int argc, char *argv[])
 
       if ( GNSS_sample_on_takeoff == 0) // did not find takeoff by now
 	{
-	  if (next_block_identifier == D_GNSS_DATA)
+	  if ( record_header.record_type == D_GNSS_DATA)
 	    {
 	      ++GNSS_sample_number;
-	      assert(size * sizeof(uint32_t) == sizeof(D_GNSS_coordinates_t));
-	      memcpy ((uint8_t*) &(coordinates), in_data, size * sizeof(uint32_t));
+	      assert( data_size_words * sizeof(uint32_t) == sizeof(D_GNSS_coordinates_t));
+	      memcpy ((uint8_t*) &(coordinates), (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 	      if (coordinates.velocity.abs () > 50.0 / 3.6)
 		GNSS_sample_on_takeoff = GNSS_sample_number;
 	    }
 // ***********************************************************************************************************
-	  if (next_block_identifier == GNSS_DATA)
+	  if ( record_header.record_type == GNSS_DATA)
 	    {
 	      ++GNSS_sample_number;
-	      assert(size * sizeof(uint32_t) == sizeof(GNSS_coordinates_t));
-	      memcpy ((uint8_t*) &(coordinates), in_data, size * sizeof(uint32_t));
+	      assert( data_size_words * sizeof(uint32_t) == sizeof(GNSS_coordinates_t));
+	      memcpy ((uint8_t*) &(coordinates), (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 	      if (coordinates.velocity.abs () > 50.0 / 3.6)
 		GNSS_sample_on_takeoff = GNSS_sample_number;
 	    }
@@ -351,40 +349,32 @@ int main (int argc, char *argv[])
   else
     GNSS_sample_on_takeoff = 1;
 
-  while ( in_file.read (
-      (char*) &next_block_identifier_read,
-      sizeof(next_block_identifier_read)))
+  while ( in_file.read ((char*) input_buffer, sizeof( record_header_t)))
     {
-      int size = flexible_log_file_t::verify_record_get_size ( next_block_identifier_read);
+      uint32_t * data_start;
 
-      if (size == 0) // error, format not recognized
+      // read the record header
+      unsigned bytes_read = in_file.gcount ();
+      if( bytes_read != sizeof( record_header_t))
+	break; // EOF ?
+
+      record_header = *(record_header_t *)input_buffer;
+
+      data_start = input_buffer + 1;
+
+      // read the record data
+      unsigned data_size_bytes = (record_header.total_size - 1) * sizeof( uint32_t);
+      in_file.read ( (char*) data_start, data_size_bytes);
+      if( in_file.gcount () != data_size_bytes)
+	break; // EOF ?
+
+      // verify the record's integrity
+      data_size_words = flexible_log_file_t::verify_record_get_size ( input_buffer, LRSX_file_format_version);
+      if (data_size_words == 0) // error, format not recognized
 	{
-	  printf( "\nBAD RECORD, WRONG CRC, id=%02x\n", next_block_identifier_read & 0xff);
+	  printf ("\nBAD RECORD, WRONG CRC, ID=%08x\n", input_buffer[0]);
 	  continue;
 	}
-
-      if( (next_block_identifier & 0xffff) == 0xffff)
-	{
-	  uint32_t extended_header[2]; // 32bit identifier and 32bit length
-	  in_file.read ((char*) extended_header, sizeof( extended_header));
-	  size = flexible_log_file_t::verify_extended_record_get_size ( next_block_identifier, extended_header[0], extended_header[1]);
-	  if( size == 0)
-	    {
-	      printf( "\nBAD EXTENDED RECORD %02x\n", next_block_identifier &0xff);
-	      break; // error
-	    }
-	  next_block_identifier = extended_header[0]; // replace short ID by extended ID
-	}
-      else
-	next_block_identifier =   next_block_identifier_read & 0xff; // keep only the ID
-
-      if( size > MAX_SUPPORTED_RECORD_SIZE_WORDS)
-	break;
-
-      in_file.read ((char*) in_data, size * sizeof(uint32_t));
-      unsigned bytes_read = in_file.gcount ();
-      if (bytes_read != (size * sizeof(uint32_t)))
-	break;
 
 #if 0 // monitor advance
       static unsigned linecount = 0;
@@ -397,7 +387,7 @@ int main (int argc, char *argv[])
 	}
 #endif
 
-      switch ( next_block_identifier)
+      switch ( record_header.record_type)
 	{
 // ***********************************************************************************************************
 	case FLIGHT_EVENT:
@@ -427,31 +417,30 @@ int main (int argc, char *argv[])
 		  "SOME_EEPROM_VALUE_HAS_CHANGED"
 	      };
 
-	  if( (size != 1) || ((*in_data)&0xff) > (sizeof(event_name)/sizeof(char *)) )
+	  if( ( record_header.total_size != 2) || ((*input_buffer)&0xff) > (sizeof(event_name)/sizeof(char *)) )
 	    {
-		printf("Event: %08x size = %d INVALID\n", *in_data, size);
+		printf("Event: %08x size = %d INVALID\n", *input_buffer, record_header.total_size);
 	    }
 	  else
 	    {
-	      if( ((*in_data)&0xff) == CAN_COMMAND_RECEIVED)
+	      if( ((*input_buffer)&0xff) == CAN_COMMAND_RECEIVED)
 		{
-		  printf("Event: %s : %s\n", event_name[(*in_data)&0xff], communicator_command[(*in_data) >> 8]);
-		  communicator_command_t command = (communicator_command_t)((*in_data) >> 8);
+		  printf("Event: %s : %s\n", event_name[(*input_buffer)&0xff], communicator_command[(*input_buffer) >> 8]);
+		  communicator_command_t command = (communicator_command_t)((*input_buffer) >> 8);
 		  organizer->on_command( command, coordinates, observations);
 		}
 	      else
-		printf("Event: %s %08x\n", event_name[(*in_data)&0xff], (*in_data) >> 8);
+		printf("Event: %s %08x\n", event_name[(*input_buffer)&0xff], (*input_buffer) >> 8);
 	    }
 	  }
 	  break;
 // ***********************************************************************************************************
 	case EEPROM_FILE:
-	  if( start_with_given_configuration)
+	  if( start_with_given_configuration) // ignore this record
 	    break;
 
-	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
-		  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-	  memcpy (permanent_data_file_storage, in_data, bytes_read);
+	  memset ((uint8_t*) permanent_data_file_storage, 0xff, EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+	  memcpy (permanent_data_file_storage, (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 	  permanent_data_file.set_free_space();
 	  permanent_data_file.setup_registry();
 	  success = permanent_data_file.is_consistent();
@@ -473,7 +462,7 @@ int main (int argc, char *argv[])
 	    if( start_with_given_configuration)
 		break;
 
-	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)in_data;
+	    EEPROM_file_system_node *candidate = (EEPROM_file_system_node *)input_buffer;
 	    if( not EEPROM_file_system<LOWEST_UNUSED_EEPROM_ID>::node_is_consistent( candidate))
 		{
 		  printf(" EEPROM data file (id = %d sz= %d) not consistent\n", candidate->id, candidate->size);
@@ -491,10 +480,10 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case LARUS_DESCRIPTION:
 	  {
-	    printf("Firmware: %s\n", (char *)in_data);
-	    printf("Larus ID:\n%08x%08x%08x%08x\n", in_data[8], in_data[9], in_data[10], in_data[11]);
+	    printf("Firmware: %s\n", (char *)(input_buffer+1));
+	    printf("Larus ID:\n%08x%08x%08x%08x\n", input_buffer[9], input_buffer[10], input_buffer[11], input_buffer[12]);
 	    printf("Flash SHA256:\n%08x%08x%08x%08x\n%08x%08x%08x%08x\n",
-		   in_data[12], in_data[13], in_data[14], in_data[15], in_data[16], in_data[17], in_data[18], in_data[19]);
+		   input_buffer[13], input_buffer[14], input_buffer[15], input_buffer[16], input_buffer[17], input_buffer[18], input_buffer[19], input_buffer[20]);
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -511,8 +500,8 @@ int main (int argc, char *argv[])
 
 	  ++records;
 
-	  assert( size * sizeof(uint32_t) == sizeof( measurement_data_t));
-	  memcpy( (uint8_t *)&observations, in_data, size * sizeof(uint32_t));
+	  assert( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( measurement_data_t));
+	  memcpy( (uint8_t *)&observations, (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 
 	  if( measurement_initialized)
 	    {
@@ -605,8 +594,8 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case MAGNETOMETER_DATA:
 	  ++x_mag_records;
-	  assert( size * sizeof(uint32_t) == sizeof( float3vector));
-	  memcpy( (uint8_t *)&(external_induction), in_data, size * sizeof(uint32_t));
+	  assert( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( float3vector));
+	  memcpy( (uint8_t *)&(external_induction), (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 #if 1
 	  system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
 #else
@@ -617,8 +606,8 @@ int main (int argc, char *argv[])
 	  case D_GNSS_DATA:
 	    {
 	    ++GNSS_sample_number;
-	    assert( size * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
-	    memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
+	    assert( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( D_GNSS_coordinates_t));
+	    memcpy( (uint8_t *)&( coordinates), (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
 	      static int old;
@@ -657,9 +646,9 @@ int main (int argc, char *argv[])
 	    case GNSS_DATA:
 	      {
 		++GNSS_sample_number;
-	      assert( size * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
+	      assert( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( GNSS_coordinates_t));
 
-	      memcpy( (uint8_t *)&( coordinates), in_data, size * sizeof(uint32_t));
+	      memcpy( (uint8_t *)&( coordinates), (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
 
 #if PRINT_GNSS_RATE
 	      static int old;
@@ -699,8 +688,11 @@ int main (int argc, char *argv[])
 	      }
 // ***********************************************************************************************************
 	case SENSOR_STATUS:
-	  assert( size == 1);
-	  system_state = *in_data;
+	  assert( record_header.total_size == 2);
+	  system_state = *input_buffer;
+	  break;
+	default:
+	    printf ("\nRECORD IGNORED, HEAD=%08x\n", input_buffer[0]);
 	  break;
 	}
     }
