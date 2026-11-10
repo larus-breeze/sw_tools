@@ -59,6 +59,7 @@
 #include "mutex_implementation.h"
 
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
+#define PRINT_GNSS_RATE 0
 
 uint32_t buffer[128];
 flexible_log_file_implementation_t flex_file( buffer, 128);
@@ -97,8 +98,11 @@ using namespace std;
 uint32_t system_state;
 state_vector_t state_vector;
 D_GNSS_coordinates_t coordinates;
-measurement_data_t observations;
+measurement_data_timed_t observations;
 float3vector external_induction;
+magnetometer_data_timed_t external_induction_timed;
+imu_data_timed_t imu_data;
+value_and_timestamp_t static_pressure_record;
 
 uint32_t fake_system_state // fake system state here in lack of hardware
   = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE | PITOT_SENSOR_AVAILABLE;
@@ -372,13 +376,13 @@ int main (int argc, char *argv[])
       data_size_words = flexible_log_file_t::verify_record_get_size ( input_buffer, LRSX_file_format_version);
       if (data_size_words == 0) // error, format not recognized
 	{
-	  printf ("\nBAD RECORD, WRONG CRC, ID=%08x\n", input_buffer[0]);
+	  printf ("\nBAD RECORD # %d, WRONG CRC, NODE=%08x \n", records, input_buffer[0]);
 	  continue;
 	}
 
 #if 0 // monitor advance
       static unsigned linecount = 0;
-      printf( "%02x ", next_block_identifier);
+      printf( "%02x ", record_header.record_type);
       ++linecount;
       if( linecount == 50)
 	{
@@ -404,7 +408,8 @@ int main (int argc, char *argv[])
 		  "CAN_COMMAND_RECEIVED",
 
 		  "DEBUGGER_EVENT",
-		  "ACCELERATION_CALIBRATION_DONE"
+		  "ACCELERATION_CALIBRATION_DONE",
+		  "GNSS_LOG"
 	      };
 	  const char * communicator_command[] =
 	      {
@@ -419,7 +424,7 @@ int main (int argc, char *argv[])
 
 	  if( ( record_header.total_size != 2) || ((*input_buffer)&0xff) > (sizeof(event_name)/sizeof(char *)) )
 	    {
-		printf("Event: %08x size = %d INVALID\n", *input_buffer, record_header.total_size);
+		printf("Event: %08x size = %d value %d INVALID\n", *input_buffer, record_header.total_size, (*input_buffer)&0xff);
 	    }
 	  else
 	    {
@@ -480,12 +485,62 @@ int main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case LARUS_DESCRIPTION:
 	  {
-	    printf("Firmware: %s\n", (char *)(input_buffer+1));
+	    printf("\nFirmware: %s\n", (char *)(input_buffer+1));
 	    printf("Larus ID:\n%08x%08x%08x%08x\n", input_buffer[9], input_buffer[10], input_buffer[11], input_buffer[12]);
-	    printf("Flash SHA256:\n%08x%08x%08x%08x\n%08x%08x%08x%08x\n",
+	    printf("Flash SHA256:\n%08x%08x%08x%08x\n%08x%08x%08x%08x\n\n",
 		   input_buffer[13], input_buffer[14], input_buffer[15], input_buffer[16], input_buffer[17], input_buffer[18], input_buffer[19], input_buffer[20]);
 	  }
 	  break;
+// ***********************************************************************************************************
+	case IMU_DATA:
+	  {
+	    if( data_size_words * sizeof(uint32_t) == sizeof( imu_data))
+	      memcpy( (uint8_t *)&imu_data, (uint8_t *)data_start, data_size_words * sizeof(uint32_t));
+	    else
+	      {
+		printf ("\nBAD RECORD, HEAD=%08x\n", input_buffer[0]);
+		continue;
+	      }
+
+	    break;
+	  }
+// ***********************************************************************************************************
+	case STATIC_PRESSURE:
+	  {
+	    if( data_size_words * sizeof(uint32_t) == sizeof( static_pressure_record))
+	      memcpy( (uint8_t *)&static_pressure_record, (uint8_t *)data_start, data_size_words * sizeof(uint32_t));
+	    else
+	      {
+		printf ("\nBAD RECORD, HEAD=%08x\n", input_buffer[0]);
+		continue;
+	      }
+
+	    break;
+	  }
+// ***********************************************************************************************************
+      case MAGNETOMETER_DATA:
+	if(
+	    ( data_size_words * sizeof(uint32_t) == sizeof( float3vector))
+	    or
+	    ( data_size_words * sizeof(uint32_t) == sizeof( external_induction_timed))
+	  )
+	  {
+		// ignore timestamp for the moment
+		memcpy( (uint8_t *)&(external_induction_timed), (uint8_t *)(input_buffer + 1), sizeof(external_induction) * sizeof(uint32_t));
+	  }
+	else
+	  {
+		  printf ("\nBAD RECORD, HEAD=%08x\n", input_buffer[0]);
+		  continue;
+	  }
+
+	++x_mag_records;
+#if 1
+	system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
+#else
+	system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
+#endif
+	break;
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
 	  {
@@ -500,8 +555,19 @@ int main (int argc, char *argv[])
 
 	  ++records;
 
-	  assert( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( measurement_data_t));
-	  memcpy( (uint8_t *)&observations, (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
+	  if( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( measurement_data_t))
+	    {
+		  memcpy( (uint8_t *)&observations, (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
+	    }
+	  if( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( measurement_data_timed_t))
+	    {
+		  memcpy( (uint8_t *)&observations, (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
+	    }
+	  else
+	    {
+	      printf("BAD RECORD SIZE\n");
+	      exit(0);
+	    }
 
 	  if( measurement_initialized)
 	    {
@@ -548,6 +614,7 @@ int main (int argc, char *argv[])
 	      out_file.write ( (const char*)&state_vector, sizeof(state_vector_t));
 	      ++records_out;
 
+#if 0
 	      if( write_f37)
 		{
 		  f37_data.m = observations;
@@ -574,7 +641,7 @@ int main (int argc, char *argv[])
 
 		  f37_file.write ( (const char*)&f37_data, sizeof( legacy_observations_type));
 		}
-
+#endif
 	      if( write_csv)
 		{
 		  csv_file << coordinates.latitude << ',' << coordinates.longitude << ',' << coordinates.GNSS_MSL_altitude;
@@ -592,17 +659,6 @@ int main (int argc, char *argv[])
 	}
 	  break;
 // ***********************************************************************************************************
-	case MAGNETOMETER_DATA:
-	  ++x_mag_records;
-	  assert( (record_header.total_size -1) * sizeof(uint32_t) == sizeof( float3vector));
-	  memcpy( (uint8_t *)&(external_induction), (uint8_t *)(input_buffer + 1), data_size_words * sizeof(uint32_t));
-#if 1
-	  system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
-#else
-	  system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
-#endif
-	  break;
-// ***********************************************************************************************************
 	  case D_GNSS_DATA:
 	    {
 	    ++GNSS_sample_number;
@@ -611,12 +667,12 @@ int main (int argc, char *argv[])
 
 #if PRINT_GNSS_RATE
 	      static int old;
-	      float delta = state_vector.observations.c.nano - old;
+	      float delta = coordinates.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
 	      printf("%3.6f\n", delta / 1000000);
-	      old = state_vector.observations.c.nano;
+	      old = coordinates.nano;
 #endif
 
 	      if( have_basic_sensor_data)
@@ -653,12 +709,12 @@ int main (int argc, char *argv[])
 #if PRINT_GNSS_RATE
 	      static int old;
 
-	      float delta = input.nano - old;
+	      float delta = coordinates.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
 	      printf("%3.6f\n", delta / 1000000);
-	      old = input.nano;
+	      old = coordinates.nano;
 #endif
 
 	      coordinates.relPosHeading = 0;
