@@ -58,6 +58,8 @@
 #include "compass_calibrator_3D.h"
 #include "mutex_implementation.h"
 
+void print_flight_event_info( uint32_t data, unsigned time);
+
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define PRINT_GNSS_RATE 0
 
@@ -195,7 +197,8 @@ main (int argc, char *argv[])
       itoa (
 	  (sizeof(measurement_data_t) + sizeof(float3vector)
 	      + sizeof(D_GNSS_coordinates_t) + sizeof(uint32_t)
-	      + sizeof(state_vector_t)) / sizeof(uint32_t),
+	      + sizeof(state_vector_t)) / sizeof(uint32_t)
+	      + sizeof(float3vector) / sizeof(uint32_t),
 	  size_string, 10);
       strcat (buf, size_string);
     }
@@ -416,50 +419,18 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case FLIGHT_EVENT:
 	  {
-	    const char *event_name[] =
-		  { "NO_EVENT",
-		    "MAG_CALIBRATION_DONE",
-		    "EXT_MAG_CALIBRATION_DONE",
-		    "AIR_DENSITY_MODIFIED",
-		    "EEPROM_CONFIGURATION_CHANGED",
-		    "CAN_COMMAND_RECEIVED",
-		    "DEBUGGER_EVENT",
-		    "ACCELERATION_CALIBRATION_DONE",
-		    "GNSS_LOG"
-		  };
-	    const char *communicator_command[] =
-	      { "NO_COMMAND",
-		"MEASURE_CALIB_LEFT",
-		"MEASURE_CALIB_RIGHT",
-		"MEASURE_CALIB_LEVEL",
-		"SET_SENSOR_ROTATION",
-		"FINE_TUNE_CALIB",
-		"SOME_EEPROM_VALUE_HAS_CHANGED"
-	      };
-
-	    if ((record_header.total_size != 2)
-		|| ((*input_buffer) & 0xff)
-		    > (sizeof(event_name) / sizeof(char*)))
-	      {
-		printf ("Event: %08x size = %d value %04x\n", *input_buffer,
-			record_header.total_size, input_buffer[1]);
-	      }
-	    else
-	      {
-		if (((*input_buffer) & 0xff) == CAN_COMMAND_RECEIVED)
-		  {
-		    printf ("Event: %s : %s\n",
-			    event_name[(*input_buffer) & 0xff],
-			    communicator_command[(*input_buffer) >> 8]);
-		    communicator_command_t command =
-			(communicator_command_t) ((*input_buffer) >> 8);
-		    organizer->on_command (command, coordinates, observations);
-		  }
-		else
-		  printf ("Event: %s %08x\n",
-			  event_name[(*input_buffer) & 0xff],
-			  (*input_buffer) >> 8);
-	      }
+	    switch( data_size_words)
+	    {
+	      case 1:
+		    print_flight_event_info( input_buffer[1], records);
+		break;
+	      case 2:
+		    print_flight_event_info( input_buffer[1], buffer[2]);
+		break;
+	      default:
+		    printf ("\nBAD RECORD # %d, WRONG CRC, NODE=%08x \n", records, input_buffer[0]);
+		break;
+	    }
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -610,6 +581,8 @@ main (int argc, char *argv[])
 				sizeof(system_state));
 		out_file.write ((const char*) &state_vector,
 				sizeof(state_vector_t));
+		out_file.write ((const char*) &(external_induction_timed.induction),
+				sizeof(float3vector));
 		++records_out;
 
 	      }
