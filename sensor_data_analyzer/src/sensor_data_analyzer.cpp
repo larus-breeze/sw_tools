@@ -62,7 +62,7 @@ void print_flight_event_info( uint32_t data, unsigned time);
 
 #define MAX_SUPPORTED_RECORD_SIZE_WORDS 256
 #define PRINT_GNSS_RATE 0
-
+#define HONORIZE_EXTERNAL_INDUCTION 1
 uint32_t buffer[128];
 flexible_log_file_implementation_t flex_file (buffer, 128);
 
@@ -131,43 +131,11 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  bool have_configuration = false;
-  bool write_f37 = false;
-  bool write_csv = false;
-
   bool start_with_given_configuration;
   if (argc == 3)
     {
-      if (strcmp (argv[2], "f37") == 0)
-	{
-	  write_f37 = true;
-	  // initialize empty EEPROM data file
-	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
-	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-	  permanent_data_file.set_memory_to_existing_data (
-	      (uint32_t*) permanent_data_file_storage,
-	      (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
-	  start_with_given_configuration = false;
-	  have_configuration = false;
-	}
-      else if (strcmp (argv[2], "csv") == 0)
-	{
-	  write_csv = true;
-	  // initialize empty EEPROM data file
-	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
-	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-	  permanent_data_file.set_memory_to_existing_data (
-	      (uint32_t*) permanent_data_file_storage,
-	      (uint32_t*) permanent_data_file_storage + EEPROM_FILE_SYSTEM_SIZE);
-	  start_with_given_configuration = false;
-	  have_configuration = false;
-	}
-      else
-	{
 	  read_permanent_data_file (argv[2]);
 	  start_with_given_configuration = true;
-	  have_configuration = true;
-	}
     }
   else
     {
@@ -210,40 +178,6 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  legacy_observations_type f37_data;
-  f37_data.c.position = float3vector ();
-  ofstream f37_file;
-  if (write_f37)
-    {
-      char *dot = strrchr (buf, '.');
-      if (dot == 0)
-	exit (0);
-      dot[1] = 0;
-      strcat (buf, "f37");
-      f37_file.open (buf, ios::out | ios::binary | ios::ate);
-      if (not f37_file.is_open ())
-	{
-	  cout << "Unable to open output file\n";
-	  return -1;
-	}
-    }
-
-  ofstream csv_file;
-  if (write_csv)
-    {
-      char *dot = strrchr (buf, '.');
-      if (dot == 0)
-	exit (0);
-      dot[1] = 0;
-      strcat (buf, "csv");
-      csv_file.open (buf, ios::out | ios::binary | ios::ate);
-      if (not csv_file.is_open ())
-	{
-	  cout << "Unable to open output file\n";
-	  return -1;
-	}
-    }
-
   ensure_EEPROM_parameter_integrity ();
 
   uint32_t *input_buffer = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
@@ -251,127 +185,14 @@ main (int argc, char *argv[])
 
   organizer_t *organizer = 0;
   bool success;
-  bool measurement_initialized = false;
-  unsigned counter_10Hz = 0;
-  bool need_to_dump_EEPROM_data = true;
-  bool have_basic_sensor_data = false;
   unsigned records_out = 0;
   unsigned x_mag_records = 0;
-  unsigned GNSS_sample_on_takeoff = 0;
   unsigned GNSS_sample_number = 0;
   system_state = fake_system_state;
-  bool takeoff_reported = false;
   record_header_t record_header;
   unsigned data_size_words;
   unsigned LRSX_file_format_version = 1; // start with default value
-
-// read until a configuration file is found
-  while (in_file.read ((char*) input_buffer, sizeof(record_header_t)))
-    {
-      uint32_t *data_start;
-
-      // read the record header
-      unsigned bytes_read = in_file.gcount ();
-      if (bytes_read != sizeof(record_header_t))
-	break; // EOF ?
-
-      record_header = *(record_header_t*) input_buffer;
-
-      data_start = input_buffer + 1;
-
-      // read the record data
-      unsigned data_size_bytes = (record_header.total_size - 1)
-	  * sizeof(uint32_t);
-      in_file.read ((char*) data_start, data_size_bytes);
-      if (in_file.gcount () != data_size_bytes)
-	break; // EOF ?
-
-      // verify the record's integrity
-      data_size_words = flexible_log_file_t::verify_record_get_size (
-	  input_buffer, LRSX_file_format_version);
-      if (data_size_words == 0) // error, format not recognized
-	{
-	  // try interpreting the record as file format version 2
-	  if ((record_header.record_type == FILE_FORMAT_VERSION)
-	      && (record_header.total_size == 2))
-	    {
-	      data_size_words = flexible_log_file_t::verify_record_get_size (
-		  input_buffer, 2);
-	      if (data_size_words == 1)
-		LRSX_file_format_version = input_buffer[1];
-	      else
-		printf ("\nBAD RECORD, WRONG CRC, ID=%08x\n", input_buffer[0]);
-	    }
-	  else
-	    printf ("\nBAD RECORD, WRONG CRC, ID=%08x\n", input_buffer[0]);
-
-	  continue;
-	}
-
-      if ((record_header.record_type == FILE_FORMAT_VERSION)
-	  && (record_header.total_size == 2))
-	{
-	  LRSX_file_format_version = input_buffer[1];
-	}
-
-      if (record_header.record_type == EEPROM_FILE
-	  && not start_with_given_configuration)
-	{
-	  memset ((uint8_t*) permanent_data_file_storage, 0xff,
-	  EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-	  memcpy (permanent_data_file_storage, (uint8_t*) (input_buffer + 1),
-		  data_size_words * sizeof(uint32_t));
-	  permanent_data_file.set_free_space ();
-	  permanent_data_file.setup_registry ();
-	  success = permanent_data_file.is_consistent ();
-	  if (not success)
-	    {
-	      cout << "EEPROM data entry not consistent\n";
-	      return -1;
-	    }
-
-	  have_configuration = true;
-	}
-
-      if (GNSS_sample_on_takeoff == 0) // did not find takeoff by now
-	{
-	  if (record_header.record_type == D_GNSS_DATA)
-	    {
-	      ++GNSS_sample_number;
-	      assert(
-		  data_size_words * sizeof(uint32_t)
-		      == sizeof(D_GNSS_coordinates_t));
-	      memcpy ((uint8_t*) &(coordinates), (uint8_t*) (input_buffer + 1),
-		      data_size_words * sizeof(uint32_t));
-	      if (coordinates.velocity.abs () > 50.0 / 3.6)
-		GNSS_sample_on_takeoff = GNSS_sample_number;
-	    }
-	  // ***********************************************************************************************************
-	  if (record_header.record_type == GNSS_DATA)
-	    {
-	      ++GNSS_sample_number;
-	      assert(
-		  data_size_words * sizeof(uint32_t)
-		      == sizeof(GNSS_coordinates_t));
-	      memcpy ((uint8_t*) &(coordinates), (uint8_t*) (input_buffer + 1),
-		      data_size_words * sizeof(uint32_t));
-	      if (coordinates.velocity.abs () > 50.0 / 3.6)
-		GNSS_sample_on_takeoff = GNSS_sample_number;
-	    }
-	}
-    }
-
-// now read all data from the very beginning
-// ***********************************************************************************************************
-  in_file.clear ();
-  in_file.seekg (0, ios::beg);
-
-  GNSS_sample_number = 0;
-
-  if (GNSS_sample_on_takeoff > 600)
-    GNSS_sample_on_takeoff -= 600;
-  else
-    GNSS_sample_on_takeoff = 1;
+  input_data_t new_input;
 
   while (in_file.read ((char*) input_buffer, sizeof(record_header_t)))
     {
@@ -419,18 +240,19 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case FLIGHT_EVENT:
 	  {
-	    switch( data_size_words)
-	    {
+	    switch (data_size_words)
+	      {
 	      case 1:
-		    print_flight_event_info( input_buffer[1], records);
+		print_flight_event_info (input_buffer[1], records);
 		break;
 	      case 2:
-		    print_flight_event_info( input_buffer[1], buffer[2]);
+		print_flight_event_info (input_buffer[1], buffer[2]);
 		break;
 	      default:
-		    printf ("\nBAD RECORD # %d, WRONG CRC, NODE=%08x \n", records, input_buffer[0]);
+		printf ("\nBAD RECORD # %d, WRONG CRC, NODE=%08x \n", records,
+			input_buffer[0]);
 		break;
-	    }
+	      }
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -454,9 +276,6 @@ main (int argc, char *argv[])
 
 	    cout << "EEPROM data read:\n";
 	    permanent_data_file.dump_all_entries ();
-	    need_to_dump_EEPROM_data = false;
-
-	    have_configuration = true;
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -480,8 +299,6 @@ main (int argc, char *argv[])
 					    (void*) (candidate + 1));
 	    printf ("id= %d val = %e\n", id, *(float*) (candidate + 1));
 
-	    if (id == 42)
-	      have_configuration = true; // todo patch kind of too simple ...
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -512,80 +329,24 @@ main (int argc, char *argv[])
 	    observations.mag = imu_data.mag;
 	    observations.gyro = imu_data.gyro;
 
-	    have_basic_sensor_data = true;
-
-	    if (need_to_dump_EEPROM_data)
-	      {
-		need_to_dump_EEPROM_data = false;
-		cout << "EEPROM data read:\n";
-		permanent_data_file.dump_all_entries ();
-	      }
+	    new_input.type = IMU_DATA;
+	    new_input.data = &imu_data;
+	    organizer->on_new_information (new_input);
 
 	    ++records;
 
-	    if (measurement_initialized)
-	      {
-		organizer->on_new_pressure_data (observations.static_pressure,
-						 observations.pitot_pressure);
-		organizer->update_at_100_Hz (
-		    observations, system_state,
-		    external_induction_timed.induction);
-	      }
-	    if (++counter_10Hz == 10)
-	      {
-		counter_10Hz = 0;
-		if (measurement_initialized)
-		  {
-		    bool landing_detected = organizer->update_at_10Hz (
-			coordinates, observations);
+	    organizer->report_data (state_vector);
+	    out_file.write ((const char*) &observations, sizeof(observations));
+	    out_file.write ((const char*) &external_induction_timed,
+			    sizeof(float3vector));
+	    out_file.write ((const char*) &coordinates, sizeof(coordinates));
+	    out_file.write ((const char*) &system_state, sizeof(system_state));
+	    out_file.write ((const char*) &state_vector,
+			    sizeof(state_vector_t));
+	    out_file.write ((const char*) &(external_induction_timed.induction),
+			    sizeof(float3vector));
 
-		    if (landing_detected)
-		      {
-			organizer->cleanup_after_landing ();
-			printf ("Landed at: %d:%02d UTC \n", coordinates.hour,
-				coordinates.minute);
-		      }
-		  }
-	      }
-
-	    if (organizer != 0)
-	      {
-		bool significant_configuration_change =
-		    organizer->manage_attitude_setup_in_progress (coordinates,
-								  observations);
-
-		if (significant_configuration_change)
-		  {
-		    printf ("Significant configuration change\n");
-		  }
-	      }
-
-	    if (not takeoff_reported
-		and GNSS_sample_number == GNSS_sample_on_takeoff)
-	      {
-		takeoff_reported = true;
-		printf ("\nTakeoff: %d:%02d UTC \n", coordinates.hour,
-			coordinates.minute);
-	      }
-	    if ((organizer != 0)
-		&& (GNSS_sample_number > GNSS_sample_on_takeoff)) // after initialization
-	      {
-		organizer->report_data (state_vector);
-		out_file.write ((const char*) &observations,
-				sizeof(observations));
-		out_file.write ((const char*) &external_induction_timed,
-				sizeof(float3vector));
-		out_file.write ((const char*) &coordinates,
-				sizeof(coordinates));
-		out_file.write ((const char*) &system_state,
-				sizeof(system_state));
-		out_file.write ((const char*) &state_vector,
-				sizeof(state_vector_t));
-		out_file.write ((const char*) &(external_induction_timed.induction),
-				sizeof(float3vector));
-		++records_out;
-
-	      }
+	    ++records_out;
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -604,7 +365,12 @@ main (int argc, char *argv[])
 	      }
 
 	    observations.supply_voltage = supp_data.supply_voltage;
-	    observations.static_sensor_temperature = supp_data.sensor_temperature;
+	    observations.static_sensor_temperature =
+		supp_data.sensor_temperature;
+
+	    new_input.type = SUPPLEMENTARY_DATA;
+	    new_input.data = &supp_data;
+	    organizer->on_new_information (new_input);
 
 	  }
 	  break;
@@ -620,6 +386,10 @@ main (int argc, char *argv[])
 		printf ("\nBAD RECORD, HEAD=%08x\n", input_buffer[0]);
 		continue;
 	      }
+
+	    new_input.type = PRESSURE_DATA;
+	    new_input.data = &pressure_record;
+	    organizer->on_new_information (new_input);
 
 	    observations.static_pressure = pressure_record.absolute_pressure;
 	    observations.pitot_pressure = pressure_record.dynamic_pressure;
@@ -644,8 +414,12 @@ main (int argc, char *argv[])
 		continue;
 	      }
 
+	    new_input.type = MAGNETOMETER_DATA;
+	    new_input.data = &external_induction_timed;
+	    organizer->on_new_information (new_input);
+
 	    ++x_mag_records;
-#if 1
+#if HONORIZE_EXTERNAL_INDUCTION
 	    system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
 #else
 	system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
@@ -672,28 +446,9 @@ main (int argc, char *argv[])
 	      old = coordinates.nano;
 #endif
 
-	    if (have_basic_sensor_data)
-	      {
-		if (not measurement_initialized && have_configuration)
-		  {
-		    organizer = new organizer_t;
-
-		    organizer->initialize_before_measurement ();
-		    organizer->initialize_after_first_measurement (
-			coordinates, observations);
-		    organizer->update_magnetic_induction_data (
-			coordinates.latitude, coordinates.longitude);
-
-		    measurement_initialized = true;
-		  }
-	      }
-
-	    if (organizer)
-	      {
-		organizer->update_GNSS_data (coordinates);
-		organizer->update_magnetic_induction_data (
-		    coordinates.latitude, coordinates.longitude);
-	      }
+	    new_input.type = D_GNSS_DATA;
+	    new_input.data = &coordinates;
+	    organizer->on_new_information (new_input);
 
 	    state_vector.satfix = coordinates.sat_fix_type;
 	  }
@@ -720,57 +475,27 @@ main (int argc, char *argv[])
 	      old = coordinates.nano;
 #endif
 
-	    coordinates.relPosHeading = 0;
-	    coordinates.relPosNED = float3vector ();
-
-	    if (have_basic_sensor_data)
-	      {
-		if (not measurement_initialized && have_configuration)
-		  {
-		    organizer = new organizer_t;
-
-		    organizer->initialize_before_measurement ();
-		    organizer->initialize_after_first_measurement (
-			coordinates, observations);
-		    organizer->update_magnetic_induction_data (
-			coordinates.latitude, coordinates.longitude);
-
-		    measurement_initialized = true;
-		  }
-
-		if (organizer)
-		  {
-		    organizer->update_GNSS_data (coordinates);
-		    organizer->update_magnetic_induction_data (
-			coordinates.latitude, coordinates.longitude);
-		  }
-		state_vector.satfix = coordinates.sat_fix_type;
-	      }
+	    new_input.type = GNSS_DATA;
+	    new_input.data = &coordinates;
+	    organizer->on_new_information (new_input);
 	  }
 	  break;
 // ***********************************************************************************************************
 	case SENSOR_STATUS:
-	  assert(record_header.total_size == 2);
-	  system_state = *input_buffer;
-	  break;
-	default:
-	  printf ("\nRECORD IGNORED, HEAD=%08x\n", input_buffer[0]);
-	  break;
+	  {
+	    assert(record_header.total_size == 2);
+	    system_state = *input_buffer;
+	    break;
+	    default:
+	    printf ("\nRECORD IGNORED, HEAD=%08x\n", input_buffer[0]);
+	    break;
+	  }
 	}
     }
-
-  if (organizer)
-    organizer->cleanup_after_landing (); // latest here
 
   printf ("\n%d records in, %d ext_mag_records,  %d records out\n", records,
 	  x_mag_records, records_out);
   out_file.close ();
-
-  if (write_f37)
-    f37_file.close ();
-
-  if (write_csv)
-    csv_file.close ();
 
   strcpy (buf, argv[1]);
   char *p = strrchr (buf, '/');
