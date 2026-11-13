@@ -183,7 +183,7 @@ main (int argc, char *argv[])
   uint32_t *input_buffer = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
 
-  organizer_t *organizer = 0;
+  organizer_t organizer;
   bool success;
   unsigned records_out = 0;
   unsigned x_mag_records = 0;
@@ -314,6 +314,24 @@ main (int argc, char *argv[])
 	  }
 	  break;
 // ***********************************************************************************************************
+	case BASIC_SENSOR_DATA:
+	  {
+	    if (data_size_words * sizeof(uint32_t) == sizeof(observations))
+	      memcpy ((uint8_t*) &observations, (uint8_t*) data_start,
+		      data_size_words * sizeof(uint32_t));
+	    else
+	      {
+		printf ("\nBAD RECORD, HEAD=%08x\n", input_buffer[0]);
+		continue;
+	      }
+	    imu_data.acc = observations.acc;
+	    imu_data.mag = observations.mag;
+	    imu_data.gyro = observations.gyro;
+	    new_input.type = IMU_DATA;
+	    new_input.data = &imu_data;
+	    organizer.on_new_information (new_input);
+	  }
+	  break;
 	case IMU_DATA:
 	  {
 	    if (data_size_words * sizeof(uint32_t) == sizeof(imu_data))
@@ -331,11 +349,11 @@ main (int argc, char *argv[])
 
 	    new_input.type = IMU_DATA;
 	    new_input.data = &imu_data;
-	    organizer->on_new_information (new_input);
+	    organizer.on_new_information (new_input);
 
 	    ++records;
 
-	    organizer->report_data (state_vector);
+	    organizer.report_data (state_vector, observations);
 	    out_file.write ((const char*) &observations, sizeof(observations));
 	    out_file.write ((const char*) &external_induction_timed,
 			    sizeof(float3vector));
@@ -370,7 +388,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = SUPPLEMENTARY_DATA;
 	    new_input.data = &supp_data;
-	    organizer->on_new_information (new_input);
+	    organizer.on_new_information (new_input);
 
 	  }
 	  break;
@@ -389,7 +407,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = PRESSURE_DATA;
 	    new_input.data = &pressure_record;
-	    organizer->on_new_information (new_input);
+	    organizer.on_new_information (new_input);
 
 	    observations.static_pressure = pressure_record.absolute_pressure;
 	    observations.pitot_pressure = pressure_record.dynamic_pressure;
@@ -416,7 +434,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = MAGNETOMETER_DATA;
 	    new_input.data = &external_induction_timed;
-	    organizer->on_new_information (new_input);
+	    organizer.on_new_information (new_input);
 
 	    ++x_mag_records;
 #if HONORIZE_EXTERNAL_INDUCTION
@@ -448,7 +466,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = D_GNSS_DATA;
 	    new_input.data = &coordinates;
-	    organizer->on_new_information (new_input);
+	    organizer.on_new_information (new_input);
 
 	    state_vector.satfix = coordinates.sat_fix_type;
 	  }
@@ -475,9 +493,9 @@ main (int argc, char *argv[])
 	      old = coordinates.nano;
 #endif
 
-	    new_input.type = GNSS_DATA;
+	    new_input.type = D_GNSS_DATA; // always report as d-GNSS !
 	    new_input.data = &coordinates;
-	    organizer->on_new_information (new_input);
+	    organizer.on_new_information (new_input);
 	  }
 	  break;
 // ***********************************************************************************************************

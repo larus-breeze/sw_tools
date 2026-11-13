@@ -138,6 +138,18 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.84738672.268622728.2101835759.179207979" name="/" resourcePath="lib/INSLIB">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.base.631820544" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.base" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1111314957" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1535897186"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1505390610" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1598348491"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1171407594" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1545999777"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.290247962" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.706286308"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1412965559" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.177196441"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.base.1958859501" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.616871668">
+								<option defaultValue="gnu.asm.debugging.level.default" id="gnu.asm.option.debugging.level.2016184229" superClass="gnu.asm.option.debugging.level" valueType="enumerated"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Communication"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Interfaces"/>
