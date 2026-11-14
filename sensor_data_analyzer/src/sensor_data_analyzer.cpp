@@ -105,9 +105,7 @@ uint32_t system_state;
 state_vector_t state_vector;
 D_GNSS_coordinates_t coordinates;
 measurement_data_t observations;
-magnetometer_data_timed_t external_induction_timed;
-imu_data_timed_t imu_data;
-pressure_data_timed_t pressure_record;
+supplementary_data_t supplementary_data;
 
 uint32_t fake_system_state // fake system state here in lack of hardware
 = GNSS_AVAILABLE | MTI_SENSOR_AVAILABE | MS5611_STATIC_AVAILABLE
@@ -178,21 +176,23 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  ensure_EEPROM_parameter_integrity ();
-
   uint32_t *input_buffer = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
 
-  organizer_t organizer;
+  organizer_t *organizer;
   bool success;
   unsigned records_out = 0;
   unsigned x_mag_records = 0;
   unsigned GNSS_sample_number = 0;
   system_state = fake_system_state;
+  magnetometer_data_timed_t external_induction_timed;
+
   record_header_t record_header;
   unsigned data_size_words;
   unsigned LRSX_file_format_version = 1; // start with default value
   input_data_t new_input;
+
+  ensure_EEPROM_parameter_integrity ();
 
   while (in_file.read ((char*) input_buffer, sizeof(record_header_t)))
     {
@@ -258,24 +258,28 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case EEPROM_FILE:
 	  {
-	    if (start_with_given_configuration) // ignore this record
-	      break;
-
-	    memset ((uint8_t*) permanent_data_file_storage, 0xff,
-	    EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
-	    memcpy (permanent_data_file_storage, (uint8_t*) (input_buffer + 1),
-		    data_size_words * sizeof(uint32_t));
-	    permanent_data_file.set_free_space ();
-	    permanent_data_file.setup_registry ();
-	    success = permanent_data_file.is_consistent ();
-	    if (not success)
+	    if (not start_with_given_configuration) // ignore this record
 	      {
-		cout << "EEPROM data entry not consistent\n";
-		return -1;
-	      }
+		    memset ((uint8_t*) permanent_data_file_storage, 0xff,
+		    EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
+		    memcpy (permanent_data_file_storage, (uint8_t*) (input_buffer + 1),
+			    data_size_words * sizeof(uint32_t));
+		    permanent_data_file.set_free_space ();
+		    permanent_data_file.setup_registry ();
+		    success = permanent_data_file.is_consistent ();
+		    if (not success)
+		      {
+			cout << "EEPROM data entry not consistent\n";
+			return -1;
+		      }
 
-	    cout << "EEPROM data read:\n";
-	    permanent_data_file.dump_all_entries ();
+		    cout << "EEPROM data read:\n";
+		    permanent_data_file.dump_all_entries ();
+	      }
+	    organizer = new organizer_t;
+
+	    organizer->initialize_before_measurement ();
+
 	  }
 	  break;
 // ***********************************************************************************************************
@@ -316,6 +320,9 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
 	  {
+	    static unsigned fake_timestamp = 0;
+	    fake_timestamp += 10;
+
 	    if (data_size_words * sizeof(uint32_t) == sizeof(observations))
 	      memcpy ((uint8_t*) &observations, (uint8_t*) data_start,
 		      data_size_words * sizeof(uint32_t));
@@ -324,16 +331,52 @@ main (int argc, char *argv[])
 		printf ("\nBAD RECORD, HEAD=%08x\n", input_buffer[0]);
 		continue;
 	      }
+
+	    // simulate LRSX V2.0 measurements taking the observations data
+	    imu_data_timed_t imu_data;
+
 	    imu_data.acc = observations.acc;
 	    imu_data.mag = observations.mag;
 	    imu_data.gyro = observations.gyro;
+	    imu_data.timestamp = fake_timestamp;
 	    new_input.type = IMU_DATA;
 	    new_input.data = &imu_data;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
+
+	    pressure_data_timed_t pressure_record;
+	    pressure_record.absolute_pressure = observations.static_pressure;
+	    pressure_record.dynamic_pressure = observations.pitot_pressure;
+	    new_input.type = PRESSURE_DATA;
+	    new_input.data = &pressure_record;
+	    organizer->on_new_information (new_input);
+
+	    supplementary_data_t supp_data;
+	    supp_data.sensor_temperature = observations.static_sensor_temperature;
+	    supp_data.supply_voltage = observations.supply_voltage;
+	    new_input.type = SUPPLEMENTARY_DATA;
+	    new_input.data = &supp_data;
+	    organizer->on_new_information (new_input);
+
+	    ++records;
+
+	    organizer->report_data (state_vector, observations);
+	    out_file.write ((const char*) &observations, sizeof(observations));
+	    out_file.write ((const char*) &external_induction_timed,
+			    sizeof(float3vector));
+	    out_file.write ((const char*) &coordinates, sizeof(coordinates));
+	    out_file.write ((const char*) &system_state, sizeof(system_state));
+	    out_file.write ((const char*) &state_vector,
+			    sizeof(state_vector_t));
+	    out_file.write ((const char*) &(external_induction_timed.induction),
+			    sizeof(float3vector));
+
+	    ++records_out;
 	  }
 	  break;
 	case IMU_DATA:
 	  {
+	    imu_data_timed_t imu_data;
+
 	    if (data_size_words * sizeof(uint32_t) == sizeof(imu_data))
 	      memcpy ((uint8_t*) &imu_data, (uint8_t*) data_start,
 		      data_size_words * sizeof(uint32_t));
@@ -349,11 +392,11 @@ main (int argc, char *argv[])
 
 	    new_input.type = IMU_DATA;
 	    new_input.data = &imu_data;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
 
 	    ++records;
 
-	    organizer.report_data (state_vector, observations);
+	    organizer->report_data (state_vector, observations);
 	    out_file.write ((const char*) &observations, sizeof(observations));
 	    out_file.write ((const char*) &external_induction_timed,
 			    sizeof(float3vector));
@@ -388,13 +431,15 @@ main (int argc, char *argv[])
 
 	    new_input.type = SUPPLEMENTARY_DATA;
 	    new_input.data = &supp_data;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
 
 	  }
 	  break;
 // ***********************************************************************************************************
 	case PRESSURE_DATA:
 	  {
+	    pressure_data_timed_t pressure_record;
+
 	    if (data_size_words * sizeof(uint32_t)
 		== sizeof(pressure_data_timed_t))
 	      memcpy ((uint8_t*) &pressure_record, (uint8_t*) data_start,
@@ -407,7 +452,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = PRESSURE_DATA;
 	    new_input.data = &pressure_record;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
 
 	    observations.static_pressure = pressure_record.absolute_pressure;
 	    observations.pitot_pressure = pressure_record.dynamic_pressure;
@@ -434,7 +479,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = MAGNETOMETER_DATA;
 	    new_input.data = &external_induction_timed;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
 
 	    ++x_mag_records;
 #if HONORIZE_EXTERNAL_INDUCTION
@@ -466,7 +511,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = D_GNSS_DATA;
 	    new_input.data = &coordinates;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
 
 	    state_vector.satfix = coordinates.sat_fix_type;
 	  }
@@ -495,7 +540,7 @@ main (int argc, char *argv[])
 
 	    new_input.type = D_GNSS_DATA; // always report as d-GNSS !
 	    new_input.data = &coordinates;
-	    organizer.on_new_information (new_input);
+	    organizer->on_new_information (new_input);
 	  }
 	  break;
 // ***********************************************************************************************************
