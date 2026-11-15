@@ -596,6 +596,8 @@ main (int argc, char *argv[])
 	}
     }
 
+  organizer->cleanup_after_landing(); // latest here
+
   printf ("\n%d records in, %d ext_mag_records,  %d records out\n", records,
 	  x_mag_records, records_out);
   out_file.close ();
