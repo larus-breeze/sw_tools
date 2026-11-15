@@ -117,6 +117,8 @@ uint32_t UNIQUE_ID[4] =
 int
 main (int argc, char *argv[])
 {
+  organizer_t *organizer=0;
+
 #ifndef _WIN32
   // avoid using FE_UNDERFLOW as it may occur occasionally when filters decay
   //  feenableexcept( FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
@@ -129,11 +131,13 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  bool start_with_given_configuration;
+  bool start_with_given_configuration = false;
   if (argc == 3)
     {
 	  read_permanent_data_file (argv[2]);
 	  start_with_given_configuration = true;
+	  organizer = new organizer_t( coordinates, observations);
+	  organizer->initialize_before_measurement ();
     }
   else
     {
@@ -179,7 +183,6 @@ main (int argc, char *argv[])
   uint32_t *input_buffer = new uint32_t[MAX_SUPPORTED_RECORD_SIZE_WORDS];
   unsigned records = 0;
 
-  organizer_t *organizer;
   bool success;
   unsigned records_out = 0;
   unsigned x_mag_records = 0;
@@ -193,6 +196,7 @@ main (int argc, char *argv[])
   input_data_t new_input;
 
   ensure_EEPROM_parameter_integrity ();
+  bool have_EEPROM_data = false;
 
   while (in_file.read ((char*) input_buffer, sizeof(record_header_t)))
     {
@@ -258,8 +262,10 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case EEPROM_FILE:
 	  {
-	    if (not start_with_given_configuration) // ignore this record
-	      {
+	    if (start_with_given_configuration) // ignore this record
+	      break;
+
+	    {
 		    memset ((uint8_t*) permanent_data_file_storage, 0xff,
 		    EEPROM_FILE_SYSTEM_SIZE * sizeof(uint32_t));
 		    memcpy (permanent_data_file_storage, (uint8_t*) (input_buffer + 1),
@@ -276,7 +282,8 @@ main (int argc, char *argv[])
 		    cout << "EEPROM data read:\n";
 		    permanent_data_file.dump_all_entries ();
 	      }
-	    organizer = new organizer_t;
+	    have_EEPROM_data = true;
+	    organizer = new organizer_t( coordinates, observations);
 
 	    organizer->initialize_before_measurement ();
 
@@ -289,7 +296,7 @@ main (int argc, char *argv[])
 	      break;
 
 	    EEPROM_file_system_node *candidate =
-		(EEPROM_file_system_node*) input_buffer;
+		(EEPROM_file_system_node*) data_start;
 	    if (not EEPROM_file_system<LOWEST_UNUSED_EEPROM_ID>::node_is_consistent (
 		candidate))
 	      {
@@ -302,6 +309,23 @@ main (int argc, char *argv[])
 	    permanent_data_file.store_data (id, candidate->size - 1,
 					    (void*) (candidate + 1));
 	    printf ("id= %d val = %e\n", id, *(float*) (candidate + 1));
+
+	    if (id == 43)
+	      {
+		have_EEPROM_data = true;
+		success = permanent_data_file.is_consistent ();
+
+		if (not success)
+		  {
+		    cout << "EEPROM data entry not consistent\n";
+		    return -1;
+		  }
+
+		if( organizer == 0)
+		  organizer = new organizer_t( coordinates, observations);
+
+		organizer->initialize_before_measurement ();
+	      }
 
 	  }
 	  break;
@@ -322,6 +346,9 @@ main (int argc, char *argv[])
 	  {
 	    static unsigned fake_timestamp = 0;
 	    fake_timestamp += 10;
+
+	    if( organizer == 0) // need to wait until we are initialized
+	      break;
 
 	    if (data_size_words * sizeof(uint32_t) == sizeof(observations))
 	      memcpy ((uint8_t*) &observations, (uint8_t*) data_start,
@@ -501,11 +528,19 @@ main (int argc, char *argv[])
 
 #if PRINT_GNSS_RATE
 	      static int old;
+	      static int old_delta;
+
 	      float delta = coordinates.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
-	      printf("%3.6f\n", delta / 1000000);
+	      delta = round( delta / 1000000);
+
+	      if( delta != old_delta)
+		{
+		  old_delta = delta;
+		  printf("%3.6f\n", delta);
+		}
 	      old = coordinates.nano;
 #endif
 
@@ -529,12 +564,17 @@ main (int argc, char *argv[])
 
 #if PRINT_GNSS_RATE
 	      static int old;
+	      static int old_delta;
 
 	      float delta = coordinates.nano - old;
 	      if( delta < 0)
 		delta += 1000000000;
 
-	      printf("%3.6f\n", delta / 1000000);
+	      if( delta != old_delta)
+		{
+		  old_delta = delta;
+		  printf("%3.6f\n", delta / 1000000);
+		}
 	      old = coordinates.nano;
 #endif
 
