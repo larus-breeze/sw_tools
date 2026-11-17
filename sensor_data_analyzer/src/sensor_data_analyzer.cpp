@@ -127,7 +127,7 @@ main (int argc, char *argv[])
 
   if ((argc != 2) && (argc != 3))
     {
-      printf ("usage: %s infile.larus_log [configuration.lrsx]\n", argv[0]);
+      printf ("usage: %s infile.lrsx [configuration.lrsx]\n", argv[0]);
       return -1;
     }
 
@@ -136,7 +136,8 @@ main (int argc, char *argv[])
     {
 	  read_permanent_data_file (argv[2]);
 	  start_with_given_configuration = true;
-	  organizer = new organizer_t( coordinates, observations);
+	    if( organizer == 0)
+	      organizer = new organizer_t( coordinates, observations);
 	  organizer->initialize_before_measurement ();
     }
   else
@@ -283,7 +284,8 @@ main (int argc, char *argv[])
 		    permanent_data_file.dump_all_entries ();
 	      }
 	    have_EEPROM_data = true;
-	    organizer = new organizer_t( coordinates, observations);
+	    if( organizer == 0)
+	      organizer = new organizer_t( coordinates, observations);
 
 	    organizer->initialize_before_measurement ();
 
@@ -373,6 +375,7 @@ main (int argc, char *argv[])
 	    pressure_data_timed_t pressure_record;
 	    pressure_record.absolute_pressure = observations.static_pressure;
 	    pressure_record.dynamic_pressure = observations.pitot_pressure;
+	    pressure_record.timestamp = fake_timestamp;
 	    new_input.type = PRESSURE_DATA;
 	    new_input.data = &pressure_record;
 	    organizer->on_new_information (new_input);
@@ -519,7 +522,6 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case D_GNSS_DATA:
 	  {
-	    ++GNSS_sample_number;
 	    assert(
 		(record_header.total_size - 1) * sizeof(uint32_t)
 		    == sizeof(D_GNSS_coordinates_t));
@@ -548,13 +550,14 @@ main (int argc, char *argv[])
 	    new_input.data = &coordinates;
 	    organizer->on_new_information (new_input);
 
+	    ++GNSS_sample_number;
+
 	    state_vector.satfix = coordinates.sat_fix_type;
 	  }
 	  break;
 // ***********************************************************************************************************
 	case GNSS_DATA:
 	  {
-	    ++GNSS_sample_number;
 	    assert(
 		(record_header.total_size - 1) * sizeof(uint32_t)
 		    == sizeof(GNSS_coordinates_t));
@@ -581,18 +584,19 @@ main (int argc, char *argv[])
 	    new_input.type = D_GNSS_DATA; // always report as d-GNSS !
 	    new_input.data = &coordinates;
 	    organizer->on_new_information (new_input);
+
+	    ++GNSS_sample_number;
 	  }
 	  break;
 // ***********************************************************************************************************
 	case SENSOR_STATUS:
 	  {
-	    assert(record_header.total_size == 2);
-	    system_state = *input_buffer;
-	    break;
-	    default:
-	    printf ("\nRECORD IGNORED, HEAD=%08x\n", input_buffer[0]);
-	    break;
+	    if(record_header.total_size == 2)
+	      system_state = *input_buffer;
+	      else
+		printf ("\nRECORD IGNORED, HEAD=%08x\n", input_buffer[0]);
 	  }
+	  break;
 	}
     }
 
