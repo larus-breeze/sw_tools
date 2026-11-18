@@ -195,6 +195,7 @@ main (int argc, char *argv[])
   unsigned data_size_words;
   unsigned LRSX_file_format_version = 1; // start with default value
   input_data_t new_input;
+  int timestamp_TOW = 0; // fake timestamp in lack of a real one
 
   ensure_EEPROM_parameter_integrity ();
   bool have_EEPROM_data = false;
@@ -257,6 +258,12 @@ main (int argc, char *argv[])
 		printf ("\nBAD RECORD # %d, WRONG CRC, NODE=%08x \n", records,
 			input_buffer[0]);
 		break;
+	      }
+	    if( (organizer != 0) and ( (communicator_command_t)( input_buffer[1] & 0xff) == CAN_COMMAND_RECEIVED))
+	      {
+	      // feed any command to the organizer and report it's response
+	      bool result = organizer->on_command( (communicator_command_t)((input_buffer[1] & 0xff00) >> 8));
+		printf ("SIM CMD Response: %s\n", result ? "true" : "false");
 	      }
 	  }
 	  break;
@@ -346,9 +353,6 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case BASIC_SENSOR_DATA:
 	  {
-	    static unsigned fake_timestamp = 0;
-	    fake_timestamp += 10;
-
 	    if( organizer == 0) // need to wait until we are initialized
 	      break;
 
@@ -367,7 +371,7 @@ main (int argc, char *argv[])
 	    imu_data.acc = observations.acc;
 	    imu_data.mag = observations.mag;
 	    imu_data.gyro = observations.gyro;
-	    imu_data.timestamp = fake_timestamp;
+	    imu_data.timestamp = timestamp_TOW;
 	    new_input.type = IMU_DATA;
 	    new_input.data = &imu_data;
 	    organizer->on_new_information (new_input);
@@ -375,7 +379,7 @@ main (int argc, char *argv[])
 	    pressure_data_timed_t pressure_record;
 	    pressure_record.absolute_pressure = observations.static_pressure;
 	    pressure_record.dynamic_pressure = observations.pitot_pressure;
-	    pressure_record.timestamp = fake_timestamp;
+	    pressure_record.timestamp = timestamp_TOW;
 	    new_input.type = PRESSURE_DATA;
 	    new_input.data = &pressure_record;
 	    organizer->on_new_information (new_input);
@@ -387,9 +391,10 @@ main (int argc, char *argv[])
 	    new_input.data = &supp_data;
 	    organizer->on_new_information (new_input);
 
+	    timestamp_TOW += 10; // ms
 	    ++records;
 
-	    organizer->report_data (state_vector, observations);
+	    organizer->report_data (state_vector);
 	    out_file.write ((const char*) &observations, sizeof(observations));
 	    out_file.write ((const char*) &external_induction_timed,
 			    sizeof(float3vector));
@@ -426,7 +431,7 @@ main (int argc, char *argv[])
 
 	    ++records;
 
-	    organizer->report_data (state_vector, observations);
+	    organizer->report_data ( state_vector);
 	    out_file.write ((const char*) &observations, sizeof(observations));
 	    out_file.write ((const char*) &external_induction_timed,
 			    sizeof(float3vector));
@@ -550,6 +555,17 @@ main (int argc, char *argv[])
 	    new_input.data = &coordinates;
 	    organizer->on_new_information (new_input);
 
+	    timestamp_TOW =
+		coordinates.day * 24
+		+ coordinates.hour;
+	    timestamp_TOW =
+		timestamp_TOW * 3600
+		+ coordinates.minute * 60
+		+ coordinates.second;
+	    timestamp_TOW =
+		timestamp_TOW * 1000
+		+ coordinates.nano / 1000000;
+
 	    ++GNSS_sample_number;
 
 	    state_vector.satfix = coordinates.sat_fix_type;
@@ -584,6 +600,17 @@ main (int argc, char *argv[])
 	    new_input.type = D_GNSS_DATA; // always report as d-GNSS !
 	    new_input.data = &coordinates;
 	    organizer->on_new_information (new_input);
+
+	    timestamp_TOW =
+		coordinates.day * 24
+		+ coordinates.hour;
+	    timestamp_TOW =
+		timestamp_TOW * 3600
+		+ coordinates.minute * 60
+		+ coordinates.second;
+	    timestamp_TOW =
+		timestamp_TOW * 1000
+		+ coordinates.nano / 1000000;
 
 	    ++GNSS_sample_number;
 	  }
