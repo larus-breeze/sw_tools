@@ -408,6 +408,7 @@ main (int argc, char *argv[])
 	    ++records_out;
 	  }
 	  break;
+// ***********************************************************************************************************
 	case IMU_DATA:
 	  {
 	    imu_data_timed_t imu_data;
@@ -497,14 +498,16 @@ main (int argc, char *argv[])
 // ***********************************************************************************************************
 	case MAGNETOMETER_DATA:
 	  {
-	    if ((data_size_words * sizeof(uint32_t) == sizeof(float3vector))
-		or (data_size_words * sizeof(uint32_t)
-		    == sizeof(external_induction_timed)))
+#if HONORIZE_EXTERNAL_INDUCTION
+	    if (data_size_words * sizeof(uint32_t) == sizeof(float3vector))
 	      {
-		// ignore timestamp for the moment
-		memcpy ((uint8_t*) &(external_induction_timed),
-			(uint8_t*) data_start,
-			sizeof(external_induction_timed) * sizeof(uint32_t));
+		// no timestamp (older data)
+		memcpy ((uint8_t*) &(external_induction_timed), (uint8_t*) data_start, sizeof(float3vector) * sizeof(uint32_t));
+		external_induction_timed.timestamp = timestamp_TOW;
+	      }
+	    else if(	(data_size_words * sizeof(uint32_t) == sizeof(external_induction_timed)))
+	      {
+		  memcpy ((uint8_t*) &(external_induction_timed), (uint8_t*) data_start, sizeof(external_induction_timed) * sizeof(uint32_t));
 	      }
 	    else
 	      {
@@ -517,7 +520,7 @@ main (int argc, char *argv[])
 	    organizer->on_new_information (new_input);
 
 	    ++x_mag_records;
-#if HONORIZE_EXTERNAL_INDUCTION
+
 	    system_state |= EXTERNAL_MAGNETOMETER_AVAILABLE;
 #else
 	system_state &= ~EXTERNAL_MAGNETOMETER_AVAILABLE;
