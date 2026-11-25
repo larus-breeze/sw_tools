@@ -1,0 +1,27 @@
+[package]
+name = "stm32h7-test"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+can-update = { path = "../can-update" }
+defmt = "0.3"
+defmt-rtt = "0.4"
+panic-probe = { version = "0.3", features = ["print-defmt"] }
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+fdcan = "=0.2.1"
+nb = "1"
+stm32h7xx-hal = { version = "0.16", features = ["stm32h743", "can", "rt"] }
+
+[[bin]]
+name = "stm32h7-test"
+path = "src/main.rs"
+test = false
+bench = false
+
+[profile.dev]
+debug = 2
+
+[profile.release]
+debug = 2

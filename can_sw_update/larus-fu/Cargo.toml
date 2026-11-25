@@ -1,0 +1,9 @@
+[package]
+name = "larus-fu"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Portable no_std CAN firmware update protocol"
+
+[dependencies]
+can-update = { path = "../can-update" }
