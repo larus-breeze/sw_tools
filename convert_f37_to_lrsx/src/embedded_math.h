@@ -51,6 +51,8 @@ typedef float float32_t;
 #define QUARTER 0.25f
 #define M_PI_F M_PI
 
+#define EPSILON 1e-12f
+
 #define SQR(x) ((x)*(x))
 #define SQRT(x) sqrtf(x)
 #define COS(x) cosf(x)
